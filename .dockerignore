@@ -1,0 +1,81 @@
+# Python byte-compiled, optimised, DLL files, etc.
+__pycache__/
+*.py[codz]
+*$py.class
+*.so
+.Python
+.tox
+.cache
+
+# Environments
+.env
+.env.example
+.envrc
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Django stuff
+*.log
+db.sqlite3
+db.sqlite3-journal
+*.dump
+
+# Logging 
+logs/
+
+# Local dev related
+media/
+**/portal.css
+**/daisyui.mjs
+**/daisyui-theme.mjs
+
+# Unit test / coverage reports
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+.mypy_cache
+.pytest_cache/
+
+# Ruff stuff
+.ruff_cache/
+
+# Documentation
+README.md
+LICENSE
+CITATION.cff
+*.md
+doc/
+
+# Git
+.git
+.gitignore
+.github/
+
+# DevOps
+.adr-dir
+.pre-commit-config.yaml
+renovate.json
+
+# Docker
+Dockerfile
+.dockerignore
+compose*.yaml
+
+# Node JS
+node_modules
+
+# Editors & IDEs
+.vscode
+*.code-workspace
+*devbox*
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db

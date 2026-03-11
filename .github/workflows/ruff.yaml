@@ -1,0 +1,31 @@
+# .github/workflows/ruff.yaml
+# GitHub Actions workflow for Ruff linting and formatting
+---
+name: Ruff
+
+on:
+  pull_request:
+    paths:
+      - '*/**.py'
+  push:
+    branches: [main]
+    paths:
+      - '*/**.py'
+
+jobs:
+  ruff:
+    name: Lint & Format with Ruff
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the repo
+        uses: actions/checkout@v6
+
+      - name: Ruff lint
+        uses: astral-sh/ruff-action@v3
+        with:
+          args: check .
+
+      - name: Ruff format (check only)
+        uses: astral-sh/ruff-action@v3
+        with:
+          args: format --check --diff .

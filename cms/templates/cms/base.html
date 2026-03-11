@@ -1,0 +1,62 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+    {% include "cms/html_head_tag.html" %}
+
+    <body id="document-body">
+        <!-- Skip to main content link -->
+        <a href="#main-content"
+            class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4
+            focus:py-2 focus:bg-pp-teal focus:text-white focus:rounded-lg focus:font-bold focus:shadow-lg
+            focus:outline-none focus:ring-2 focus:ring-pp-teal focus:ring-offset-2">
+            Skip to main content
+        </a>
+
+        <!-- page header -->
+        {% include "cms/header.html" %}
+
+        <!-- main content -->
+        <main id="main-content">
+            {% block full_width_content %}{% endblock %}
+            {% comment %}
+                Main page heading (H1). Uses page_heading if set, else title. Override this block to hide or customise (e.g. home page).
+            {% endcomment %}
+            {% block page_heading %}
+                {% if page.title or page_heading %}
+                <div class="bg-linear-to-r from-pp-dark-blue via-pp-mid-blue to-pp-teal text-white py-1 shadow-sm">
+                    <div class="container">
+                        <h2 class="my-4">{{ page_heading|default:page.title }}</h2>
+                    </div>
+                </div>
+                {% endif %}
+            {% endblock %}
+            <div class="container py-5">
+                {% block content %}{% endblock %}
+            </div>
+        </main>
+
+        <!-- Back to top button -->
+        <a href="#document-body" 
+            title="Back to top" 
+            aria-label="Back to top"
+            class="back-to-top
+            sticky bottom-10 mr-10 ml-auto inline-flex items-center justify-center w-10 h-10 rounded-lg
+            text-white bg-pp-teal shadow-sm no-underline opacity-0 pointer-events-none translate-y-2
+            transition-all duration-200 hover:opacity-90 focus-visible:outline-none focus-visible:ring-2
+            focus-visible:ring-pp-teal focus-visible:ring-offset-2 text-xl leading-none"
+            >
+                ↑
+        </a>
+
+        <!-- page footer -->
+        {% include "cms/footer.html" %}
+
+        <!-- Load the back to top functionality after HTML loaded -->
+        <script src="{% static 'cms/js/back_to_top.js' %}" defer></script>
+
+        <!-- Collapse header on scroll -->
+        <script src="{% static 'cms/js/collapse_header.js' %}" defer></script>
+    </body>
+
+</html>

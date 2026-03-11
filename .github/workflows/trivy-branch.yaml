@@ -1,0 +1,60 @@
+# trivy-branch.yaml
+# Trivy: Scan of current branch
+# Trivy is a comprehensive and versatile security scanner.
+# Trivy has scanners that look for security issues,
+# and targets where it can find those issues.
+# https://github.com/aquasecurity/trivy
+---
+name: Trivy - branch scan
+
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: trivy-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  scan:
+    permissions:
+      contents: read
+      security-events: write
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Run Trivy vulnerability scanner
+        env:
+          TRIVY_DB_REPOSITORY: >-
+            ghcr.io/aquasecurity/trivy-db,public.ecr.aws/aquasecurity/trivy-db
+        uses: aquasecurity/trivy-action@0.35.0
+        with:
+          scan-type: "fs"
+          scan-ref: "."  # Default but being explicit
+          scanners: "vuln,secret"  # Default but being explicit
+          # ignore-unfixed: true
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH,MEDIUM'
+          exit-code: "1"  # Fail workflow if vulnerabilities found
+          skip-dirs: "app/.venv"
+
+      # - name: Upload Trivy scan results to GitHub Security tab
+      #   if: always()  # Publish results to security tab even if scan fails
+      #   uses: github/codeql-action/upload-sarif@v4
+      #   with:
+      #     sarif_file: 'trivy-results.sarif'
+      #     category: trivy-branch
+
+      # Allow download & inspect SARIF
+      - name: Upload SARIF as workflow artifact
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: trivy-results-sarif
+          path: trivy-results.sarif

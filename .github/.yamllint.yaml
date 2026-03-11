@@ -1,0 +1,11 @@
+# Config for yamllint
+# Added to ignore truthy rule in GitHub workflow files
+# but keep it for other YAML files
+# Must be placed in the root of the repository
+---
+extends: default
+
+rules:
+  truthy:
+    ignore: |
+      .github/workflows/*

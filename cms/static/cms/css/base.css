@@ -1,0 +1,176 @@
+/* This is base CSS file used as input for Tailwindcss */
+
+/* Import fonts */
+@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,200;0,400;0,500;0,700;1,400&display=swap");
+
+/* Tailwind CSS import (without Tailwind's base) */
+@layer theme, reboot, base, components, tw-utilities, utilities;
+
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/preflight.css" layer(reboot);
+@import "tailwindcss/utilities.css" layer(tw-utilities);
+
+/* Global theme with Pathogens portal visual identity colours */
+@theme {
+    --color-pp-teal: #37ae94;
+    --color-pp-mid-blue: #4770b1;
+    --color-pp-dark-blue: #295986;
+    --color-pp-lime-green: #d4de27;
+    --color-pp-pale-grey: #d8d8d8;
+    --color-pp-dark-grey: #55585a;
+    --color-pp-almost-black: #1a1c1a;
+}
+
+/* Daisy UI, downloaded to path specified during build time */
+@plugin "./daisyui.mjs" {
+    /* disable default themes */
+    themes: false;
+}
+
+/*
+Register pathogens portal theme for DaisyUI
+For more detailed description of variables refer
+https://daisyui.com/docs/utilities/#theme-css-variables
+*/
+@plugin "./daisyui-theme.mjs" {
+    name: "pathogens-portal";
+    default: true;
+
+    /* Base text and background colour */
+    --color-base-100: #ffffff;
+    --color-base-200: #f3f4f6;
+    --color-base-300: #e5e7eb;
+    --color-base-content: var(--color-pp-almost-black);
+
+    /* Background and text colour for components utilities
+    like '*-primary', '*-info', etc */
+    --color-primary: var(--color-pp-dark-blue);
+    --color-primary-content: #ffffff;
+    --color-secondary: var(--color-pp-pale-grey);
+    --color-secondary-content: var(--color-pp-almost-black);
+    --color-accent: var(--color-pp-teal);
+    --color-accent-content: var(--color-pp-almost-black);
+    --color-neutral: var(--color-pp-dark-grey);
+    --color-neutral-content: #ffffff;
+    --color-info: #d1f0e9;
+    --color-info-content: #143e35;
+    --color-success: #64ceb7;
+    --color-success-content: #0f2f28;
+    --color-warning: #f3b153;
+    --color-warning-content: #511e01;
+    --color-error: #eb7270;
+    --color-error-content: #470b0b;
+
+    /* Border radius for components */
+    --radius-box: 0.75rem;
+    --radius-field: 0.5rem;
+    --radius-selector: 0.25rem;
+
+    /* Base size for components */
+    --size-selector: 0.25rem;
+    --size-field: 0.25rem;
+
+    /* Border and shadow control */
+    --border: 1px;
+    --depth: 1;
+    --noise: 0;
+}
+
+/* Site's default element level styling */
+@layer base {
+    /* If no reduced motion preference, apply the scoped styling */
+    @media (prefers-reduced-motion: no-preference) {
+        html {
+            interpolate-size: allow-keywords;
+            @apply scroll-smooth;
+        }
+    }
+
+    /* Default Font, Font size and body element styling  */
+    body {
+        font-family: "IBM Plex Sans", Helvetica, Arial, sans-serif;
+        @apply flex flex-col min-h-screen m-0 text-base font-normal;
+    }
+
+    /* Main content, extends to end of viewport */
+    main {
+        @apply flex-1;
+    }
+
+    /* Footer styling */
+    footer {
+        @apply w-full border-t border-solid border-pp-pale-grey;
+    }
+
+    /* Default anchor a.k.a links styling and hover behaviour */
+    a {
+        @apply text-pp-mid-blue no-underline;
+    }
+
+    a:hover {
+        @apply text-pp-mid-blue underline underline-offset-2 cursor-pointer;
+    }
+
+    /* Default typography for headers and text */
+    h1 {
+        @apply text-5xl;
+    }
+
+    h2 {
+        @apply text-4xl;
+    }
+
+    h3 {
+        @apply text-3xl;
+    }
+
+    h4 {
+        @apply text-2xl;
+    }
+
+    h5 {
+        @apply text-xl;
+    }
+
+    h1, h2, h3, h4, h5, h6 {
+        @apply mt-7 mb-4 font-medium tracking-tight wrap-break-word hyphens-auto;
+    }
+
+    p {
+        @apply my-4 wrap-break-word hyphens-none text-pretty;
+    }
+
+    /* Default list styling */
+    ul {
+        @apply list-disc;
+    }
+
+    ol {
+        @apply list-decimal;
+    }
+
+    ul, ol {
+        @apply my-4 pl-8 space-y-2;
+    }
+}
+
+/* Site's custom component styling */
+@layer utilities {
+    /* Max width is 80% until the window size is 96rem,
+       after that max-width is fixed to 80rem */
+    .container {
+        @apply mx-auto max-w-[80%] 2xl:max-w-7xl;
+    }
+
+    /* Screen reader only - visually hidden but accessible to assistive technologies */
+    .sr-only {
+        @apply absolute w-px h-px p-0 -m-px overflow-hidden whitespace-nowrap border-0;
+        clip: rect(0,0,0,0);
+    }
+
+    /* Remove sr-only on focus */
+    .focus\:not-sr-only:focus {
+        @apply static w-auto h-auto p-[inherit] m-[inherit] overflow-visible whitespace-normal;
+        clip: auto;
+    }
+}

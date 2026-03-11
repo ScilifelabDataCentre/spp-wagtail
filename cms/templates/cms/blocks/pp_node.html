@@ -1,0 +1,38 @@
+{% load wagtailcore_tags wagtailimages_tags %}
+
+<details class="mb-4 border border-pp-pale-grey rounded-lg overflow-hidden group" >
+    <summary class="w-full text-left p-2 bg-pp-pale-grey hover:bg-gray-200 
+    transition-all duration-200 cursor-pointer list-none group-open:bg-gray-200"
+    >
+        <div class="flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                {% image value.flag fill-48x32 %}
+                <h6 class="text-sm sm:text-lg m-0 font-semibold text-pp-dark-grey">
+                    {{ value.country }}
+                </h6>
+            </div>
+            <svg 
+                class="w-8 h-8 text-pp-mid-blue transform transition-transform 
+                duration-200 group-open:rotate-180" 
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24"
+            >
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                d="M19 9l-7 7-7-7"></path>
+            </svg>
+        </div>
+    </summary>
+    <div class="p-4 bg-white border-t border-pp-pale-grey">
+        <div class="flex gap-4 items-center">
+            <div class="flex-1">
+                {% image value.logo height-64 class="object-contain" %}
+            </div>
+            <div class="flex-5">
+                <p class="text-sm sm:text-base text-pp-dark-grey">
+                    {{ value.description|richtext }}
+                </p>
+            </div>
+        </div>
+    </div>
+</details>

@@ -1,0 +1,74 @@
+# docker-compose.yaml
+# Docker Compose configuration for Swedish Pathogens Portal (SPP)
+---
+name: SPP
+services:
+  # Portal website
+  web:
+    build:
+      context: ./
+      dockerfile: Dockerfile
+      target: dev
+      args:
+        with_pygraphviz: ${with_pygraphviz:-false}
+    image: swedish_pathogens_portal
+    pull_policy: never
+    container_name: spp_web
+    entrypoint: python manage.py runserver_plus --nopin 0.0.0.0:8000
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=psql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}
+    ports:
+      - "8000:8000"
+    working_dir: /app/local
+    volumes:
+      - type: bind
+        source: ./
+        target: /app/local
+    depends_on:
+      db:
+        condition: service_healthy
+        restart: true
+      tailwind:
+        condition: service_started
+  # Postgresql DB
+  db:
+    image: postgres:18.3-trixie
+    container_name: spp_db
+    env_file:
+      - .env
+    volumes:
+      - type: volume
+        source: postgres_db
+        target: /var/lib/postgresql
+    healthcheck:
+      test: pg_isready --username=${POSTGRES_USER} --dbname=${POSTGRES_DB}
+      interval: 5s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+  # Tailwind watch
+  tailwind:
+    image: swedish_pathogens_portal
+    init: true
+    pull_policy: never
+    entrypoint:
+      - sh
+      - -c
+      - |
+        cp /usr/local/lib/daisyui.mjs cms/static/cms/css/daisyui.mjs
+        cp /usr/local/lib/daisyui-theme.mjs cms/static/cms/css/daisyui-theme.mjs
+        exec tailwindcss \
+          --input cms/static/cms/css/base.css \
+          --output cms/static/cms/css/portal.css \
+          --watch=always
+    container_name: spp_tailwind_watch
+    working_dir: /app/local
+    volumes:
+      - type: bind
+        source: ./
+        target: /app/local
+# Persistant volume for DB
+volumes:
+  postgres_db:

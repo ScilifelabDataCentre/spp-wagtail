@@ -1,0 +1,32 @@
+# Yamllint: Lint YAML files.
+# A linter for YAML files. Checks for (among other things):
+# - syntax validity
+# - key repetition
+# - line length
+# - trailing spaces
+# - indentation
+---
+name: Yamllint
+on:
+  pull_request:
+    paths:
+      - '**/*.yml'
+      - '**/*.yaml'
+  push:
+    branches: [main]
+    paths:
+      - '**/*.yml'
+      - '**/*.yaml'
+
+jobs:
+  yamllint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Run yamllint
+        uses: ibiqlik/action-yamllint@v3
+        with:
+          config_file: .github/.yamllint.yaml
+          strict: true  # Default but explicit - fail on warnings too

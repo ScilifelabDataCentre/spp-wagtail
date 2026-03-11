@@ -1,0 +1,66 @@
+# Pa11y: A tool to check accessibility issues on a webpage
+# The config file and sitemap file used by this workflow
+# are in the ".github" directory of the repository
+#
+# This runs against a local instance of the app
+# since we don't have a live url to test against.
+# We can change this later if wanted / needed
+#
+# TODO: Schedule scans against live site
+---
+name: Pa11y Accessibility Check
+
+on:
+  workflow_dispatch:
+
+env:
+  SECRET_KEY: ci-not-a-secret
+  DEBUG: "1"
+  DATABASE_URL: sqlite:///db.sqlite3
+  ALLOWED_HOSTS: 127.0.0.1,localhost
+  EUROPE_PMC_API_URL: http://localhost:8000/example
+  EUROPE_PMC_WEB_URL: http://localhost:8000/example
+
+jobs:
+  pa11y:
+    name: Pa11y Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v6
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version-file: .python-version
+
+      - name: Install uv
+        run: pipx install uv
+
+      - name: Install Python deps
+        run: uv sync --group dev
+
+      - name: Set up Node.js 24
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Install Pa11y CI and wait-on
+        run: npm install -g pa11y-ci wait-on
+
+      - name: Prepare DB
+        run: |
+          uv run python manage.py migrate --noinput
+
+      - name: Start app and wait until ready
+        run: |
+          uv run python manage.py runserver 127.0.0.1:8000 &
+          npx wait-on http://127.0.0.1:8000
+
+      - name: Run Pa11y CI
+        run: |
+          pa11y-ci \
+            --config ${GITHUB_WORKSPACE}/.github/pa11y.config \
+            --sitemap http://127.0.0.1:8000/sitemap.xml \
+            --sitemap-exclude 'pdf$'

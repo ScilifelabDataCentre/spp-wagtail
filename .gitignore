@@ -1,0 +1,70 @@
+# Python byte-compiled, optimised, DLL files, etc.
+__pycache__/
+*.py[codz]
+*$py.class
+*.so
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Django stuff
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+*.dump
+media/
+staticfiles/
+
+# Tailwind CSS (ignore the locally generated CSS, it will be at build time)
+core/static/css/portal.css
+
+# DaisyUI (ignore the locally existing JS, it will be downloaded during build time)
+daisyui.mjs
+daisyui-theme.mjs
+
+# Unit test / coverage reports
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+.pytest_cache/
+
+# Ruff stuff
+.ruff_cache/
+
+# Translations
+*.mo
+*.pot
+
+# Visual Studio Code
+.vscode
+*.code-workspace
+
+# Devbox, direnv, process-compose
+devbox.json
+devbox.lock
+.envrc
+process-compose.yaml
+
+# OS
+.DS_Store
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Cursor
+.cursor
+.cursorignore
+.cursorignorerules
+
+# Logging 
+*logs/
