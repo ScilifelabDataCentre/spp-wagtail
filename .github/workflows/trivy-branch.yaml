@@ -10,8 +10,18 @@ name: Trivy - branch scan
 on:
   workflow_dispatch:
   pull_request:
+    paths:
+      - '.python-version'
+      - 'Dockerfile'
+      - 'pyproject.toml'
+      - 'uv.lock'
   push:
     branches: [main]
+    paths:
+      - '.python-version'
+      - 'Dockerfile'
+      - 'pyproject.toml'
+      - 'uv.lock'
 
 concurrency:
   group: trivy-${{ github.workflow }}-${{ github.ref }}
