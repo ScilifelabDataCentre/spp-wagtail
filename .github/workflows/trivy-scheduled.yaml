@@ -44,9 +44,9 @@ jobs:
           severity: 'CRITICAL,HIGH,MEDIUM'
           exit-code: "0"  # Don't fail job if vuln found (on scheduled)
 
-      - name: Upload Trivy scan results to GitHub Security tab
-        if: always()  # Publish results to security tab even if scan fails
-        uses: github/codeql-action/upload-sarif@v4
-        with:
-          sarif_file: 'trivy-results.sarif'
-          category: trivy-cron
+          # - name: Upload Trivy scan results to GitHub Security tab
+          #   if: always()  # Publish results to security tab even if scan fails
+          #   uses: github/codeql-action/upload-sarif@v4
+          #   with:
+          #     sarif_file: 'trivy-results.sarif'
+          #     category: trivy-cron
