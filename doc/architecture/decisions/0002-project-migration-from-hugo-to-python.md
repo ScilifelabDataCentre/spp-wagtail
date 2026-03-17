@@ -1,6 +1,6 @@
 # 4. Project migration from Hugo implementation to Python architecture
 
-**Date**: 2026-03-16
+**Date**: 2026-03-17
 
 ## Status
 
@@ -33,7 +33,6 @@ The following is the updated technology stack used in the Python implementation.
 | **Web Framework** | Django     | Secure, robust, and feature-rich with built-in admin interface, powerful ORM, and comprehensive templating system. Well known to the team, battle-tested, and easy to maintain. |
 | **Frontend Enhancement** | htmx    | Lightweight, modern approach to dynamic web interfaces. Enables AJAX, WebSocket, and real-time features without complex JavaScript frameworks. Integrates seamlessly with Django templates. |
 | **Frontend Styling** | TailwindCSS  | Utility-first CSS framework enabling consistent and maintainable UI styling. |
-| **UI Components** | DaisyUI |  Tailwind-based component library allowing rapid development of consistent interfaces. |
 | **Database** | PostgreSQL | Reliable, performant, and supports advanced features such as full-text search and JSONB. Integrates seamlessly with Django ORM.                                            |
 
 ## Consequences

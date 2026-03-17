@@ -1,6 +1,8 @@
 # 2. Formatting Rules
 
 **Date**: 2025-11-10
+**Updated**: 2026-03-17  
+**Previous ID**: ADR-0002
 
 ## Status
 

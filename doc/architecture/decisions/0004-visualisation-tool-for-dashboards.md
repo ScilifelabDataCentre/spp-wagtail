@@ -1,6 +1,8 @@
 # 3. Visualisation tool for Dashboards
 
 **Date:** 2025-11-13
+**Updated**: 2026-03-17  
+**Previous ID**: ADR-0003
 
 ## Status
 
