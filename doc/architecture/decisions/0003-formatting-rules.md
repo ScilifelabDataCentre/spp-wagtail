@@ -2,6 +2,10 @@
 
 **Date**: 2025-11-10
 
+**Updated**: 2026-03-17
+
+**Previous ID**: ADR-0002
+
 ## Status
 
 Accepted
@@ -22,9 +26,9 @@ Formalizing these rules will:
 We will adopt the following formatting rules for the Swedish Pathogens Portal project:
 
 ### HTML Formatting
-- **Line Length**: Aim for approximately 90-100 characters per line in HTML template files, primarily referring to content/text displayed on webpages (e.g., text within `<p>`, `<h1>`, `<div>`, and other content tags). This is a guideline rather than a hard threshold, as there is no good automated tool to enforce it for HTML.
+- **Line Length**: Aim for approximately 100-120 characters per line in HTML template files, primarily referring to content/text displayed on webpages (e.g., text within `<p>`, `<h1>`, `<div>`, and other content tags). This is a guideline rather than a hard threshold, as there is no good automated tool to enforce it for HTML and also there could be exceptions like really long urls.
 - **Indentation**: If indentation is used, it should be 4 spaces (consistent with Python formatting).
-- **Rationale**: Improves readability in code reviews, easier to view in terminal/IDE side-by-side, aligns with common HTML style guides. Prevents overly long lines that are hard to scan, especially for content that will be displayed to users. The guideline is more lenient than Python's 88-character limit to account for HTML's structure and TailwindCSS utility classes.
+- **Rationale**: Improves readability in code reviews, easier to view in terminal/IDE side-by-side, aligns with common HTML style guides. Prevents overly long lines that are hard to scan, especially for content that will be displayed to users. The guideline is more lenient than Python's 100-character limit to account for HTML's structure and TailwindCSS utility classes.
 - **Note**: While HTML templates with TailwindCSS utility classes can create long lines in code, the line length guideline primarily applies to visible content/text. Code formatting (attributes, class lists) may exceed this guideline when necessary for readability. Since there's no good automated tool to enforce HTML line length, this is a soft guideline to avoid overly long lines when possible.
 - **Enforcement**: Manual code review. Automated tooling (e.g., Prettier, HTML linters) may be considered in the future, but currently there is no reliable tool to enforce HTML line length.
 

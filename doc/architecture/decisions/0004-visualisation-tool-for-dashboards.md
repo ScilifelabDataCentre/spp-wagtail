@@ -2,6 +2,10 @@
 
 **Date:** 2025-11-13
 
+**Updated**: 2026-03-17
+
+**Previous ID**: ADR-0003
+
 ## Status
 
 Accepted
@@ -12,13 +16,13 @@ Within the Swedish Pathogens Portal we develop and manage multiple dashboards. E
 
 - Plotly _(integrated directly within the Django app)_
 
-- Apache Superset _(as an external visualization service)_
+- Apache Superset _(as an external visualisation service)_
 
 The main goal was to find a solution that provides flexibility, ease of integration, and sufficient control over how plots are generated and displayed.
 
 ## Decision
 
-We decided to use **Plotly** as the primary plotting library for generating visualizations for our dashboards.
+We decided to use **Plotly** as the primary plotting library for generating visualisations for our dashboards.
 
 **Rationale:**
 
@@ -31,15 +35,15 @@ We decided to use **Plotly** as the primary plotting library for generating visu
 
 - **Flexibility and Control:** Plotly allows full programmatic control over plot generation directly in Python, which fits well with our existing Django backend and development workflow.
 
-- **Simplicity of Integration:** The overhead of managing a separate visualization service is not outweighed by our current limited visualisation needs, thus simply embedding plots directly with the Django templates works more than sufficient.
+- **Simplicity of Integration:** The overhead of managing a separate visualisation service is not outweighed by our current limited visualisation needs, thus simply embedding plots directly with the Django templates works more than sufficient.
 
 **Considered Alternatives:**
 
 - **Apache Superset:**
 
-    - _Pros:_ Robust visualization platform, role-based access control, built-in dashboarding features.
+    - _Pros:_ Robust visualisation platform, role-based access control, built-in dashboard features.
 
-    - _Cons:_ Adds operational overhead (requires a separate service), less flexible for embedding custom plots in Django templates, and our current visualization needs do not justify the added complexity.
+    - _Cons:_ Adds operational overhead (requires a separate service), less flexible for embedding custom plots in Django templates, and our current visualisation needs do not justify the added complexity.
 
 ## Consequences
 
