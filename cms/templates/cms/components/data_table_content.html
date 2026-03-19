@@ -1,0 +1,101 @@
+{% comment %}
+    Swappable table content returned directly by views for HTMX partial responses.
+
+    The "t" variable must be a dict returned by cms.services.data_table.get_table_context().
+    For HTMX responses the view should render this template with context {"t": table_context}.
+{% endcomment %}
+
+{% if t.page_obj %}
+
+<div class="overflow-x-auto rounded-box shadow border border-base-300">
+    <table class="table table-zebra table-pin-rows"
+           aria-label="{{ t.table_label }}">
+        <thead>
+            <tr class="bg-primary text-primary-content uppercase tracking-wider">
+                {% for header in t.headers %}
+                <th scope="col">{{ header }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in t.page_obj %}
+            <tr class="hover:bg-info transition-colors duration-150">
+                {% for cell in row %}
+                <td>{{ cell }}</td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% if t.show_controls %}
+<div class="flex flex-col sm:flex-row items-center justify-between gap-3 mt-4 text-sm">
+    <span class="text-neutral">
+        Showing {{ t.start_index }} to {{ t.end_index }} of {{ t.total_count }} entries{% if t.search %} <span class="italic">(filtered)</span>{% endif %}
+    </span>
+
+    {% if t.page_obj.paginator.num_pages > 1 %}
+    <nav aria-label="Table pagination">
+        <div class="join">
+            {% if t.page_obj.has_previous %}
+            <button class="join-item btn btn-sm"
+                    hx-get="{{ t.table_url }}?page={{ t.page_obj.previous_page_number }}"
+                    hx-target="#data-table-{{ t.table_id }}-content"
+                    hx-include="#data-table-{{ t.table_id }}-controls"
+                    hx-indicator="#data-table-{{ t.table_id }}-loading"
+                    aria-label="Previous page">
+                «
+            </button>
+            {% else %}
+            <button class="join-item btn btn-sm btn-disabled" aria-disabled="true">«</button>
+            {% endif %}
+
+            {% for page_num in t.page_range %}
+                {% if not page_num %}
+                <button class="join-item btn btn-sm btn-disabled" aria-hidden="true">…</button>
+                {% elif page_num == t.page_obj.number %}
+                <button class="join-item btn btn-sm btn-primary" aria-current="page" aria-label="Page {{ page_num }}">
+                    {{ page_num }}
+                </button>
+                {% else %}
+                <button class="join-item btn btn-sm"
+                        hx-get="{{ t.table_url }}?page={{ page_num }}"
+                        hx-target="#data-table-{{ t.table_id }}-content"
+                        hx-include="#data-table-{{ t.table_id }}-controls"
+                        hx-indicator="#data-table-{{ t.table_id }}-loading"
+                        aria-label="Page {{ page_num }}">
+                    {{ page_num }}
+                </button>
+                {% endif %}
+            {% endfor %}
+
+            {% if t.page_obj.has_next %}
+            <button class="join-item btn btn-sm"
+                    hx-get="{{ t.table_url }}?page={{ t.page_obj.next_page_number }}"
+                    hx-target="#data-table-{{ t.table_id }}-content"
+                    hx-include="#data-table-{{ t.table_id }}-controls"
+                    hx-indicator="#data-table-{{ t.table_id }}-loading"
+                    aria-label="Next page">
+                »
+            </button>
+            {% else %}
+            <button class="join-item btn btn-sm btn-disabled" aria-disabled="true">»</button>
+            {% endif %}
+        </div>
+    </nav>
+    {% endif %}
+</div>
+{% endif %}
+
+{% else %}
+
+<div class="text-center py-12 text-neutral">
+    {% if t.search %}
+    No entries matching "{{ t.search }}".
+    {% else %}
+    No data available.
+    {% endif %}
+</div>
+
+{% endif %}
