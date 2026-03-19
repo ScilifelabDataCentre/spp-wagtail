@@ -1,4 +1,4 @@
-{% load static %}
+{% load static django_htmx %}
 
 <head>
 
@@ -37,6 +37,9 @@
 
     <!-- Stylesheet -->
     <link rel="stylesheet" href="{% static 'cms/css/portal.css' %}">
+
+    {% htmx_script %}
+    {% django_htmx_script %}
 
     <!-- Load the matomo functionality after HTML loaded -->
     <script src="{% static 'cms/js/matomo_script.js' %}" defer></script>
