@@ -6,6 +6,7 @@ from wagtail.blocks import RichTextBlock
 from wagtail.fields import StreamField
 from wagtail.models import Page
 
+
 # Dict to set allowed child page type for specific section type
 SECTION_PAGE_TYPES = {
     "default": "cms.StandardPage",
@@ -50,9 +51,3 @@ class SectionIndexPage(Page):
         FieldPanel("section_type"),
         FieldPanel("content"),
     ]
-
-    def allowed_subpage_models(self) -> list[Page]:
-        """To control the allowed children page type."""
-
-        model_path = SECTION_PAGE_TYPES[self.section_type]
-        return [Page.get_model_from_string(model_path)]
