@@ -13,7 +13,7 @@ Accepted
 ## Context
 
 As the Swedish Pathogens Portal transitioned from a static Hugo site to a Python/Django architecture (ADR-0002), we rebuilt the whole portal from scratch during a first phase aiming at releasing an MVP.
-However, because they follow different release cycles, the need to decouple the page content from the code base quickly became apparent.
+However, because content and code follow different release cycles, the need to decouple the page content from the codebase quickly became apparent.
 The portal team requires a system that supports their need for a structured content management workflow:
 
 - **Content review prior to publication:** editorial approval before changes go live
