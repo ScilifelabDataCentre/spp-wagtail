@@ -22,9 +22,14 @@ def table_partial(request: HttpRequest, page_pk: int, table_id: str) -> HttpResp
         table_id: The ``table_id`` value of the target ``DataTableBlock``.
 
     Raises:
-        Http404: If the page or table block cannot be found.
+        Http404: If the page or table block cannot be found, or if the
+                 requesting user does not satisfy the page's view restrictions.
     """
     page = get_object_or_404(Page.objects.live().specific(), pk=page_pk)
+
+    for restriction in page.get_view_restrictions():
+        if not restriction.accept_request(request):
+            raise Http404
 
     headers, rows, block_value = _find_table_block(page, table_id)
 
