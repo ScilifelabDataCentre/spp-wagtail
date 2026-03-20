@@ -10,6 +10,7 @@ from django.test import RequestFactory, SimpleTestCase, TestCase
 from django.urls import reverse
 from wagtail.models import Page, PageViewRestriction
 
+from cms.blocks import DataTableBlock
 from cms.pages import HomePage, StandardPage
 from cms.services.data_table import extract_table_data, get_table_context
 
@@ -245,6 +246,20 @@ class GetTableContextTest(SimpleTestCase):
         )
         self.assertFalse(ctx["show_controls"])
 
+    def test_show_controls_false_disables_pagination(self) -> None:
+        """All rows appear on a single page when controls are hidden."""
+        ctx = get_table_context(
+            request=None,
+            rows=self.rows,
+            headers=self.headers,
+            table_url="/test/",
+            per_page_default=10,
+            show_controls=False,
+        )
+        self.assertEqual(ctx["total_count"], 30)
+        self.assertEqual(len(list(ctx["page_obj"])), 30)
+        self.assertEqual(ctx["page_obj"].paginator.num_pages, 1)
+
     def test_empty_rows_returns_zero_counts(self) -> None:
         ctx = get_table_context(
             request=None,
@@ -278,16 +293,12 @@ class DataTableBlockContextTest(SimpleTestCase):
 
     def test_none_parent_context_does_not_raise(self) -> None:
         """Regression: ``None`` parent_context must not cause ``AttributeError``."""
-        from cms.blocks.data_table import DataTableBlock
-
         block = DataTableBlock()
         context = block.get_context(self._make_value(), parent_context=None)
         self.assertIn("t", context)
         self.assertEqual(context["t"]["table_url"], "")
 
     def test_extracts_request_from_parent_context(self) -> None:
-        from cms.blocks.data_table import DataTableBlock
-
         block = DataTableBlock()
         request = RequestFactory().get("/")
         parent_context: dict[str, Any] = {"request": request}
@@ -295,8 +306,6 @@ class DataTableBlockContextTest(SimpleTestCase):
         self.assertIn("t", context)
 
     def test_resolves_page_from_parent_context(self) -> None:
-        from cms.blocks.data_table import DataTableBlock
-
         block = DataTableBlock()
         fake_page = SimpleNamespace(pk=42)
         parent_context: dict[str, Any] = {"page": fake_page}
@@ -309,8 +318,6 @@ class DataTableBlockContextTest(SimpleTestCase):
 
     def test_falls_back_to_self_key(self) -> None:
         """When ``page`` is absent, ``self`` key is used for the page object."""
-        from cms.blocks.data_table import DataTableBlock
-
         block = DataTableBlock()
         fake_page = SimpleNamespace(pk=99)
         parent_context: dict[str, Any] = {"self": fake_page}

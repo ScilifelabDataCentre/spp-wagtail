@@ -26,6 +26,20 @@ def extract_table_data(typed_table: Any) -> tuple[list[str], list[list[Any]]]:
     return headers, rows
 
 
+def extract_block_params(block_value: dict[str, Any]) -> dict[str, Any]:
+    """Extract keyword arguments for ``get_table_context`` from a block value.
+
+    Centralises the string-to-int / truthy conversions that both
+    ``DataTableBlock.get_context`` and ``table_partial`` need.
+    """
+    return {
+        "table_id": block_value["table_id"],
+        "table_label": block_value.get("table_label", ""),
+        "per_page_default": int(block_value.get("per_page", DEFAULT_PER_PAGE)),
+        "show_controls": bool(block_value.get("show_controls", False)),
+    }
+
+
 def get_table_context(
     request: HttpRequest | None,
     rows: list[list[Any]],
@@ -83,6 +97,9 @@ def get_table_context(
             for row in rows
             if any(term in strip_tags(str(cell)).lower() for cell in row)
         ]
+
+    if not show_controls:
+        per_page = max(len(rows), 1)
 
     paginator = Paginator(rows, per_page)
     page_obj = paginator.get_page(page_number)

@@ -9,7 +9,7 @@ from django.urls import reverse
 from wagtail import blocks
 from wagtail.contrib.typed_table_block.blocks import TypedTableBlock
 
-from cms.services.data_table import extract_table_data, get_table_context
+from cms.services.data_table import extract_block_params, extract_table_data, get_table_context
 
 
 class DataTableBlock(blocks.StructBlock):
@@ -85,10 +85,7 @@ class DataTableBlock(blocks.StructBlock):
             rows=rows,
             headers=headers,
             table_url=table_url,
-            table_id=value["table_id"],
-            table_label=value.get("table_label", ""),
-            per_page_default=int(value.get("per_page", 10)),
-            show_controls=bool(value.get("show_controls", False)),
+            **extract_block_params(value),
         )
         context["t"] = table_ctx
         return context
