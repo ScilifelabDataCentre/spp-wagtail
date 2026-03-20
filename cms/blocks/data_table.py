@@ -59,14 +59,17 @@ class DataTableBlock(blocks.StructBlock):
 
     def get_context(self, value: dict[str, Any], parent_context: dict | None = None) -> dict:
         """Build the ``t`` context dict expected by the data-table templates."""
-        context = super().get_context(value, parent_context)
-
+        # Extract before super() because Block.get_context mutates
+        # parent_context in place, overwriting the "self" key with the
+        # block value dict.
         request = parent_context.get("request") if parent_context else None
         page = (
-            parent_context.get("page") or parent_context.get("self")
+            (parent_context.get("page") or parent_context.get("self"))
             if parent_context
             else None
         )
+
+        context = super().get_context(value, parent_context)
 
         headers, rows = extract_table_data(value["table"])
 
