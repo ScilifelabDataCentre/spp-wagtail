@@ -2,13 +2,19 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from django.http import Http404, HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, render
+from django.views.decorators.cache import cache_control
+from django.views.decorators.http import require_GET
 from wagtail.models import Page
 
-from cms.services.data_table import extract_table_data, get_table_context
+from cms.services.data_table import extract_block_params, extract_table_data, get_table_context
 
 
+@require_GET
+@cache_control(max_age=60)
 def table_partial(request: HttpRequest, page_pk: int, table_id: str) -> HttpResponse:
     """Return the swappable table-content partial for a specific DataTableBlock.
 
@@ -38,17 +44,14 @@ def table_partial(request: HttpRequest, page_pk: int, table_id: str) -> HttpResp
         rows=rows,
         headers=headers,
         table_url=request.path,
-        table_id=table_id,
-        table_label=block_value.get("table_label", ""),
-        per_page_default=int(block_value.get("per_page", 10)),
-        show_controls=bool(block_value.get("show_controls", False)),
+        **extract_block_params(block_value),
     )
     return render(request, "cms/components/data_table_content.html", {"t": ctx})
 
 
 def _find_table_block(
     page: Page, table_id: str
-) -> tuple[list[str], list[list], dict]:
+) -> tuple[list[str], list[list[Any]], dict[str, Any]]:
     """Locate a DataTableBlock in the page's ``content`` StreamField.
 
     Returns:
