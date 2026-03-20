@@ -12,7 +12,7 @@ DEFAULT_PER_PAGE = 10
 DEFAULT_PER_PAGE_OPTIONS: tuple[int, ...] = (10, 25, 50)
 
 
-def extract_table_data(typed_table: Any) -> tuple[list[str], list[list[Any]]]:
+def extract_table_data(typed_table: Any) -> tuple[list[str], list[list[Any]]]:  # noqa: ANN401
     """Convert a ``TypedTable`` value into plain headers + rows lists.
 
     ``RichTextValue`` objects are kept as-is so the Django template engine
@@ -79,7 +79,7 @@ def get_table_context(
 
     try:
         per_page = int(params.get("per_page", per_page_default))
-    except (TypeError, ValueError):
+    except TypeError, ValueError:
         per_page = per_page_default
 
     if per_page not in per_page_options:
@@ -87,16 +87,12 @@ def get_table_context(
 
     try:
         page_number = int(params.get("page", 1))
-    except (TypeError, ValueError):
+    except TypeError, ValueError:
         page_number = 1
 
     if search:
         term = search.lower()
-        rows = [
-            row
-            for row in rows
-            if any(term in strip_tags(str(cell)).lower() for cell in row)
-        ]
+        rows = [row for row in rows if any(term in strip_tags(str(cell)).lower() for cell in row)]
 
     if not show_controls:
         per_page = max(len(rows), 1)
@@ -106,9 +102,7 @@ def get_table_context(
 
     page_range = [
         None if p == Paginator.ELLIPSIS else p
-        for p in paginator.get_elided_page_range(
-            page_obj.number, on_each_side=2, on_ends=1
-        )
+        for p in paginator.get_elided_page_range(page_obj.number, on_each_side=2, on_ends=1)
     ]
 
     return {

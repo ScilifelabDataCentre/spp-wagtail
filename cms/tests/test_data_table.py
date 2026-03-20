@@ -35,17 +35,20 @@ class ExtractTableDataTest(SimpleTestCase):
     """Unit tests for ``extract_table_data``."""
 
     def test_none_returns_empty(self) -> None:
+        """None input returns empty headers and rows."""
         headers, rows = extract_table_data(None)
         self.assertEqual(headers, [])
         self.assertEqual(rows, [])
 
     def test_empty_columns_returns_empty(self) -> None:
+        """Table with no columns returns empty headers and rows."""
         table = SimpleNamespace(columns=[], row_data=[])
         headers, rows = extract_table_data(table)
         self.assertEqual(headers, [])
         self.assertEqual(rows, [])
 
     def test_extracts_headers_and_rows(self) -> None:
+        """Headers and rows are extracted from a well-formed table."""
         table = _make_typed_table(
             ["Name", "Score"],
             [["Alice", 95], ["Bob", 87]],
@@ -76,11 +79,13 @@ class GetTableContextTest(SimpleTestCase):
     """Unit tests for ``get_table_context``."""
 
     def setUp(self) -> None:
+        """Create a 30-row dataset for pagination tests."""
         self.factory = RequestFactory()
         self.headers = ["Name", "Value"]
         self.rows: list[list[Any]] = [[f"item-{i}", i] for i in range(30)]
 
     def test_returns_all_expected_keys(self) -> None:
+        """Returned dict contains every key the templates rely on."""
         ctx = get_table_context(
             request=None,
             rows=self.rows,
@@ -106,6 +111,7 @@ class GetTableContextTest(SimpleTestCase):
         self.assertEqual(set(ctx.keys()), expected_keys)
 
     def test_none_request_uses_defaults(self) -> None:
+        """None request falls back to default search, per_page, and page."""
         ctx = get_table_context(
             request=None,
             rows=self.rows,
@@ -117,6 +123,7 @@ class GetTableContextTest(SimpleTestCase):
         self.assertEqual(ctx["total_count"], 30)
 
     def test_label_falls_back_to_table_id(self) -> None:
+        """Empty table_label resolves to the table_id string."""
         ctx = get_table_context(
             request=None,
             rows=[],
@@ -128,6 +135,7 @@ class GetTableContextTest(SimpleTestCase):
         self.assertEqual(ctx["table_label"], "my-table")
 
     def test_explicit_label_used(self) -> None:
+        """A non-empty table_label is used as-is."""
         ctx = get_table_context(
             request=None,
             rows=[],
@@ -139,6 +147,7 @@ class GetTableContextTest(SimpleTestCase):
         self.assertEqual(ctx["table_label"], "My Table")
 
     def test_search_filters_rows(self) -> None:
+        """Search term keeps only matching rows."""
         request = self.factory.get("/", {"search": "item-5"})
         ctx = get_table_context(
             request=request,
@@ -150,6 +159,7 @@ class GetTableContextTest(SimpleTestCase):
         self.assertEqual(list(ctx["page_obj"])[0], ["item-5", 5])
 
     def test_search_strips_html_tags(self) -> None:
+        """Search matches against plain text after stripping HTML tags."""
         rows: list[list[Any]] = [["<b>Alpha</b>", 1], ["Beta", 2]]
         request = self.factory.get("/", {"search": "alpha"})
         ctx = get_table_context(
@@ -161,6 +171,7 @@ class GetTableContextTest(SimpleTestCase):
         self.assertEqual(ctx["total_count"], 1)
 
     def test_search_is_case_insensitive(self) -> None:
+        """Search matching ignores case."""
         request = self.factory.get("/", {"search": "ITEM-0"})
         ctx = get_table_context(
             request=request,
@@ -171,6 +182,7 @@ class GetTableContextTest(SimpleTestCase):
         self.assertEqual(ctx["total_count"], 1)
 
     def test_invalid_per_page_falls_back_to_default(self) -> None:
+        """A per_page value not in per_page_options reverts to the default."""
         request = self.factory.get("/", {"per_page": "999"})
         ctx = get_table_context(
             request=request,
@@ -182,6 +194,7 @@ class GetTableContextTest(SimpleTestCase):
         self.assertEqual(ctx["per_page"], 10)
 
     def test_non_numeric_per_page_falls_back(self) -> None:
+        """Non-numeric per_page reverts to the default."""
         request = self.factory.get("/", {"per_page": "abc"})
         ctx = get_table_context(
             request=request,
@@ -192,6 +205,7 @@ class GetTableContextTest(SimpleTestCase):
         self.assertEqual(ctx["per_page"], 10)
 
     def test_pagination_defaults_to_page_one(self) -> None:
+        """Without a page param the first page is returned."""
         ctx = get_table_context(
             request=None,
             rows=self.rows,
@@ -204,6 +218,7 @@ class GetTableContextTest(SimpleTestCase):
         self.assertEqual(ctx["end_index"], 10)
 
     def test_explicit_page_number(self) -> None:
+        """An explicit page param selects the corresponding page."""
         request = self.factory.get("/", {"page": "2"})
         ctx = get_table_context(
             request=request,
@@ -216,6 +231,7 @@ class GetTableContextTest(SimpleTestCase):
         self.assertEqual(ctx["start_index"], 11)
 
     def test_invalid_page_number_defaults_to_first(self) -> None:
+        """Non-numeric page number falls back to page 1."""
         request = self.factory.get("/", {"page": "xyz"})
         ctx = get_table_context(
             request=request,
@@ -226,6 +242,7 @@ class GetTableContextTest(SimpleTestCase):
         self.assertEqual(ctx["page_obj"].number, 1)
 
     def test_out_of_range_page_returns_last(self) -> None:
+        """Page number beyond the last page returns the last page."""
         request = self.factory.get("/", {"page": "999"})
         ctx = get_table_context(
             request=request,
@@ -237,6 +254,7 @@ class GetTableContextTest(SimpleTestCase):
         self.assertEqual(ctx["page_obj"].number, 3)
 
     def test_show_controls_passed_through(self) -> None:
+        """The show_controls flag is included in the returned context."""
         ctx = get_table_context(
             request=None,
             rows=[],
@@ -261,6 +279,7 @@ class GetTableContextTest(SimpleTestCase):
         self.assertEqual(ctx["page_obj"].paginator.num_pages, 1)
 
     def test_empty_rows_returns_zero_counts(self) -> None:
+        """Empty dataset yields zero for total, start, and end index."""
         ctx = get_table_context(
             request=None,
             rows=[],
@@ -280,7 +299,7 @@ class GetTableContextTest(SimpleTestCase):
 class DataTableBlockContextTest(SimpleTestCase):
     """Tests for ``DataTableBlock.get_context``, including the precedence fix."""
 
-    def _make_value(self, **overrides: Any) -> dict[str, Any]:
+    def _make_value(self, **overrides: str | int | bool | SimpleNamespace) -> dict[str, Any]:
         defaults: dict[str, Any] = {
             "table_id": "t1",
             "table_label": "Test",
@@ -299,6 +318,7 @@ class DataTableBlockContextTest(SimpleTestCase):
         self.assertEqual(context["t"]["table_url"], "")
 
     def test_extracts_request_from_parent_context(self) -> None:
+        """Request object is forwarded from parent_context to get_table_context."""
         block = DataTableBlock()
         request = RequestFactory().get("/")
         parent_context: dict[str, Any] = {"request": request}
@@ -306,6 +326,7 @@ class DataTableBlockContextTest(SimpleTestCase):
         self.assertIn("t", context)
 
     def test_resolves_page_from_parent_context(self) -> None:
+        """Page PK from ``page`` key is used to build the table_url."""
         block = DataTableBlock()
         fake_page = SimpleNamespace(pk=42)
         parent_context: dict[str, Any] = {"page": fake_page}
@@ -342,26 +363,28 @@ def _table_content_json(
     """Return StreamField JSON containing one DataTableBlock."""
     if rows is None:
         rows = [["Alice", 95.0], ["Bob", 87.5], ["Charlie", 72.0]]
-    return json.dumps([
-        {
-            "type": "data_table",
-            "value": {
-                "table_id": table_id,
-                "table_label": "Test Table",
-                "show_controls": True,
-                "per_page": "10",
-                "table": {
-                    "columns": [
-                        {"type": "text", "heading": "Name"},
-                        {"type": "numeric", "heading": "Score"},
-                    ],
-                    "rows": [{"values": r} for r in rows],
-                    "caption": "",
+    return json.dumps(
+        [
+            {
+                "type": "data_table",
+                "value": {
+                    "table_id": table_id,
+                    "table_label": "Test Table",
+                    "show_controls": True,
+                    "per_page": "10",
+                    "table": {
+                        "columns": [
+                            {"type": "text", "heading": "Name"},
+                            {"type": "numeric", "heading": "Score"},
+                        ],
+                        "rows": [{"values": r} for r in rows],
+                        "caption": "",
+                    },
                 },
+                "id": f"block-{table_id}",
             },
-            "id": f"block-{table_id}",
-        },
-    ])
+        ]
+    )
 
 
 class TablePartialViewTest(TestCase):
@@ -369,6 +392,7 @@ class TablePartialViewTest(TestCase):
 
     @classmethod
     def setUpTestData(cls) -> None:
+        """Create a published StandardPage with a 15-row data table."""
         root = Page.get_first_root_node()
         # Wagtail's initial migration creates a default page with slug="home";
         # remove it via treebeard so the tree stays consistent.
@@ -393,25 +417,30 @@ class TablePartialViewTest(TestCase):
         )
 
     def test_returns_200_for_valid_request(self) -> None:
+        """Valid page and table_id returns 200 with table content."""
         resp = self.client.get(self._url())
         self.assertEqual(resp.status_code, 200)
         self.assertContains(resp, "student-0")
 
     def test_nonexistent_page_returns_404(self) -> None:
+        """Non-existent page PK returns 404."""
         resp = self.client.get(self._url(page_pk=99999))
         self.assertEqual(resp.status_code, 404)
 
     def test_nonexistent_table_id_returns_404(self) -> None:
+        """Unrecognised table_id on an existing page returns 404."""
         resp = self.client.get(self._url(table_id="no-such-table"))
         self.assertEqual(resp.status_code, 404)
 
     def test_search_filters_response(self) -> None:
+        """Search param filters the rendered table rows."""
         resp = self.client.get(self._url(), {"search": "student-3"})
         self.assertEqual(resp.status_code, 200)
         self.assertContains(resp, "student-3")
         self.assertNotContains(resp, "student-0")
 
     def test_pagination(self) -> None:
+        """Page 2 shows rows 11-15 and omits rows 0-9."""
         resp = self.client.get(self._url(), {"page": "2", "per_page": "10"})
         self.assertEqual(resp.status_code, 200)
         self.assertContains(resp, "student-10")

@@ -32,7 +32,10 @@ class DataTableBlock(blocks.StructBlock):
         required=True,
         max_length=60,
         validators=[RegexValidator(r"^[a-zA-Z0-9-]+$", "Only letters, numbers, and hyphens.")],
-        help_text="Unique identifier for this table on the page — must not repeat if multiple tables are added (letters, numbers, hyphens).",
+        help_text=(
+            "Unique identifier for this table on the page — must not repeat "
+            "if multiple tables are added (letters, numbers, hyphens)."
+        ),
     )
     table_label = blocks.CharBlock(
         required=True,
@@ -64,9 +67,7 @@ class DataTableBlock(blocks.StructBlock):
         # block value dict.
         request = parent_context.get("request") if parent_context else None
         page = (
-            (parent_context.get("page") or parent_context.get("self"))
-            if parent_context
-            else None
+            (parent_context.get("page") or parent_context.get("self")) if parent_context else None
         )
 
         context = super().get_context(value, parent_context)
