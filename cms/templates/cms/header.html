@@ -33,7 +33,7 @@
                         aria-haspopup="true"
                         aria-controls="{{ item.title|slugify }}-menu"
                         type="button">
-                        Dashboards
+                        {{ item.title|title }}
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                         </svg>
@@ -105,7 +105,6 @@
                 </svg>
             </button>
             <hr class="my-4 border-pp-pale-grey">
-            <!-- Direct links: Dashboards, Outbreaks, Topics (touch targets ≥44px) -->
             <div class="flex flex-col gap-4" aria-label="Main links">
                 {% for item in header_menu %}
                     {% if item.has_submenu %}
@@ -114,7 +113,7 @@
                             <summary class="flex items-center text-pp-dark-blue font-medium uppercase tracking-wider
                             list-none focus-visible:rounded focus-visible:outline-none focus-visible:ring-2
                             focus-visible:ring-offset-2 [&::-webkit-details-marker]:hidden">
-                                <span>{{ item.title }}</span>
+                                <span>{{ item.title|title }}</span>
                                 <svg class="w-4 h-4 ml-2 transition-transform group-open/details:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                                 </svg>
