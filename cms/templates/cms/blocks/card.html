@@ -1,19 +1,4 @@
 {% load wagtailimages_tags %}
 
-<a class="block bg-white border border-pp-pale-grey rounded-lg p-6 hover:shadow-lg
-hover:border-pp-dark-blue/75 transition-all duration-200 group no-underline"
-target="_blank" rel="noopener noreferrer"
-href="{{ value.url }}"
->
-    <div>
-        {% image value.image height-64 class="m-auto object-contain" %}
-    </div>
-    <h5 class="text-lg font-semibold text-center text-pp-dark-grey
-    group-hover:text-pp-dark-blue transition-colors duration-200"
-    >
-        {{ value.title }}
-    </h5>
-    <p class="text-sm text-pp-dark-grey mb-0">
-        {{ value.description }}
-    </p>
-</a>
+{% image value.image format-webp as thumbnail %}
+{% include "cms/components/content_card.html#content_card" with title=value.title description=value.description image=thumbnail.url url=value.url external_url=True only %}

@@ -17,6 +17,9 @@ DATABASES = {
 
 DEBUG = False
 
+MEDIA_ROOT = BASE_DIR / "media" / "test"  # noqa: F405
+MEDIA_URL = "/media/test/"
+
 ADMIN_URL = "admin/"
 WAGTAIL_SITE_NAME = "Test Portal"
 WAGTAILADMIN_URL = "wagtail/"
