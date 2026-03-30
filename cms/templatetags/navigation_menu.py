@@ -38,20 +38,13 @@ def get_menu(slug: str) -> QuerySet[NavigationMainMenu]:
         {% endfor %}
     """
 
-    # TO DISCUSS:
-    # from django.core.cache import cache
-    # cache_key = f"menu_{slug}"
-    # menu_items = cache.get(cache_key)
-    # if menu_items is not None:
-    #     return menu_items
+    # TODO: Later if needed add caching to avoid DB query for every request
 
     try:
         menu = NavigationMenu.objects.prefetch_related(
             "main_menu_items__page", "main_menu_items__sub_menu_items__page"
         ).get(slug=slug)
         menu_items = menu.main_menu_items.all()
-        # Cache menu for 5 minutes
-        # cache.set(cache_key, menu_items, 300)
         return menu_items
     except ObjectDoesNotExist as e:
         LOGGER.warning(f"Couldn't find navigation menu for slug '{slug}':\n{e}")
