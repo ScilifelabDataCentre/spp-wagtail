@@ -7,8 +7,9 @@ from django.test import TestCase
 from PIL import Image as PILImage
 from wagtail.blocks import StructBlockValidationError
 from wagtail.images import get_image_model
+from wagtail.models import Page, Site
 
-from cms.blocks.cards import CardBlock, CardGridBlock
+from cms.blocks.cards import CardBlock, CardGridBlock, ChildPageCardBlock
 
 #######################################################################
 #################### Helper functions for testing #####################
@@ -142,3 +143,111 @@ class TestCardGridBlock(TestCase):
         self.assertEqual(result["cards"][1]["image"].title, "Image 2")
         self.assertEqual(result["cards"][1]["description"], "Description for card 2")
         self.assertEqual(result["cards"][1]["url"], "https://example.com/card2")
+
+
+#######################################################################
+####################   ChildPageCardBlock tests   #####################
+#######################################################################
+
+
+class TestChildPageCardBlock(TestCase):
+    """Tests for the ChildPageCardBlock."""
+
+    def setUp(self):
+        """Set up test data."""
+
+        self.root = Page.objects.get(id=1)
+
+        Site.objects.update_or_create(
+            id=1,
+            defaults={
+                "hostname": "localhost",
+                "root_page": self.root,
+                "is_default_site": True,
+            },
+        )
+
+        self.parent = self.root.add_child(instance=Page(title="Parent", slug="parent"))
+        self.child_b = self.parent.add_child(instance=Page(title="B page", slug="b"))  # noqa: F841
+        self.child_a = self.parent.add_child(instance=Page(title="A page", slug="a"))  # noqa: F841
+        self.child_d = self.parent.add_child(instance=Page(title="D page", slug="d"))  # noqa: F841
+        self.child_c = self.parent.add_child(instance=Page(title="C page", slug="c"))  # noqa: F841
+
+        self.block = ChildPageCardBlock()
+
+    def test_returns_all_children_by_default(self):
+        """Test that all child pages are returned by default."""
+
+        value = self.block.to_python(
+            {
+                "parent_page": self.parent.id,
+            }
+        )
+
+        result = self.block.clean(value)
+        context = self.block.get_context(result)
+
+        self.assertEqual(len(context["child_pages"]), 4)
+
+    def test_limits_to_3(self):
+        """Test that the number of child pages can be limited to 3."""
+        value = self.block.to_python(
+            {
+                "parent_page": self.parent.id,
+                "num_children": "3",
+            }
+        )
+
+        result = self.block.clean(value)
+        context = self.block.get_context(result)
+
+        self.assertLessEqual(len(context["child_pages"]), 3)
+
+    def test_order_by_title(self):
+        """Test that child pages can be ordered by title."""
+        value = self.block.to_python(
+            {
+                "parent_page": self.parent.id,
+                "order_by": "title",
+            }
+        )
+
+        result = self.block.clean(value)
+        context = self.block.get_context(result)
+
+        titles = [p.title for p in context["child_pages"]]
+        self.assertEqual(titles, sorted(titles))
+
+    def test_order_by_created(self):
+        """Test that child pages can be ordered by creation date."""
+        self.child_e = self.parent.add_child(instance=Page(title="E page", slug="e"))
+        self.child_e.save_revision().publish()
+
+        value = self.block.to_python(
+            {
+                "parent_page": self.parent.id,
+                "order_by": "created",
+            }
+        )
+
+        result = self.block.clean(value)
+        context = self.block.get_context(result)
+
+        self.assertEqual(context["child_pages"][0].title, "E page")
+
+    def test_parent_with_no_children_returns_empty_list(self):
+        """Test that a parent page with no children returns an empty list."""
+        empty_parent = self.root.add_child(instance=Page(title="Empty parent", slug="empty-parent"))
+
+        value = self.block.to_python(
+            {
+                "parent_page": empty_parent.id,
+                "num_children": "all",
+                "order_by": "created",
+            }
+        )
+
+        result = self.block.clean(value)
+        context = self.block.get_context(result)
+
+        self.assertEqual(list(context["child_pages"]), [])
