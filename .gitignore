@@ -23,7 +23,8 @@ media/
 staticfiles/
 
 # Tailwind CSS (ignore the locally generated CSS, it will be at build time)
-core/static/css/portal.css
+tailwindcss*
+portal.css
 
 # DaisyUI (ignore the locally existing JS, it will be downloaded during build time)
 daisyui.mjs
