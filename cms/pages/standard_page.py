@@ -5,7 +5,7 @@ from wagtail.admin.panels import FieldPanel
 from wagtail.fields import StreamField
 from wagtail.models import Page
 
-from cms.blocks import CardBlock, CardGridBlock, ChildPageCardBlock
+from cms.blocks import AlertBlock, CardBlock, CardGridBlock, ChildPageCardBlock
 
 
 class StandardPage(Page):
@@ -27,6 +27,7 @@ class StandardPage(Page):
     content = StreamField(
         [
             ("text", blocks.RichTextBlock(verbose_name="Text (Rich)")),
+            ("alert", AlertBlock()),
             ("card", CardBlock()),
             ("card_grid", CardGridBlock()),
             ("child_page_cards", ChildPageCardBlock()),
