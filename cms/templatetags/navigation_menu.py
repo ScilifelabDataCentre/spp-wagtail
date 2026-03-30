@@ -31,7 +31,7 @@ def get_menu(slug: str) -> QuerySet[NavigationMainMenu]:
         {% for item in menu_items %}
             <a href="{{ item.link }}">{{ item.title }}</a>
             {% if item.has_submenu %}
-                {% for sub_item in item.sub_menu.all %}
+                {% for sub_item in item.sub_menu_items.all %}
                     <a href="{{ sub_item.link }}">{{ sub_item.title }}</a>
                 {% endfor %}
             {% endif %}
