@@ -1,4 +1,6 @@
 {% load static %}
+{% load navigation_menu %}
+{% get_menu "footer" as footer_menu %}
 
 <footer class="bg-linear-to-br from-pp-dark-blue to-pp-mid-blue text-white mt-10" role="contentinfo" aria-label="Site footer">
     <div class="container mx-auto max-w-7xl py-4">
@@ -19,13 +21,10 @@
                 *:hover:text-pp-lime-green *:focus-visible:rounded *:focus-visible:outline-none *:focus-visible:ring-2
                 *:focus-visible:ring-offset-2 *:focus-visible:ring-offset-pp-dark-blue"
                     aria-label="Footer links">
-                    <a href="">About</a>
-                    <span class="select-none" aria-hidden="true">·</span>
-                    <a href="">Contact</a>
-                    <span class="select-none" aria-hidden="true">·</span>
-                    <a href="">Cite us</a>
-                    <span class="select-none" aria-hidden="true">·</span>
-                    <a href="">Privacy policy</a>
+                    {% for item in footer_menu %}
+                    <a href="{{ item.link }}">{{ item.title|title }}</a>
+                    {% if not forloop.last %}<span class="select-none" aria-hidden="true">·</span>{% endif %}
+                    {% endfor %}
                 </nav>
                 <div class="flex mt-2 pb-2 gap-3 justify-center *:text-inherit *:w-8 *:h-8 md:*:w-9 md:*:h-9
                     *:bg-white/10 *:hover:bg-pp-lime-green *:hover:text-pp-dark-blue *:rounded-lg *:flex
