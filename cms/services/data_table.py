@@ -12,18 +12,19 @@ DEFAULT_PER_PAGE = 10
 DEFAULT_PER_PAGE_OPTIONS: tuple[int, ...] = (10, 25, 50)
 
 
-def extract_table_data(typed_table: Any) -> tuple[list[str], list[list[Any]]]:  # noqa: ANN401
-    """Convert a ``TypedTable`` value into plain headers + rows lists.
+def extract_table_data(typed_table: Any) -> tuple[list[str], list[list[Any]], str]:  # noqa: ANN401
+    """Convert a ``TypedTable`` value into plain headers, rows, and caption.
 
     ``RichTextValue`` objects are kept as-is so the Django template engine
     calls their ``__html__()`` method and renders safe HTML automatically.
     """
     if not typed_table or not typed_table.columns:
-        return [], []
+        return [], [], ""
 
     headers = [col["heading"] for col in typed_table.columns]
     rows = [list(row["values"]) for row in typed_table.row_data]
-    return headers, rows
+    caption = getattr(typed_table, "caption", "") or ""
+    return headers, rows, caption
 
 
 def extract_block_params(block_value: dict[str, Any]) -> dict[str, Any]:
@@ -32,10 +33,14 @@ def extract_block_params(block_value: dict[str, Any]) -> dict[str, Any]:
     Centralises the string-to-int / truthy conversions that both
     ``DataTableBlock.get_context`` and ``table_partial`` need.
     """
+    try:
+        per_page = int(block_value.get("per_page") or DEFAULT_PER_PAGE)
+    except TypeError, ValueError:
+        per_page = DEFAULT_PER_PAGE
+
     return {
         "table_id": block_value["table_id"],
-        "table_label": block_value.get("table_label", ""),
-        "per_page_default": int(block_value.get("per_page", DEFAULT_PER_PAGE)),
+        "per_page_default": per_page,
         "show_controls": bool(block_value.get("show_controls", False)),
     }
 
@@ -44,10 +49,10 @@ def get_table_context(
     request: HttpRequest | None,
     rows: list[list[Any]],
     headers: list[str],
+    caption: str,
     table_url: str,
     *,
     table_id: str = "data-table",
-    table_label: str = "",
     per_page_default: int = DEFAULT_PER_PAGE,
     per_page_options: tuple[int, ...] = DEFAULT_PER_PAGE_OPTIONS,
     show_controls: bool = True,
@@ -60,10 +65,10 @@ def get_table_context(
                           (e.g. management commands, Wagtail previews).
         rows:             Full dataset as a list-of-lists (one inner list per row).
         headers:          Column header strings, same length as each row.
+        caption:          Text for the ``<caption>`` element (from the
+                          TypedTableBlock's built-in caption field).
         table_url:        The URL that HTMX controls will call for updates.
         table_id:         HTML id prefix used by the template and HTMX targets.
-        table_label:      Human-readable label for the table's aria-label
-                          attribute.  Falls back to *table_id*.
         per_page_default: Number of rows shown when the user hasn't chosen.
         per_page_options: Choices offered in the "entries per page" select.
         show_controls:    When False the template hides the search bar,
@@ -72,8 +77,6 @@ def get_table_context(
     Returns:
         A dict ready to pass (or nest) into a template context.
     """
-    resolved_label = table_label or table_id
-
     params = request.GET if request else {}
     search = params.get("search", "").strip()
 
@@ -107,7 +110,7 @@ def get_table_context(
 
     return {
         "table_id": table_id,
-        "table_label": resolved_label,
+        "caption": caption,
         "table_url": table_url,
         "headers": headers,
         "page_obj": page_obj,

@@ -37,12 +37,13 @@ def table_partial(request: HttpRequest, page_pk: int, table_id: str) -> HttpResp
         if not restriction.accept_request(request):
             raise Http404
 
-    headers, rows, block_value = _find_table_block(page, table_id)
+    headers, rows, caption, block_value = _find_table_block(page, table_id)
 
     ctx = get_table_context(
         request=request,
         rows=rows,
         headers=headers,
+        caption=caption,
         table_url=request.path,
         **extract_block_params(block_value),
     )
@@ -51,11 +52,11 @@ def table_partial(request: HttpRequest, page_pk: int, table_id: str) -> HttpResp
 
 def _find_table_block(
     page: Page, table_id: str
-) -> tuple[list[str], list[list[Any]], dict[str, Any]]:
+) -> tuple[list[str], list[list[Any]], str, dict[str, Any]]:
     """Locate a DataTableBlock in the page's ``content`` StreamField.
 
     Returns:
-        A 3-tuple of ``(headers, rows, block_value)`` for the matched block.
+        A 4-tuple of ``(headers, rows, caption, block_value)``.
 
     Raises:
         Http404: If no ``data_table`` block with *table_id* exists on the page.
@@ -66,7 +67,7 @@ def _find_table_block(
 
     for block in content:
         if block.block_type == "data_table" and block.value.get("table_id") == table_id:
-            headers, rows = extract_table_data(block.value["table"])
-            return headers, rows, block.value
+            headers, rows, caption = extract_table_data(block.value["table"])
+            return headers, rows, caption, block.value
 
     raise Http404
