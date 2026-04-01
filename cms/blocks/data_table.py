@@ -47,11 +47,12 @@ class DataTableBlock(blocks.StructBlock):
         help_text="Show search, pagination, and per-page controls.",
     )
     per_page = blocks.ChoiceBlock(
-        choices=[("", "---------"), ("10", "10"), ("25", "25"), ("50", "50")],
+        choices=[("10", "10"), ("25", "25"), ("50", "50")],
+        default="10",
         required=False,
         help_text=(
-            "Number of rows per page when controls are visible. "
-            "Defaults to 10 if left empty."
+            "Number of rows per page when controls are visible "
+            "(display all entries if controls are not shown)."
         ),
     )
     table = TypedTableBlock(
