@@ -6,10 +6,13 @@ import json
 from types import SimpleNamespace
 from typing import Any
 
-from django.test import RequestFactory, SimpleTestCase, TestCase
+from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
+from django.test import RequestFactory, SimpleTestCase
 from django.urls import reverse
 from wagtail.contrib.typed_table_block.blocks import TypedTable
-from wagtail.models import Page, PageViewRestriction
+from wagtail.models import Page, PageViewRestriction, Site
+from wagtail.test.utils import WagtailPageTestCase
 
 from cms.blocks import DataTableBlock
 from cms.pages import HomePage, StandardPage
@@ -75,6 +78,23 @@ class ExtractTableDataTest(SimpleTestCase):
         table = _make_typed_table(["Content"], [[rich]])
         _, rows, _ = extract_table_data(table)
         self.assertIs(rows[0][0], rich)
+
+    def test_none_caption_returns_empty_string(self) -> None:
+        """A table whose caption attribute is None returns an empty string."""
+        table = SimpleNamespace(
+            columns=[{"heading": "Col"}],
+            row_data=[{"values": ["val"]}],
+            caption=None,
+        )
+        _, _, caption = extract_table_data(table)
+        self.assertEqual(caption, "")
+
+    def test_columns_with_empty_rows(self) -> None:
+        """Headers are extracted even when row_data is empty."""
+        table = _make_typed_table(["Name", "Score"], [])
+        headers, rows, _ = extract_table_data(table)
+        self.assertEqual(headers, ["Name", "Score"])
+        self.assertEqual(rows, [])
 
 
 # ---------------------------------------------------------------------------
@@ -298,6 +318,46 @@ class GetTableContextTest(SimpleTestCase):
         self.assertEqual(ctx["start_index"], 0)
         self.assertEqual(ctx["end_index"], 0)
 
+    def test_valid_custom_per_page(self) -> None:
+        """A per_page value in per_page_options is accepted and applied."""
+        request = self.factory.get("/", {"per_page": "25"})
+        ctx = get_table_context(
+            request=request,
+            rows=self.rows,
+            headers=self.headers,
+            caption="",
+            table_url="/test/",
+        )
+        self.assertEqual(ctx["per_page"], 25)
+        self.assertEqual(len(list(ctx["page_obj"])), 25)
+
+    def test_search_no_matches_returns_zero(self) -> None:
+        """Search term with no matches yields total_count of zero."""
+        request = self.factory.get("/", {"search": "nonexistent"})
+        ctx = get_table_context(
+            request=request,
+            rows=self.rows,
+            headers=self.headers,
+            caption="",
+            table_url="/test/",
+        )
+        self.assertEqual(ctx["total_count"], 0)
+        self.assertEqual(ctx["start_index"], 0)
+        self.assertEqual(ctx["end_index"], 0)
+
+    def test_search_partial_match(self) -> None:
+        """Substring search matches all rows containing the term."""
+        request = self.factory.get("/", {"search": "item-1"})
+        ctx = get_table_context(
+            request=request,
+            rows=self.rows,
+            headers=self.headers,
+            caption="",
+            table_url="/test/",
+        )
+        # "item-1" matches item-1, item-10 through item-19 = 11 rows
+        self.assertEqual(ctx["total_count"], 11)
+
 
 # ---------------------------------------------------------------------------
 # Service layer: extract_block_params
@@ -337,6 +397,17 @@ class ExtractBlockParamsTest(SimpleTestCase):
             {
                 "table_id": "tbl",
                 "show_controls": False,
+            }
+        )
+        self.assertEqual(params["per_page_default"], 10)
+
+    def test_non_numeric_per_page_falls_back_to_default(self) -> None:
+        """Non-numeric per_page string falls back to the default."""
+        params = extract_block_params(
+            {
+                "table_id": "tbl",
+                "per_page": "abc",
+                "show_controls": True,
             }
         )
         self.assertEqual(params["per_page_default"], 10)
@@ -405,6 +476,14 @@ class DataTableBlockContextTest(SimpleTestCase):
         )
         self.assertEqual(context["t"]["table_url"], expected_url)
 
+    def test_parent_context_without_page_or_self(self) -> None:
+        """parent_context with neither ``page`` nor ``self`` yields empty table_url."""
+        block = DataTableBlock()
+        request = RequestFactory().get("/")
+        parent_context: dict[str, Any] = {"request": request}
+        context = block.get_context(self._make_value(), parent_context=parent_context)
+        self.assertEqual(context["t"]["table_url"], "")
+
 
 # ---------------------------------------------------------------------------
 # Block layer: DataTableBlock.clean
@@ -458,6 +537,31 @@ class DataTableBlockCleanTest(SimpleTestCase):
         cleaned = block.clean(value)
         self.assertLessEqual(len(cleaned["table_id"]), 60)
 
+    def test_empty_caption_and_table_id_produces_empty_slug(self) -> None:
+        """Both table_id and caption empty produces an empty-string identifier."""
+        block = DataTableBlock()
+        value = {
+            "table_id": "",
+            "show_controls": False,
+            "per_page": "",
+            "table": self._empty_table(""),
+        }
+        cleaned = block.clean(value)
+        self.assertEqual(cleaned["table_id"], "")
+
+    def test_regex_validator_rejects_invalid_characters(self) -> None:
+        """table_id with spaces, underscores, or dots raises ValidationError."""
+        block = DataTableBlock()
+        for invalid_id in ("foo bar", "foo_bar", "foo.bar"):
+            value = {
+                "table_id": invalid_id,
+                "show_controls": False,
+                "per_page": "",
+                "table": self._empty_table("Caption"),
+            }
+            with self.assertRaises(ValidationError, msg=f"{invalid_id!r} should be rejected"):
+                block.clean(value)
+
 
 # ---------------------------------------------------------------------------
 # View layer: table_partial endpoint
@@ -497,7 +601,7 @@ def _table_content_json(
     )
 
 
-class TablePartialViewTest(TestCase):
+class TablePartialViewTest(WagtailPageTestCase):
     """Integration tests for the ``table_partial`` HTMX endpoint."""
 
     @classmethod
@@ -509,6 +613,10 @@ class TablePartialViewTest(TestCase):
         root = Page.get_first_root_node()
         cls.home = HomePage(title="Home", slug="home")
         root.add_child(instance=cls.home)
+        Site.objects.update_or_create(
+            is_default_site=True,
+            defaults={"hostname": "testserver", "root_page": cls.home},
+        )
 
         cls.page = StandardPage(title="Test Page", slug="test-page")
         cls.page.content = _table_content_json(
@@ -586,3 +694,81 @@ class TablePartialViewTest(TestCase):
         )
         resp = self.client.get(self._url())
         self.assertEqual(resp.status_code, 404)
+
+    def test_post_returns_405(self) -> None:
+        """POST to the table_partial endpoint returns 405 Method Not Allowed."""
+        resp = self.client.post(self._url())
+        self.assertEqual(resp.status_code, 405)
+
+    def test_cache_control_header(self) -> None:
+        """Response includes Cache-Control with max-age=60."""
+        resp = self.client.get(self._url())
+        self.assertIn("max-age=60", resp["Cache-Control"])
+
+    def test_unpublished_page_returns_404(self) -> None:
+        """A page that has been unpublished returns 404."""
+        self.page.unpublish()
+        resp = self.client.get(self._url())
+        self.assertEqual(resp.status_code, 404)
+        self.page.save_revision().publish()
+
+    def test_authenticated_user_accesses_login_restricted_page(self) -> None:
+        """A logged-in user can access a login-restricted page's table."""
+        PageViewRestriction.objects.create(
+            page=self.page,
+            restriction_type=PageViewRestriction.LOGIN,
+        )
+        User.objects.create_user(username="testuser", password="testpass")  # noqa: S106
+        self.client.login(username="testuser", password="testpass")  # noqa: S106
+        resp = self.client.get(self._url())
+        self.assertEqual(resp.status_code, 200)
+
+    def test_uses_correct_template(self) -> None:
+        """The view renders the data_table_content.html partial template."""
+        resp = self.client.get(self._url())
+        self.assertTemplateUsed(resp, "cms/components/data_table_content.html")
+
+    def test_search_no_results_message(self) -> None:
+        """Search with no matches renders a 'No entries matching' message."""
+        resp = self.client.get(self._url(), {"search": "zzz-nonexistent"})
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "No entries matching")
+
+    def test_empty_table_shows_no_data_message(self) -> None:
+        """A table with zero rows renders a 'No data available' message."""
+        page = StandardPage(title="Empty Table Page", slug="empty-table")
+        page.content = _table_content_json("empty", rows=[], caption="Empty")
+        self.home.add_child(instance=page)
+        page.save_revision().publish()
+
+        url = reverse(
+            "cms:table_partial",
+            kwargs={"page_pk": page.pk, "table_id": "empty"},
+        )
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "No data available")
+
+    def test_page_with_data_table_is_renderable(self) -> None:
+        """Full page render path includes the DataTableBlock without errors."""
+        self.assertPageIsRenderable(self.page)
+
+    def test_page_with_data_table_is_renderable_with_search(self) -> None:
+        """Full page rendering does not break when search query params are present."""
+        self.assertPageIsRenderable(self.page, query_data={"search": "student-3"})
+
+    def test_page_with_data_table_is_previewable(self) -> None:
+        """Wagtail admin preview works for a page containing a DataTableBlock.
+
+        Explicit post_data with an empty StreamField is used because
+        TypedTableBlock's widget generates form data too complex for
+        Wagtail's auto-extraction to handle reliably.
+        """
+        from wagtail.test.utils.form_data import nested_form_data, streamfield
+
+        self.assertPageIsPreviewable(
+            self.page,
+            post_data=nested_form_data(
+                {"title": "Test Page", "slug": "test-page", "content": streamfield([])}
+            ),
+        )
