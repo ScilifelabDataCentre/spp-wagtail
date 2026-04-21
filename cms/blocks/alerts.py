@@ -19,7 +19,13 @@ class AlertBlock(blocks.StructBlock):
             Defaults to "info". This is used for background colour of the alert.
     """
 
-    message = blocks.RichTextBlock(features=["h4", "h5", "bold", "italic", "link"])
+    message = blocks.RichTextBlock(
+        features=["h4", "h5", "bold", "italic", "link"],
+        help_text=(
+            "The content of the alert, it is rich text field that supports "
+            "headings (h4, h5), bold, italic, and links."
+        ),
+    )
     alert_type = blocks.ChoiceBlock(
         choices=[
             ("info", "Info"),
@@ -28,6 +34,10 @@ class AlertBlock(blocks.StructBlock):
             ("error", "Error"),
         ],
         default="info",
+        help_text=(
+            "The type of alert to display. Selected option will determine "
+            "the background colour of the alert."
+        ),
     )
 
     class Meta:

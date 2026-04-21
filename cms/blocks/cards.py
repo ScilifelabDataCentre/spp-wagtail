@@ -23,16 +23,20 @@ class CardBlock(blocks.StructBlock):
     # TODO: Depending on the design, we might want to add more optional fields
     # here like a date, topic, etc.
 
-    image = ImageChooserBlock(required=True)
-    title = blocks.CharBlock(required=True, max_length=120)
-    description = blocks.TextBlock(required=True, max_length=300)
-    url = blocks.URLBlock(required=True)
+    image = ImageChooserBlock(required=True, help_text="Image displayed at the top of the card.")
+    title = blocks.CharBlock(required=True, max_length=120, help_text="Title text for the card.")
+    description = blocks.TextBlock(
+        required=True, max_length=300, help_text="Short description displayed below the title."
+    )
+    url = blocks.URLBlock(
+        required=True, help_text="URL the card links to when clicked (opens in new tab)."
+    )
 
     class Meta:
         """Set meta values."""
 
         icon = "placeholder"
-        label = "Card"
+        label = "Card (External Link)"
         collapsed = True
         template = "cms/blocks/card.html"
 
@@ -53,7 +57,7 @@ class CardGridBlock(blocks.StructBlock):
         """Set meta values."""
 
         icon = "table"
-        label = "Card Grid"
+        label = "Card Grid (External Links)"
         template = "cms/blocks/card_grid.html"
 
 
@@ -80,7 +84,7 @@ class ChildPageCardBlock(blocks.StructBlock):
     # For now, this block is a placeholder to demonstrate how to pull child pages and display
     # them as cards easily.
 
-    parent_page = blocks.PageChooserBlock()
+    parent_page = blocks.PageChooserBlock(help_text="Parent page to pull child pages from.")
     num_children = blocks.ChoiceBlock(
         choices=[
             ("all", "All"),
@@ -89,6 +93,7 @@ class ChildPageCardBlock(blocks.StructBlock):
         default="all",
         label="Number of child pages",
         widget=forms.RadioSelect,
+        help_text="How many child pages to display.",
     )
     order_by = blocks.ChoiceBlock(
         choices=[
@@ -99,6 +104,7 @@ class ChildPageCardBlock(blocks.StructBlock):
         default="created",
         label="Order by",
         widget=forms.RadioSelect,
+        help_text="Field to order child pages by.",
     )
 
     def get_context(
