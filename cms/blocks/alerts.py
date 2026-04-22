@@ -19,9 +19,7 @@ class AlertBlock(blocks.StructBlock):
 
     message = blocks.RichTextBlock(
         features=["h4", "h5", "bold", "italic", "link"],
-        help_text=(
-            "Alert body. Rich text only: headings H4–H5, bold, italic, and links."
-        ),
+        help_text="Alert body. Rich text only: headings H4–H5, bold, italic, and links.",
     )
     alert_type = blocks.ChoiceBlock(
         choices=[

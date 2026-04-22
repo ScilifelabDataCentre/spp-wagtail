@@ -28,7 +28,6 @@ class StandardPage(Page):
                 "text",
                 blocks.RichTextBlock(
                     verbose_name="Text (rich)",
-                    features=["h2", "h3", "bold", "italic", "link", "ol", "ul", "image"],
                     help_text="Main body copy. Use headings for structure; images optional.",
                 ),
             ),
@@ -43,8 +42,6 @@ class StandardPage(Page):
     content_panels = Page.content_panels + [
         FieldPanel(
             "content",
-            help_text=(
-                "Drag blocks to reorder. Each block type has its own fields and help text."
-            ),
+            help_text="Drag blocks to reorder. Each block type has its own fields and help text.",
         ),
     ]

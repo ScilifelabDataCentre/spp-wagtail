@@ -101,10 +101,7 @@ class ChildPageCardBlock(blocks.StructBlock):
     # them as cards easily.
 
     parent_page = blocks.PageChooserBlock(
-        help_text=(
-            "Only published child pages of this page are shown, in the order you "
-            "choose below."
-        ),
+        help_text="Only published child pages of this page are shown, in the chosen order below."
     )
     num_children = blocks.ChoiceBlock(
         choices=[
@@ -169,7 +166,7 @@ class ChildPageCardBlock(blocks.StructBlock):
 
         icon = "form"
         label = "Child page cards"
-        help_text=(
+        help_text = (
             "Lists published child pages as teaser cards. Page types should provide "
             "listing image and teaser fields when those exist; until then, use only "
             "where the template matches your page model."
