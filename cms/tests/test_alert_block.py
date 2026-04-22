@@ -1,4 +1,4 @@
-"""Tests for the alert block."""
+"""Unit tests for ``AlertBlock`` validation and rendering."""
 
 from django.test import SimpleTestCase
 from wagtail.blocks import StructBlockValidationError

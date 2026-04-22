@@ -1,4 +1,4 @@
-"""Custom image format of Image in RichTextField."""
+"""Wagtail rich-text image formats (captioned ``<figure>`` plus WebP rendition)."""
 
 from django.forms.utils import flatatt
 from django.template.loader import render_to_string
@@ -7,17 +7,17 @@ from wagtail.images.models import Image
 
 
 class CaptionedImageFormat(Format):
-    """Custom Wagtail image format that renders images with captions.
+    """Rich-text image format that wraps the rendition in ``<figure>`` / ``<figcaption>``.
 
-    This format extends Wagtail's rich text image handling to include a
-    <figure> and <figcaption> wrapper, where the caption is derived from
-    the provided alt text or falls back to the image title.
+    The visible caption reuses the alt text supplied in the editor, or falls back to
+    the image title when alt text is empty. Behaviour is otherwise defined by the
+    registered ``Format`` (name, label, filter spec, classname).
     """
 
     def image_to_html(
         self, image: Image, alt_text: str, extra_attributes: dict | None = None
     ) -> str:
-        """Render the image as HTML with a caption.
+        """Render HTML for this format using the shared captioned image template.
 
         Args:
             image (Image): The Wagtail image instance to render.

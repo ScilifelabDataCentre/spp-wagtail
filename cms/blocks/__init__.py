@@ -1,4 +1,4 @@
-"""Re-usable blocks."""
+"""StreamField block definitions exported for page models and tests."""
 
 from .alerts import AlertBlock
 from .cards import CardBlock, CardGridBlock, ChildPageCardBlock

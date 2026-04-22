@@ -21,6 +21,7 @@ MEDIA_ROOT = BASE_DIR / "media" / "test"  # noqa: F405
 MEDIA_URL = "/media/test/"
 
 ADMIN_URL = "admin/"
+# Wagtail admin URL settings: used when tests or code build absolute admin links.
 WAGTAIL_SITE_NAME = "Test Portal"
 WAGTAILADMIN_URL = "wagtail/"
 WAGTAILADMIN_BASE_URL = "http://localhost:8000"

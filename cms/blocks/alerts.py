@@ -1,12 +1,10 @@
-"""Alert block."""
+"""Alert StructBlock for styled callouts in StreamField content."""
 
 from wagtail import blocks
 
 
 class AlertBlock(blocks.StructBlock):
-    """Alert block.
-
-    A structured block to display styled alert messages in the CMS.
+    """Structured block for notices, warnings, errors, or success states.
 
     Attributes:
         message (RichTextBlock): The content of the alert, allowing limited formatting
@@ -22,8 +20,7 @@ class AlertBlock(blocks.StructBlock):
     message = blocks.RichTextBlock(
         features=["h4", "h5", "bold", "italic", "link"],
         help_text=(
-            "The content of the alert, it is rich text field that supports "
-            "headings (h4, h5), bold, italic, and links."
+            "Alert body. Rich text only: headings H4–H5, bold, italic, and links."
         ),
     )
     alert_type = blocks.ChoiceBlock(
@@ -34,10 +31,7 @@ class AlertBlock(blocks.StructBlock):
             ("error", "Error"),
         ],
         default="info",
-        help_text=(
-            "The type of alert to display. Selected option will determine "
-            "the background colour of the alert."
-        ),
+        help_text="Controls the visual style (colour) of the alert on the public site.",
     )
 
     class Meta:
@@ -45,4 +39,7 @@ class AlertBlock(blocks.StructBlock):
 
         icon = "comment"
         label = "Alert"
+        help_text = (
+            "Callout for notices, warnings, or success states. Prefer short, scannable text."
+        )
         template = "cms/blocks/alert.html"

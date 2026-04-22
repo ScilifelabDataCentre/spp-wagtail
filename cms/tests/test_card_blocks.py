@@ -1,4 +1,4 @@
-"""Tests for the card blocks."""
+"""Tests for card, card grid, and child-page card StreamField blocks."""
 
 import io
 

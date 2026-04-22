@@ -1,4 +1,4 @@
-"""Tests for the image formats."""
+"""Tests for ``CaptionedImageFormat`` in ``cms.image_formats``."""
 
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
