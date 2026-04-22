@@ -1,0 +1,21 @@
+{% comment %}
+    Template used by the custom image format called "Captioned" which is defined
+    in "cms/image_format.py". This is format is listed as one of the format while
+    adding image within RichText field.
+{% endcomment %}
+
+<figure class="{{ alignment_class }}">
+    <img 
+        src="{{ image.url }}"
+        width="{{ image.width }}"
+        height="{{ image.height }}"
+        class="m-auto {{ classname }}" 
+        alt="{{ alt_text|striptags }}"
+        loading="lazy"
+        decoding="async"
+        {{ extra_attributes_flat }}
+    />
+    {% if alt_text %}
+    <figcaption class="text-center text-pp-dark-grey text-sm italic mt-2">{{ alt_text|striptags }}</figcaption>
+    {% endif %}
+</figure>

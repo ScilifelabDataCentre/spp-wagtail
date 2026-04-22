@@ -1,0 +1,15 @@
+{% load wagtailcore_tags %}
+{# DaisyUI alert-* classes; role="alert" is assertive—review if info/success should be polite. #}
+<div role="alert"
+    {% if value.alert_type == "info" %}
+    class="alert alert-info"
+    {% elif value.alert_type == "success" %}
+    class="alert alert-success"
+    {% elif value.alert_type == "warning" %}
+    class="alert alert-warning"
+    {% elif value.alert_type == "error" %}
+    class="alert alert-error"
+    {% endif %}
+>
+    <div class="[&_h4]:mt-0 [&_h5]:mt-0 [&_p]:mb-0">{% include_block value.message %}</div>
+</div>
