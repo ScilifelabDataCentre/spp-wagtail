@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 from types import SimpleNamespace
 from typing import Any
+from unittest.mock import patch
 
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
@@ -411,6 +412,30 @@ class ExtractBlockParamsTest(SimpleTestCase):
             }
         )
         self.assertEqual(params["per_page_default"], 10)
+
+    def test_non_numeric_per_page_logs_warning(self) -> None:
+        """Unexpected per_page values emit a structlog warning."""
+        with patch("cms.services.data_table.LOGGER") as mock_logger:
+            extract_block_params(
+                {
+                    "table_id": "tbl",
+                    "per_page": "abc",
+                    "show_controls": True,
+                }
+            )
+        mock_logger.warning.assert_called_once()
+
+    def test_empty_per_page_does_not_log(self) -> None:
+        """Empty per_page is a normal editor input and must not emit a warning."""
+        with patch("cms.services.data_table.LOGGER") as mock_logger:
+            extract_block_params(
+                {
+                    "table_id": "tbl",
+                    "per_page": "",
+                    "show_controls": False,
+                }
+            )
+        mock_logger.warning.assert_not_called()
 
 
 # ---------------------------------------------------------------------------
