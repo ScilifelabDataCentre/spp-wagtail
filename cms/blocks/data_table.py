@@ -10,7 +10,13 @@ from django.utils.text import slugify
 from wagtail import blocks
 from wagtail.contrib.typed_table_block.blocks import TypedTableBlock
 
-from cms.services.data_table import extract_block_params, extract_table_data, get_table_context
+from cms.services.data_table import (
+    DEFAULT_PER_PAGE,
+    DEFAULT_PER_PAGE_OPTIONS,
+    extract_block_params,
+    extract_table_data,
+    get_table_context,
+)
 
 
 class DataTableBlock(blocks.StructBlock):
@@ -47,8 +53,8 @@ class DataTableBlock(blocks.StructBlock):
         help_text="Show search, pagination, and per-page controls.",
     )
     per_page = blocks.ChoiceBlock(
-        choices=[("10", "10"), ("25", "25"), ("50", "50")],
-        default="10",
+        choices=[(str(v), str(v)) for v in DEFAULT_PER_PAGE_OPTIONS],
+        default=str(DEFAULT_PER_PAGE),
         required=False,
         help_text=(
             "Number of rows per page when controls are visible "
