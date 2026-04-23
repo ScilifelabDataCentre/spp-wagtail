@@ -1,0 +1,13 @@
+{% load site_announcements %}
+{% get_site_announcements as announcements %}
+{% if announcements %}
+<div class="container pt-4">
+    <section aria-label="Site announcements" class="space-y-2">
+        {% for a in announcements %}
+            <div {% if a.announcement_type == "maintenance" %}class="alert alert-warning"{% else %}class="alert alert-info"{% endif %}>
+                {{ a.message|announcement_rich_text }}
+            </div>
+        {% endfor %}
+    </section>
+</div>
+{% endif %}
