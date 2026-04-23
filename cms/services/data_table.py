@@ -7,12 +7,13 @@ from typing import Any
 from django.core.paginator import Paginator
 from django.http import HttpRequest
 from django.utils.html import strip_tags
+from wagtail.contrib.typed_table_block.blocks import TypedTable
 
 DEFAULT_PER_PAGE = 10
 DEFAULT_PER_PAGE_OPTIONS: tuple[int, ...] = (10, 25, 50)
 
 
-def extract_table_data(typed_table: Any) -> tuple[list[str], list[list[Any]], str]:  # noqa: ANN401
+def extract_table_data(typed_table: TypedTable | None) -> tuple[list[str], list[list[Any]], str]:
     """Convert a ``TypedTable`` value into plain headers, rows, and caption.
 
     ``RichTextValue`` objects are kept as-is so the Django template engine
