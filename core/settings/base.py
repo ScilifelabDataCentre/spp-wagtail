@@ -158,6 +158,19 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 STATIC_URL = "static/"
 
 
+# WAGTAIL BASE SETTINGS
+# ------------------------------------------------------------------------------
+# Allowed image formats for upload via Wagtail admin.
+WAGTAILIMAGES_EXTENSIONS = ["jpeg", "jpg", "png", "webp"]
+# Default image format conversions of images during rendition.
+WAGTAILIMAGES_FORMAT_CONVERSIONS = {
+    "jpeg": "webp",
+    "jpg": "webp",
+    "png": "webp",
+    "webp": "webp",
+}
+
+
 # Logging
 # -----------------------------------------------------------------------------------------------
 #
