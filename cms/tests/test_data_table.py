@@ -562,8 +562,8 @@ class DataTableBlockCleanTest(SimpleTestCase):
         cleaned = block.clean(value)
         self.assertLessEqual(len(cleaned["table_id"]), 60)
 
-    def test_empty_caption_and_table_id_produces_empty_slug(self) -> None:
-        """Both table_id and caption empty produces an empty-string identifier."""
+    def test_empty_caption_raises_validation_error(self) -> None:
+        """An empty caption is rejected with a ValidationError."""
         block = DataTableBlock()
         value = {
             "table_id": "",
@@ -571,8 +571,20 @@ class DataTableBlockCleanTest(SimpleTestCase):
             "per_page": "",
             "table": self._empty_table(""),
         }
-        cleaned = block.clean(value)
-        self.assertEqual(cleaned["table_id"], "")
+        with self.assertRaises(ValidationError):
+            block.clean(value)
+
+    def test_whitespace_only_caption_raises_validation_error(self) -> None:
+        """A caption consisting only of whitespace is also rejected."""
+        block = DataTableBlock()
+        value = {
+            "table_id": "",
+            "show_controls": False,
+            "per_page": "",
+            "table": self._empty_table("   "),
+        }
+        with self.assertRaises(ValidationError):
+            block.clean(value)
 
     def test_regex_validator_rejects_invalid_characters(self) -> None:
         """table_id with spaces, underscores, or dots raises ValidationError."""
@@ -664,10 +676,19 @@ class TablePartialViewTest(WagtailPageTestCase):
         self.assertEqual(resp.status_code, 200)
         self.assertContains(resp, "student-0")
 
-    def test_caption_rendered_in_response(self) -> None:
-        """The table caption appears in the rendered HTML."""
+    def test_partial_response_references_caption_heading(self) -> None:
+        """The HTMX partial links the table to the caption heading via aria-labelledby.
+
+        The visible caption heading lives in the outer block template, which is
+        not re-rendered on HTMX swaps; the partial only needs to reference it.
+        """
         resp = self.client.get(self._url())
-        self.assertContains(resp, "<caption")
+        self.assertContains(resp, 'aria-labelledby="data-table-scores-title"')
+
+    def test_caption_visible_in_full_page_render(self) -> None:
+        """The caption renders as a visible heading above the table."""
+        resp = self.client.get(self.page.url)
+        self.assertContains(resp, 'id="data-table-scores-title"')
         self.assertContains(resp, "Student Scores")
 
     def test_nonexistent_page_returns_404(self) -> None:

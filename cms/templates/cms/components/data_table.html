@@ -11,6 +11,12 @@
 
 <div id="data-table-{{ t.table_id }}">
 
+    {% if t.caption %}
+    <h3 id="data-table-{{ t.table_id }}-title" class="text-lg font-semibold mb-3">
+        {{ t.caption }}
+    </h3>
+    {% endif %}
+
     {% if t.show_controls %}
     <div id="data-table-{{ t.table_id }}-controls"
          class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">

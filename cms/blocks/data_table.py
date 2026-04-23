@@ -4,10 +4,12 @@ from __future__ import annotations
 
 from typing import Any
 
+from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
 from django.urls import reverse
 from django.utils.text import slugify
 from wagtail import blocks
+from wagtail.blocks.struct_block import StructBlockValidationError
 from wagtail.contrib.typed_table_block.blocks import TypedTableBlock
 
 from cms.services.data_table import (
@@ -26,8 +28,9 @@ class DataTableBlock(blocks.StructBlock):
     Wagtail admin while the front end renders the portal's DaisyUI + HTMX data
     table component.
 
-    The built-in TypedTableBlock *Caption* field doubles as the accessible
-    ``<caption>`` rendered inside the ``<table>`` element.
+    The built-in TypedTableBlock *Caption* field is required and rendered as a
+    visible heading above the table; it also provides the accessible label
+    referenced by ``aria-labelledby`` on the ``<table>`` element.
 
     Attributes:
         table_id:      Unique identifier (per page) used as the HTML ``id``
@@ -71,11 +74,15 @@ class DataTableBlock(blocks.StructBlock):
     )
 
     def clean(self, value: dict[str, Any]) -> dict[str, Any]:
-        """Auto-fill table_id from the table caption when left blank."""
+        """Require a non-empty caption and auto-fill table_id from it when blank."""
         cleaned = super().clean(value)
+        table = cleaned.get("table")
+        caption = (getattr(table, "caption", "") or "").strip() if table else ""
+        if not caption:
+            raise StructBlockValidationError(
+                block_errors={"table": ValidationError("Table caption is required.")},
+            )
         if not cleaned.get("table_id"):
-            table = cleaned.get("table")
-            caption = getattr(table, "caption", "") if table else ""
             cleaned["table_id"] = slugify(caption)[:60]
         return cleaned
 

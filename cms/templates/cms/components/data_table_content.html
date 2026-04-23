@@ -8,8 +8,7 @@
 {% if t.page_obj %}
 
 <div class="overflow-x-auto rounded-box shadow border border-base-300">
-    <table class="table table-zebra table-pin-rows">
-        {% if t.caption %}<caption class="sr-only">{{ t.caption }}</caption>{% endif %}
+    <table class="table table-zebra table-pin-rows"{% if t.caption %} aria-labelledby="data-table-{{ t.table_id }}-title"{% endif %}>
         <thead>
             <tr class="bg-primary text-primary-content uppercase tracking-wider">
                 {% for header in t.headers %}
