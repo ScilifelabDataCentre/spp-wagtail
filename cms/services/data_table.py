@@ -40,7 +40,7 @@ def extract_block_params(block_value: dict[str, Any]) -> dict[str, Any]:
     raw_per_page = block_value.get("per_page")
     try:
         per_page = int(raw_per_page or DEFAULT_PER_PAGE)
-    except (TypeError, ValueError):
+    except TypeError, ValueError:
         LOGGER.warning("data_table.invalid_per_page", value=raw_per_page)
         per_page = DEFAULT_PER_PAGE
 
@@ -88,7 +88,7 @@ def get_table_context(
 
     try:
         page_number = int(params.get("page", 1))
-    except (TypeError, ValueError):
+    except TypeError, ValueError:
         LOGGER.warning("data_table.invalid_page_param", value=params.get("page"))
         page_number = 1
 
@@ -104,7 +104,7 @@ def get_table_context(
         raw_per_page = params.get("per_page", per_page_default)
         try:
             per_page = int(raw_per_page)
-        except (TypeError, ValueError):
+        except TypeError, ValueError:
             LOGGER.warning("data_table.invalid_per_page_param", value=raw_per_page)
             per_page = per_page_default
         if per_page not in per_page_options:
