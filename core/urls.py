@@ -43,5 +43,6 @@ if settings.DEBUG:
 
 urlpatterns += [
     path(settings.WAGTAILADMIN_URL, include(wagtailadmin_urls)),
+    path("cms/", include("cms.urls")),
     path("", include(wagtail_urls)),
 ]

@@ -1,0 +1,76 @@
+{% comment %}
+    Reusable data table with search, pagination, and configurable entries per page.
+
+    Usage from any template:
+        {% include "cms/components/data_table.html#data_table" with t=table_context %}
+
+    The "t" variable must be a dict returned by cms.services.data_table.get_table_context().
+{% endcomment %}
+
+{% partialdef data_table %}
+
+<div id="data-table-{{ t.table_id }}">
+
+    {% if t.caption %}
+    <h3 id="data-table-{{ t.table_id }}-title" class="text-lg font-semibold mb-3">
+        {{ t.caption }}
+    </h3>
+    {% endif %}
+
+    {% if t.show_controls %}
+    <div id="data-table-{{ t.table_id }}-controls"
+         class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
+
+        <div role="search">
+            <label for="data-table-{{ t.table_id }}-search" class="sr-only">Search table</label>
+            <input id="data-table-{{ t.table_id }}-search"
+                   type="search"
+                   name="search"
+                   value="{{ t.search }}"
+                   placeholder="Search..."
+                   autocomplete="off"
+                   class="input input-sm w-56"
+                   hx-get="{{ t.table_url }}"
+                   hx-trigger="input changed delay:300ms, search"
+                   hx-target="#data-table-{{ t.table_id }}-content"
+                   hx-include="#data-table-{{ t.table_id }}-controls"
+                   hx-indicator="#data-table-{{ t.table_id }}-loading"
+            />
+        </div>
+
+        <div class="flex items-center gap-2">
+            <label for="data-table-{{ t.table_id }}-per-page" class="text-sm text-neutral">Show</label>
+            <select id="data-table-{{ t.table_id }}-per-page"
+                    name="per_page"
+                    class="select select-sm"
+                    hx-get="{{ t.table_url }}"
+                    hx-trigger="change"
+                    hx-target="#data-table-{{ t.table_id }}-content"
+                    hx-include="#data-table-{{ t.table_id }}-controls"
+                    hx-indicator="#data-table-{{ t.table_id }}-loading"
+            >
+                {% for option in t.per_page_options %}
+                <option value="{{ option }}" {% if option == t.per_page %}selected{% endif %}>{{ option }}</option>
+                {% endfor %}
+            </select>
+            <span class="text-sm text-neutral">entries</span>
+        </div>
+
+    </div>
+    {% endif %}
+
+    <div class="relative min-h-20">
+        <div id="data-table-{{ t.table_id }}-loading"
+             class="htmx-indicator absolute inset-0 bg-base-100/60 flex items-center justify-center z-10 rounded-box">
+            <span class="loading loading-spinner text-accent loading-lg" aria-label="Loading"></span>
+        </div>
+
+        <div id="data-table-{{ t.table_id }}-content" aria-live="polite">
+            {% include "cms/components/data_table_content.html" %}
+        </div>
+    </div>
+
+</div>
+
+{% endpartialdef %}
+

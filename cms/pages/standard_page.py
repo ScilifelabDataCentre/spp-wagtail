@@ -5,7 +5,7 @@ from wagtail.admin.panels import FieldPanel
 from wagtail.fields import StreamField
 from wagtail.models import Page
 
-from cms.blocks import AlertBlock, CardBlock, CardGridBlock, ChildPageCardBlock
+from cms.blocks import AlertBlock, CardBlock, CardGridBlock, ChildPageCardBlock, DataTableBlock
 
 
 class StandardPage(Page):
@@ -16,6 +16,7 @@ class StandardPage(Page):
     Attributes:
         content (StreamField): StreamField with multiple content block types:
             - RichTextBlock: formatted text (headings, bold, italic, links, lists)
+            - DataTableBlock: interactive table with search and pagination
     """
 
     template = "cms/pages/standard_page.html"
@@ -35,6 +36,7 @@ class StandardPage(Page):
             ("card", CardBlock()),
             ("card_grid", CardGridBlock()),
             ("child_page_cards", ChildPageCardBlock()),
+            ("data_table", DataTableBlock()),
         ],
         blank=True,
     )

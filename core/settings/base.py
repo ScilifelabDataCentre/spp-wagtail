@@ -53,6 +53,7 @@ DJANGO_APPS = [
 WAGTAIL_APPS = [
     "wagtail.contrib.forms",
     "wagtail.contrib.redirects",
+    "wagtail.contrib.typed_table_block",
     "wagtail.embeds",
     "wagtail.sites",
     "wagtail.users",
