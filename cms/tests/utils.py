@@ -16,6 +16,7 @@ def create_test_image(*, title: str = "Test image", file_name: str = "test.jpg")
 
     Example usage:
         image = create_test_image(title="My Test Image", file_name="my_test_image.jpg")
+
     Returns:
         Image: A saved Wagtail Image model instance.
     """
