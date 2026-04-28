@@ -43,13 +43,16 @@ def announcement_rich_text(value: str) -> SafeString:
 
     For each anchor whose ``href`` targets an external origin — i.e. starts
     with ``http://``, ``https://``, or a protocol-relative ``//`` — the
-    filter merges ``noopener`` and ``noreferrer`` into its ``rel``
-    attribute. Existing editor tokens (e.g. ``nofollow``, ``ugc``) are
-    preserved and the merged set is deduplicated while keeping the
-    editor's ordering stable. All other anchors (mailto, relative,
-    fragment, ``javascript:``, ``data:``, etc.) are left untouched so
-    this filter never silently whitelists unsafe schemes — Wagtail's
-    upstream sanitiser strips those before rendering reaches us.
+    filter sets ``target="_blank"`` so the link opens in a new tab and
+    merges ``noopener`` and ``noreferrer`` into its ``rel`` attribute
+    (``noopener`` is the security mitigation that pairs with
+    ``target="_blank"``). Existing editor tokens (e.g. ``nofollow``,
+    ``ugc``) are preserved and the merged set is deduplicated while
+    keeping the editor's ordering stable. All other anchors (mailto,
+    relative, fragment, ``javascript:``, ``data:``, etc.) are left
+    untouched so this filter never silently whitelists unsafe schemes —
+    Wagtail's upstream sanitiser strips those before rendering reaches
+    us.
 
     The filter is intended for per-banner use only. It must never be
     applied globally, since that would rewrite anchors inside unrelated
@@ -69,6 +72,7 @@ def announcement_rich_text(value: str) -> SafeString:
         href = anchor["href"]
         if not href.startswith(_EXTERNAL_HREF_PREFIXES):
             continue
+        anchor["target"] = "_blank"
         existing = anchor.get("rel") or []
         if isinstance(existing, str):
             existing = existing.split()

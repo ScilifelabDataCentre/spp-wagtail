@@ -175,6 +175,16 @@ class AnnouncementRichTextFilterTests(TestCase):
         )
         self.assertEqual(_rel_tokens_from_string(rendered), {"noopener", "noreferrer"})
 
+    def test_external_anchor_gets_target_blank(self):
+        """External anchors are forced to ``target="_blank"`` (open in new tab)."""
+        rendered = announcement_rich_text('<p><a href="https://example.com">link</a></p>')
+        self.assertIn('target="_blank"', rendered)
+
+    def test_relative_anchor_does_not_get_target_blank(self):
+        """Same-origin anchors are not given ``target="_blank"``."""
+        rendered = announcement_rich_text('<p><a href="/about">about</a></p>')
+        self.assertNotIn("target=", rendered)
+
     def test_mailto_href_left_untouched(self):
         """``mailto:`` anchors are not whitelisted by the filter."""
         rendered = announcement_rich_text('<p><a href="mailto:x@example.com">email</a></p>')
@@ -358,6 +368,21 @@ class SiteAnnouncementRenderTests(_SiteAnnouncementRenderTestCase):
         self.assertTrue(
             {"noopener", "noreferrer"}.issubset(set(anchor.get("rel") or [])),
         )
+
+    def test_external_anchor_in_announcement_opens_in_new_tab(self):
+        """An announcement's external anchor renders with ``target="_blank"``."""
+        SiteAnnouncement.objects.create(
+            title="ext",
+            message='<p>See <a href="https://status.example/">status</a></p>',
+            announcement_type="maintenance",
+            is_enabled=True,
+        )
+
+        soup = BeautifulSoup(self._render(), "html.parser")
+
+        anchor = soup.find("a", href="https://status.example/")
+        self.assertIsNotNone(anchor)
+        self.assertEqual(anchor.get("target"), "_blank")
 
     def test_editor_rel_nofollow_preserved_in_response(self):
         """Editor ``rel="nofollow"`` survives the merge in the rendered response."""
