@@ -11,9 +11,9 @@ class SiteAnnouncement(models.Model):
     """A site-wide announcement rendered above the page header on every public page.
 
     Editors toggle `is_enabled` to surface or hide a banner and reorder banners by
-    editing the integer `sort_order` in the admin list view. The `announcement_type`
-    choice drives the DaisyUI alert colour in the public template (maintenance →
-    `alert-warning`, survey → `alert-info`).
+    drag-and-drop in the admin list view (powered by ``sort_order_field`` on the
+    viewset). The `announcement_type` choice drives the DaisyUI alert colour in
+    the public template (maintenance → `alert-warning`, survey → `alert-info`).
 
     Attributes:
         title (str): Short internal label used in the admin list view.
@@ -23,7 +23,8 @@ class SiteAnnouncement(models.Model):
             DaisyUI alert colour.
         is_enabled (bool): When False the banner is not rendered on public pages.
         sort_order (int): Ascending display order when multiple enabled banners
-            are rendered. Ties are broken by primary key.
+            are rendered. Managed by Wagtail's drag-and-drop interface; ties
+            are broken by primary key.
     """
 
     ANNOUNCEMENT_TYPE_CHOICES = [
@@ -38,14 +39,13 @@ class SiteAnnouncement(models.Model):
         choices=ANNOUNCEMENT_TYPE_CHOICES,
     )
     is_enabled = models.BooleanField(default=False)
-    sort_order = models.PositiveIntegerField(default=0)
+    sort_order = models.PositiveIntegerField(default=0, db_index=True)
 
     panels = [
         FieldPanel("title"),
         FieldPanel("message"),
         FieldPanel("announcement_type"),
         FieldPanel("is_enabled"),
-        FieldPanel("sort_order"),
     ]
 
     class Meta:
@@ -63,12 +63,16 @@ class SiteAnnouncement(models.Model):
 class SiteAnnouncementViewSet(SnippetViewSet):
     """Wagtail admin viewset for the `SiteAnnouncement` snippet.
 
-    Controls the snippet list-view columns and the default admin ordering so
-    editors can reorder banners by editing the integer `sort_order` directly.
+    Controls the snippet list-view columns and the default admin ordering.
+    Setting ``sort_order_field`` exposes the "Sort item order" toggle on
+    the index view, which activates Wagtail's drag-and-drop interface so
+    editors reorder banners visually instead of editing the integer
+    ``sort_order`` by hand.
     """
 
     model = SiteAnnouncement
     ordering = ["sort_order"]
+    sort_order_field = "sort_order"
     list_display = ["title", "announcement_type", "is_enabled", "sort_order"]
 
 
