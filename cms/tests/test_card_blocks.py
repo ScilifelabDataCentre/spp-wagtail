@@ -1,41 +1,11 @@
 """Tests for card, card grid, and child-page card StreamField blocks."""
 
-import io
-
-from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
-from PIL import Image as PILImage
 from wagtail.blocks import StructBlockValidationError
-from wagtail.images import get_image_model
 from wagtail.models import Page, Site
 
 from cms.blocks.cards import CardBlock, CardGridBlock, ChildPageCardBlock
-
-#######################################################################
-#################### Helper functions for testing #####################
-#######################################################################
-
-Image = get_image_model()
-
-
-def create_test_image(*, title: str = "Test image", file_name: str = "test.jpg"):
-    """Create and save a minimal test image."""
-    file_obj = io.BytesIO()
-
-    image = PILImage.new("RGB", (1, 1), color="white")
-    image.save(file_obj, format="JPEG")
-
-    file_obj.seek(0)
-
-    return Image.objects.create(
-        title=title,
-        file=SimpleUploadedFile(
-            name=file_name,
-            content=file_obj.read(),
-            content_type="image/jpeg",
-        ),
-    )
-
+from cms.tests.utils import create_test_image
 
 #######################################################################
 ########################   CardBlock tests   ##########################
