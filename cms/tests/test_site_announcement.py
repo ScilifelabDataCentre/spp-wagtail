@@ -276,7 +276,9 @@ class SiteAnnouncementRenderTests(_SiteAnnouncementRenderTestCase):
         """Two enabled banners render in ``sort_order`` with the correct class map.
 
         Also: one single outer ``<section aria-label="Site announcements">``,
-        no ``role="alert"`` on any descendant, no ``aria-live`` attribute.
+        no ``role="alert"`` on any descendant, no ``aria-live`` attribute,
+        a ``<ul role="list">`` wrapper with one ``<li>`` per banner, and a
+        leading SVG icon plus ``sr-only`` type label inside each banner.
         """
         SiteAnnouncement.objects.create(
             title="Maintenance one",
@@ -304,9 +306,21 @@ class SiteAnnouncementRenderTests(_SiteAnnouncementRenderTestCase):
         self.assertIsNone(section.find(attrs={"role": "alert"}))
         self.assertIsNone(section.find(attrs={"aria-live": True}))
 
+        lists = section.find_all("ul", attrs={"role": "list"})
+        self.assertEqual(len(lists), 1)
+        items = lists[0].find_all("li", recursive=False)
+        self.assertEqual(len(items), 2)
+
         banners = section.find_all("div", class_="alert")
-        banner_classes = [" ".join(b.get("class", [])) for b in banners]
-        self.assertEqual(banner_classes, ["alert alert-warning", "alert alert-info"])
+        self.assertEqual(len(banners), 2)
+        self.assertIn("alert-warning", banners[0]["class"])
+        self.assertIn("alert-info", banners[1]["class"])
+
+        for banner, expected_label in zip(banners, ["Maintenance:", "Announcement:"], strict=True):
+            self.assertIsNotNone(banner.find("svg", attrs={"aria-hidden": "true"}))
+            sr_label = banner.find("span", class_="sr-only")
+            self.assertIsNotNone(sr_label)
+            self.assertEqual(sr_label.get_text(strip=True), expected_label)
 
     def test_empty_state_renders_no_announcement_section(self):
         """Zero enabled rows → ``<section aria-label>`` absent from the response."""
@@ -330,10 +344,12 @@ class SiteAnnouncementRenderTests(_SiteAnnouncementRenderTestCase):
             is_enabled=True,
         )
 
-        html = self._render()
+        soup = BeautifulSoup(self._render(), "html.parser")
 
-        self.assertIn('class="alert alert-info"', html)
-        self.assertNotIn("alert-warning", html)
+        banners = soup.find_all("div", class_="alert")
+        self.assertEqual(len(banners), 1)
+        self.assertIn("alert-info", banners[0]["class"])
+        self.assertNotIn("alert-warning", banners[0]["class"])
 
     def test_toggle_off_removes_banner_from_subsequent_response(self):
         """Setting ``is_enabled=False`` makes the banner disappear from public pages."""
