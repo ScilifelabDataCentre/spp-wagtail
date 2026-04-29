@@ -1,19 +1,20 @@
 {% load site_announcements %}
 {% get_site_announcements as announcements %}
 {% if announcements %}
-<div class="container pt-4 pb-4">
-    <section aria-label="Site announcements">
-        <ul role="list" class="list-none m-0 p-0 space-y-2">
-            {% for a in announcements %}
-                <li>
-                    <div class="alert
-                        {% if a.announcement_type == 'maintenance' %}alert-warning{% else %}alert-info{% endif %}
-                        [&_p]:my-0 [&_a]:underline [&_a]:font-medium [&_a]:text-current
-                        [&_a]:underline-offset-2 [&_a:hover]:text-current">
+<section aria-label="Site announcements">
+    <ul role="list" class="list-none m-0 p-0">
+        {% for a in announcements %}
+            <li>
+                <div class="alert
+                    {% if a.announcement_type == 'maintenance' %}alert-warning{% else %}alert-info{% endif %}
+                    rounded-none border-0 grid-cols-1 w-full p-0
+                    [&_p]:my-0 [&_a]:underline [&_a]:font-medium [&_a]:text-current
+                    [&_a]:underline-offset-2 [&_a:hover]:text-current">
+                    <div class="container py-3 flex items-start gap-3">
                         {% if a.announcement_type == 'maintenance' %}
                             {# DaisyUI warning triangle #}
                             <svg xmlns="http://www.w3.org/2000/svg"
-                                class="h-6 w-6 shrink-0 stroke-current" fill="none"
+                                class="h-6 w-6 shrink-0 stroke-current mt-0.5" fill="none"
                                 viewBox="0 0 24 24" aria-hidden="true">
                                 <path stroke-linecap="round" stroke-linejoin="round"
                                     stroke-width="2"
@@ -25,7 +26,7 @@
                         {% else %}
                             {# DaisyUI info circle #}
                             <svg xmlns="http://www.w3.org/2000/svg"
-                                class="h-6 w-6 shrink-0 stroke-current" fill="none"
+                                class="h-6 w-6 shrink-0 stroke-current mt-0.5" fill="none"
                                 viewBox="0 0 24 24" aria-hidden="true">
                                 <path stroke-linecap="round" stroke-linejoin="round"
                                     stroke-width="2"
@@ -34,13 +35,13 @@
                             </svg>
                             <span class="sr-only">Announcement:</span>
                         {% endif %}
-                        <div class="max-w-prose">
+                        <div class="flex-1 min-w-0">
                             {{ a.message|announcement_rich_text }}
                         </div>
                     </div>
-                </li>
-            {% endfor %}
-        </ul>
-    </section>
-</div>
+                </div>
+            </li>
+        {% endfor %}
+    </ul>
+</section>
 {% endif %}
