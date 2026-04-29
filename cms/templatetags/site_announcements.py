@@ -12,8 +12,8 @@ LOGGER = structlog.get_logger(__name__)
 
 register = template.Library()
 
-_EXTERNAL_HREF_PREFIXES: tuple[str, ...] = ("http://", "https://", "//")
-_REQUIRED_REL_TOKENS: tuple[str, ...] = ("noopener", "noreferrer")
+_EXTERNAL_HREF_PREFIXES = ("http://", "https://", "//")
+_REQUIRED_REL_TOKENS = ("noopener", "noreferrer")
 
 
 @register.simple_tag
@@ -31,7 +31,7 @@ def get_site_announcements() -> QuerySet[SiteAnnouncement]:
     """
 
     try:
-        return SiteAnnouncement.objects.filter(is_enabled=True).order_by("sort_order")
+        return SiteAnnouncement.objects.filter(is_enabled=True).order_by("sort_order", "-pk")
     except Exception as e:
         LOGGER.warning(f"Problem fetching site announcements:\n{e}")
         return SiteAnnouncement.objects.none()

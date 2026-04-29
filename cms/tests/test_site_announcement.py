@@ -109,7 +109,7 @@ class SiteAnnouncementModelTests(TestCase):
         self.assertEqual(str(announcement), "Down for maintenance")
 
     def test_default_queryset_ordering_by_sort_order(self):
-        """``Meta.ordering = ['sort_order', 'pk']`` gives deterministic order."""
+        """``Meta.ordering = ['sort_order', '-pk']`` gives deterministic order."""
         SiteAnnouncement.objects.create(
             title="B",
             message="<p>x</p>",

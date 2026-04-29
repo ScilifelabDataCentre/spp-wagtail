@@ -1,6 +1,7 @@
 """Site announcement snippet."""
 
 from django.db import models
+from django.db.models import F
 from wagtail.admin.panels import FieldPanel
 from wagtail.fields import RichTextField
 from wagtail.snippets.models import register_snippet
@@ -39,25 +40,53 @@ class SiteAnnouncement(models.Model):
         choices=ANNOUNCEMENT_TYPE_CHOICES,
     )
     is_enabled = models.BooleanField(default=False)
-    sort_order = models.PositiveIntegerField(default=0, db_index=True)
+    sort_order = models.IntegerField(null=True, blank=True, editable=False, db_index=True)
 
     panels = [
-        FieldPanel("title"),
-        FieldPanel("message"),
-        FieldPanel("announcement_type"),
-        FieldPanel("is_enabled"),
+        FieldPanel(
+            "title",
+            help_text=(
+                "Internal label shown only in the admin list. Not rendered on the public site."
+            ),
+        ),
+        FieldPanel(
+            "message",
+            help_text=(
+                "Banner copy. Bold, italic, and links are allowed; headings and lists are not."
+            ),
+        ),
+        FieldPanel(
+            "announcement_type",
+            help_text=(
+                "Selects the banner colour and icon. Maintenance shows yellow with a warning "
+                "triangle; survey shows blue with an info circle."
+            ),
+        ),
+        FieldPanel(
+            "is_enabled",
+            help_text=(
+                "When enabled, the banner is shown above the page header on every public page."
+            ),
+        ),
     ]
 
     class Meta:
         """Settings for the site announcement snippet."""
 
-        ordering = ["sort_order", "pk"]
+        ordering = ["sort_order", "-pk"]
         verbose_name = "Site announcement"
         verbose_name_plural = "Site announcements"
 
     def __str__(self) -> str:
         """Return a human-readable representation."""
         return self.title
+
+    def save(self, *args: object, **kwargs: object) -> None:
+        """Insert new announcements at the top of the list."""
+        if self._state.adding and self.sort_order is None:
+            SiteAnnouncement.objects.update(sort_order=F("sort_order") + 1)
+            self.sort_order = 0
+        super().save(*args, **kwargs)
 
 
 class SiteAnnouncementViewSet(SnippetViewSet):
@@ -71,7 +100,7 @@ class SiteAnnouncementViewSet(SnippetViewSet):
     """
 
     model = SiteAnnouncement
-    ordering = ["sort_order"]
+    ordering = ["sort_order", "-pk"]
     sort_order_field = "sort_order"
     list_display = ["title", "announcement_type", "is_enabled", "sort_order"]
 
