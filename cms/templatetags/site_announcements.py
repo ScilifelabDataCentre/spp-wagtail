@@ -76,8 +76,8 @@ def announcement_rich_text(value: str) -> SafeString:
         existing = anchor.get("rel") or []
         if isinstance(existing, str):
             existing = existing.split()
-        merged: list[str] = []
-        seen: set[str] = set()
+        merged = []
+        seen = set()
         for token in (*existing, *_REQUIRED_REL_TOKENS):
             if token and token not in seen:
                 merged.append(token)
