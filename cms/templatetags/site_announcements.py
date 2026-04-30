@@ -5,6 +5,7 @@ from bs4 import BeautifulSoup
 from django import template
 from django.db.models.query import QuerySet
 from django.utils.safestring import SafeString, mark_safe
+from wagtail.rich_text import expand_db_html
 
 from cms.snippets import SiteAnnouncement
 
@@ -41,33 +42,43 @@ def get_site_announcements() -> QuerySet[SiteAnnouncement]:
 def announcement_rich_text(value: str) -> SafeString:
     """Harden external ``<a>`` elements inside an announcement's rich text.
 
+    The filter first runs ``expand_db_html`` over ``value`` so internal
+    references stored in Wagtail's rich-text database format — page links
+    (``<a linktype="page" id="…">``), document links, embeds — are
+    rewritten to real ``<a href="…">`` markup before anchor inspection.
+    This makes the filter self-contained, so the template can apply it
+    directly to the ``RichTextField`` value without chaining
+    ``|richtext`` first.
+    
     For each anchor whose ``href`` targets an external origin — i.e. starts
     with ``http://``, ``https://``, or a protocol-relative ``//`` — the
     filter sets ``target="_blank"`` so the link opens in a new tab and
-    merges ``noopener`` and ``noreferrer`` into its ``rel`` attribute
-    (``noopener`` is the security mitigation that pairs with
-    ``target="_blank"``). Existing editor tokens (e.g. ``nofollow``,
-    ``ugc``) are preserved and the merged set is deduplicated while
-    keeping the editor's ordering stable. All other anchors (mailto,
-    relative, fragment, ``javascript:``, ``data:``, etc.) are left
-    untouched so this filter never silently whitelists unsafe schemes —
-    Wagtail's upstream sanitiser strips those before rendering reaches
-    us.
-
+    merges ``noopener`` and ``noreferrer`` into its ``rel`` attribute.
+    Existing editor tokens (e.g. ``nofollow``, ``ugc``) are preserved and
+    the merged set is deduplicated while keeping the editor's ordering
+    stable. All other anchors (mailto, relative, fragment, ``javascript:``,
+    ``data:``, etc.) are left untouched so this filter never silently
+    whitelists unsafe schemes — Wagtail's upstream sanitiser strips those
+    before rendering reaches us.
+    Expanded internal page links surface as relative URLs and so stay
+    outside the external-origin set, exactly as same-origin links should.
+    
     The filter is intended for per-banner use only. It must never be
     applied globally, since that would rewrite anchors inside unrelated
     content such as the ``AlertBlock`` StreamField.
-
+    
     Args:
-        value (str): Rendered rich-text HTML (typically the snippet's
-            ``message`` field after Wagtail's default ``|richtext``
-            pipeline).
-
+        value (str): The snippet's ``message`` field in Wagtail's rich-text
+            database format, as read directly from the ``RichTextField``.
+            Already-expanded HTML is also accepted — ``expand_db_html`` is
+            a no-op on output containing no ``linktype`` or ``embedtype``
+            tags.
+            
     Returns:
-        SafeString: The mutated HTML, marked safe for template
+        SafeString: The expanded, mutated HTML, marked safe for template
             inclusion.
     """
-    soup = BeautifulSoup(value, "html.parser")
+    soup = BeautifulSoup(expand_db_html(value), "html.parser")
     for anchor in soup.find_all("a", href=True):
         href = anchor["href"]
         if not href.startswith(_EXTERNAL_HREF_PREFIXES):
