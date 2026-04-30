@@ -49,7 +49,7 @@ def announcement_rich_text(value: str) -> SafeString:
     This makes the filter self-contained, so the template can apply it
     directly to the ``RichTextField`` value without chaining
     ``|richtext`` first.
-    
+
     For each anchor whose ``href`` targets an external origin — i.e. starts
     with ``http://``, ``https://``, or a protocol-relative ``//`` — the
     filter sets ``target="_blank"`` so the link opens in a new tab and
@@ -62,18 +62,18 @@ def announcement_rich_text(value: str) -> SafeString:
     before rendering reaches us.
     Expanded internal page links surface as relative URLs and so stay
     outside the external-origin set, exactly as same-origin links should.
-    
+
     The filter is intended for per-banner use only. It must never be
     applied globally, since that would rewrite anchors inside unrelated
     content such as the ``AlertBlock`` StreamField.
-    
+
     Args:
         value (str): The snippet's ``message`` field in Wagtail's rich-text
             database format, as read directly from the ``RichTextField``.
             Already-expanded HTML is also accepted — ``expand_db_html`` is
             a no-op on output containing no ``linktype`` or ``embedtype``
             tags.
-            
+
     Returns:
         SafeString: The expanded, mutated HTML, marked safe for template
             inclusion.
