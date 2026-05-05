@@ -30,7 +30,7 @@ dev = [
     "werkzeug[watchdog]==3.1.6",
 ]
 prod = [
-    "gunicorn==25.1.0",
+    "gunicorn==26.0.0",
     "psycopg[c]==3.3.3",
     "wait-for-it==2.3.0",
     "whitenoise==6.12.0",
