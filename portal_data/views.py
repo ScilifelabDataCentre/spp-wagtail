@@ -16,17 +16,14 @@ from django.core.cache import cache
 from django.http import FileResponse, Http404, HttpRequest, HttpResponse
 from django.shortcuts import render
 from django.views import View
-from .services import (
+
+from portal_data.services import (
     ACCESSION_RE,
-    get_datatype_config,
-    get_dataset_listing,
     get_data_root,
+    get_dataset_listing,
+    get_datatype_config,
     list_study_files,
 )
-
-
-data_root = get_data_root()
-
 
 logger = logging.getLogger(__name__)
 
@@ -104,18 +101,19 @@ class StudyFiles(View):
     ) -> HttpResponse:
         """Render a list of files available under the given study accession."""
         datatype = str(kwargs["datatype"])
-        if datatype not in SUPPORTED_TYPES:
+        if get_datatype_config(datatype) is None:
             raise Http404("Unknown data type")
 
         if not ACCESSION_RE.match(accession):
             raise Http404("Invalid accession")
 
-        # Ensure DATA_ROOT exists on the cluster
-        if not DATA_ROOT.is_dir():
-            logger.error("DATA_ROOT does not exist or is not a directory: %s", DATA_ROOT)
+        data_root = get_data_root()
+
+        if not data_root.is_dir():
+            logger.error("DATASETS_ROOT does not exist or is not a directory: %s", data_root)
             raise Http404("Study storage not available")
 
-        study_dir = DATA_ROOT / accession
+        study_dir = data_root / accession
         if not study_dir.is_dir():
             logger.warning("Study directory not present: %s", study_dir)
             raise Http404("Study not found on this node")
@@ -170,13 +168,14 @@ class DownloadStudyFile(View):
         if requested_path.is_absolute():
             logger.warning("Rejecting absolute relpath request: %s", relpath)
             raise Http404("Invalid file path")
+        
+        data_root = get_data_root()
 
-        # Ensure DATA_ROOT exists
-        if not DATA_ROOT.is_dir():
-            logger.error("DATA_ROOT not available: %s", DATA_ROOT)
+        if not data_root.is_dir():
+            logger.error("DATASETS_ROOT does not exist or is not a directory: %s", data_root)
             raise Http404("Study storage not available")
 
-        study_dir = DATA_ROOT / accession
+        study_dir = data_root / accession
         if not study_dir.is_dir():
             logger.warning("Study directory missing for download: %s", study_dir)
             raise Http404("Study not found on this node")

@@ -5,29 +5,69 @@ from __future__ import annotations
 import csv
 import io
 import json
+import logging
+import os
 from collections.abc import Iterable, Mapping
+from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
+from typing import Any
 
 from django.conf import settings
+from django.core.cache import cache
 from django.utils import timezone
 
-SUPPORTED_TYPES = {
-    "metabolomics": {
-        "label": "Metabolomics",
-        "default_facets": [
+logger = logging.getLogger(__name__)
+
+@dataclass(frozen=True)
+class DataTypeConfig:
+    label: str
+    default_facets: tuple[str, ...]
+
+SUPPORTED_TYPES: dict[str, DataTypeConfig] = {
+    "metabolomics": DataTypeConfig(
+        label="Metabolomics",
+        default_facets=(
             "year",
             "platforms",
             "technology",
             "factors",
             "design_types",
             "repository",
-        ],
-    },
+        ),
+    ),
 }
 
 ACCESSION_RE = re.compile(r"^MTBLS\d+$")
 
+def get_datatype_config(datatype: str) -> DataTypeConfig | None:
+    return SUPPORTED_TYPES.get(datatype)
+
+
+def get_dataset_listing(
+    *,
+    datatype: str,
+    query: str,
+    filters: dict[str, list[str]],
+    facet_names: list[str],
+) -> dict[str, Any]:
+    """Return filtered studies and facets for the listing page."""
+    all_items = load_all_items(datatype)
+    filtered_items = apply_search_and_filters(all_items, query, filters)
+
+    facets = build_facets(
+        items=filtered_items,
+        facet_names=facet_names,
+        filters=filters,
+        datatype=datatype,
+        use_cache=(not query and not filters),
+    )
+
+    return {
+        "items": filtered_items,
+        "facets": facets,
+        "has_facets": any(bool(buckets) for buckets in facets.values()),
+    }
 
 def get_data_root() -> Path:
     """Return the configured datasets root.
@@ -130,7 +170,8 @@ def _iter_study_dirs(datatype: str) -> list[Path]:
     if datatype != "metabolomics":
         return []
 
-    if not DATA_ROOT.exists():
+    data_root = get_data_root()
+    if not data_root.exists():
         return []
 
     candidates: dict[str, Path] = {}
@@ -158,7 +199,8 @@ def load_all_items(datatype: str) -> list[dict]:
     if datatype != "metabolomics":
         return []
 
-    if not DATA_ROOT.is_dir():
+    data_root = get_data_root()
+    if not data_root.is_dir():
         return []
 
     items: list[dict] = []
@@ -172,8 +214,8 @@ def load_all_items(datatype: str) -> list[dict]:
             # Skip helper dirs like MTBLS_data, fetch_metabolights.sh, targets.txt
             continue
 
-        inv_path = _find_investigation_file(study_dir)
-        meta = _parse_investigation_file(inv_path)
+        inv_path = find_investigation_file(study_dir)
+        meta = parse_investigation_file(inv_path)
 
         title = meta.get("study_title") or accession
         description = meta.get("study_description") or ""
