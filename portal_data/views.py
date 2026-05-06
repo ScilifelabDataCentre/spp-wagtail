@@ -16,76 +16,81 @@ from django.core.cache import cache
 from django.http import FileResponse, Http404, HttpRequest, HttpResponse
 from django.shortcuts import render
 from django.views import View
+from .services import (
+    ACCESSION_RE,
+    get_datatype_config,
+    get_dataset_listing,
+    get_data_root,
+    list_study_files,
+)
 
-logger = logging.getLogger("pages.portal_data.views")
+
+data_root = get_data_root()
 
 
+logger = logging.getLogger(__name__)
 
 
-# -------------------------------------------------------------------
-# Views
-# -------------------------------------------------------------------
+def _positive_int(value: str | None, default: int) -> int:
+    try:
+        parsed = int(value or default)
+    except (TypeError, ValueError):
+        return default
+    return max(parsed, 1)
 
 
 class DataTypeList(View):
-    """List available studies for a given data type with faceted search."""
-
     template_name = "portal_data/index.html"
 
     def get(self, request: HttpRequest, *args: object, **kwargs: object) -> HttpResponse:
-        """Build template context for the study list page."""
         datatype = str(kwargs["datatype"])
-        ctx: dict[str, object] = {}
+        config = get_datatype_config(datatype)
 
-        if datatype not in SUPPORTED_TYPES:
-            ctx["error"] = f"Unknown data type: {datatype}"
-            return render(request, self.template_name, ctx)
+        if config is None:
+            return render(
+                request,
+                self.template_name,
+                {"error": f"Unknown data type: {datatype}"},
+            )
 
-        q = request.GET.get("q", "").strip()
-        page = max(int(request.GET.get("page", "1")), 1)
-        size = max(int(request.GET.get("size", "25")), 1)
-        facet_names = request.GET.getlist("facet") or SUPPORTED_TYPES[datatype]["default_facets"]
+        query = request.GET.get("q", "").strip()
+        page = _positive_int(request.GET.get("page"), 1)
+        size = _positive_int(request.GET.get("size"), 25)
 
-        filter_fields = facet_names
-        filters = {f: request.GET.getlist(f) for f in filter_fields if request.GET.getlist(f)}
+        facet_names = request.GET.getlist("facet") or list(config.default_facets)
+        filters = {
+            field: request.GET.getlist(field)
+            for field in facet_names
+            if request.GET.getlist(field)
+        }
 
-        # Load from PVC
-        all_items = _load_all_items(datatype)
-
-        # Apply filters + search
-        filtered_items = _apply_search_and_filters(all_items, q, filters)
-
-        # Build facets from the current result set (so facets update when search/filters change)
-        facets = _build_facets(
-            items=filtered_items,
-            facet_names=facet_names,
+        listing = get_dataset_listing(
+            datatype=datatype,
+            query=query,
             filters=filters,
-            datatype=datatype,  # from view / query_data_backend
-            use_cache=(not q and not filters),
+            facet_names=facet_names,
         )
 
-        # Simple paging
+        filtered_items = listing["items"]
         start = (page - 1) * size
         end = start + size
-        page_items = filtered_items[start:end]
 
-        has_facets = any(bool(buckets) for buckets in facets.values())
-        ctx["has_facets"] = has_facets
-
-        ctx.update(
+        return render(
+            request,
+            self.template_name,
             {
                 "datatype": datatype,
-                "datatype_label": SUPPORTED_TYPES[datatype]["label"],
-                "query": q,
+                "datatype_label": config.label,
+                "query": query,
                 "filters": filters,
-                "facets": facets,
-                "items": page_items,
+                "facets": listing["facets"],
+                "has_facets": listing["has_facets"],
+                "items": filtered_items[start:end],
                 "total": len(filtered_items),
                 "page": page,
                 "size": size,
-            }
+            },
         )
-        return render(request, self.template_name, ctx)
 
 
 class StudyFiles(View):
@@ -116,7 +121,7 @@ class StudyFiles(View):
             raise Http404("Study not found on this node")
 
         try:
-            files = _list_study_files(study_dir)
+            files = list_study_files(study_dir)
         except Exception as err:
             logger.exception("Unexpected error listing files for %s/%s", datatype, accession)
             raise Http404("Could not list files") from err

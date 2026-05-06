@@ -430,39 +430,3 @@ def _parse_investigation_file(path: Path) -> dict[str, object]:
 
     return meta
 
-# ---- Download helper functions ---------------------------------------------------
-
-
-def _list_study_files(study_dir: Path) -> list[dict[str, Any]]:
-    """List all files within a study directory.
-
-    Returns dictionaries containing relative path, size and modification time.
-    Directories are not returned (files only). Skips entries that cannot be stat'ed.
-    """
-    files: list[dict] = []
-    try:
-        for root, _, filenames in os.walk(study_dir):
-            for fn in filenames:
-                full = Path(root) / fn
-                try:
-                    # produce a relative path with forward slashes
-                    rel = str(full.relative_to(study_dir)).replace(os.sep, "/")
-                    stat = full.stat()
-                except (OSError, ValueError):
-                    # skip files we can't access or relativize
-                    logger.debug("Skipping file during listing: %s", full, exc_info=True)
-                    continue
-
-                files.append(
-                    {
-                        "relpath": rel,
-                        "name": fn,
-                        "size": stat.st_size,
-                        "mtime": stat.st_mtime,
-                    }
-                )
-    except Exception:
-        logger.exception("Error walking study_dir %s", study_dir)
-    # sort by path for stable listing
-    files.sort(key=lambda f: f["relpath"])
-    return files
