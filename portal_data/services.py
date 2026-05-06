@@ -7,6 +7,7 @@ import io
 import json
 import logging
 import os
+import re
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from datetime import datetime
@@ -175,7 +176,7 @@ def _iter_study_dirs(datatype: str) -> list[Path]:
         return []
 
     candidates: dict[str, Path] = {}
-    for p in DATA_ROOT.iterdir():
+    for p in data_root.iterdir():
         if not p.is_dir():
             continue
         name = p.name
@@ -205,7 +206,7 @@ def load_all_items(datatype: str) -> list[dict]:
 
     items: list[dict] = []
 
-    for study_dir in sorted(DATA_ROOT.iterdir(), key=lambda p: p.name):
+    for study_dir in sorted(data_root.iterdir(), key=lambda p: p.name):
         if not study_dir.is_dir():
             continue
 
