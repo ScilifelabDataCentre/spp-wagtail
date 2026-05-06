@@ -6,9 +6,11 @@ import csv
 import io
 import json
 from collections.abc import Iterable, Mapping
+from datetime import datetime
 from pathlib import Path
 
 from django.conf import settings
+from django.utils import timezone
 
 SUPPORTED_TYPES = {
     "metabolomics": {
@@ -147,7 +149,7 @@ def _iter_study_dirs(datatype: str) -> list[Path]:
     return [candidates[name] for name in sorted(candidates)]
 
 
-def _load_all_items(datatype: str) -> list[dict]:
+def load_all_items(datatype: str) -> list[dict]:
     """Load all public metabolomics datasets from the PVC.
 
     Each item dict keeps the old keys (id, repository, repo_url, etc.)
@@ -221,7 +223,7 @@ def _load_all_items(datatype: str) -> list[dict]:
 
 
 
-def _apply_search_and_filters(
+def apply_search_and_filters(
     items: list[dict],
     query: str,
     filters: dict[str, list[str]],
@@ -278,7 +280,7 @@ def _apply_search_and_filters(
 
     return items
 
-def _build_facets(
+def build_facets(
     items: list[dict[str, Any]],
     facet_names: list[str],
     filters: dict[str, list[str]] | None,
@@ -360,7 +362,7 @@ def _build_facets(
         cache.set(cache_key, facets, timeout=3600)
     return facets
 
-def _find_investigation_file(study_dir: Path) -> Path | None:
+def find_investigation_file(study_dir: Path) -> Path | None:
     """Prefer the latest investigation file under METADATA_REVISIONS, falling back to top-level."""
     rev_root = study_dir / "METADATA_REVISIONS"
     if rev_root.is_dir():
@@ -380,7 +382,7 @@ def _find_investigation_file(study_dir: Path) -> Path | None:
     return None
 
 
-def _parse_investigation_file(path: Path) -> dict[str, object]:
+def parse_investigation_file(path: Path) -> dict[str, object]:
     """Very simple ISA-tab parser focusing on the STUDY rows we care about."""
     meta: dict[str, object] = {}
 
@@ -430,3 +432,33 @@ def _parse_investigation_file(path: Path) -> dict[str, object]:
 
     return meta
 
+
+
+def list_study_files(study_dir: Path) -> list[dict[str, Any]]:
+    files: list[dict[str, Any]] = []
+
+    for root, _, filenames in os.walk(study_dir):
+        for filename in filenames:
+            full = Path(root) / filename
+
+            try:
+                relpath = str(full.relative_to(study_dir)).replace(os.sep, "/")
+                stat = full.stat()
+            except (OSError, ValueError):
+                logger.debug("Skipping file during listing: %s", full, exc_info=True)
+                continue
+
+            files.append(
+                {
+                    "relpath": relpath,
+                    "name": filename,
+                    "size": stat.st_size,
+                    "mtime": datetime.fromtimestamp(
+                        stat.st_mtime,
+                        tz=timezone.get_current_timezone(),
+                    ),
+                }
+            )
+
+    files.sort(key=lambda file: file["relpath"])
+    return files
