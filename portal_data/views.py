@@ -32,9 +32,12 @@ def _positive_int(value: str | None, default: int) -> int:
 
 
 class DataTypeList(View):
+    """Render a paginated, searchable listing for a portal data type."""
+
     template_name = "portal_data/index.html"
 
     def get(self, request: HttpRequest, *args: object, **kwargs: object) -> HttpResponse:
+        """Render the dataset listing for the requested data type."""
         datatype = str(kwargs["datatype"])
         config = get_datatype_config(datatype)
 
@@ -150,7 +153,7 @@ class DownloadStudyFile(View):
         Validating that the path stays within the study directory.
         """
         datatype = str(kwargs["datatype"])
-        if datatype not in SUPPORTED_TYPES:
+        if get_datatype_config(datatype) is None:
             raise Http404("Unknown data type")
 
         if not ACCESSION_RE.match(accession):

@@ -18,18 +18,33 @@ from django.conf import settings
 from django.core.cache import cache
 from django.utils import timezone
 
-from portal_data.SUPPORTED_TYPES import SUPPORTED_TYPES
-
 logger = logging.getLogger(__name__)
 
 @dataclass(frozen=True)
 class DataTypeConfig:
+    """Configuration for a supported portal data type."""
+
     label: str
     default_facets: tuple[str, ...]
+
+SUPPORTED_TYPES: dict[str, DataTypeConfig] = {
+    "metabolomics": DataTypeConfig(
+        label="Metabolomics",
+        default_facets=(
+            "year",
+            "platforms",
+            "technology",
+            "factors",
+            "design_types",
+            "repository",
+        ),
+    ),
+}
 
 ACCESSION_RE = re.compile(r"^MTBLS\d+$")
 
 def get_datatype_config(datatype: str) -> DataTypeConfig | None:
+    """Return configuration for a supported data type, if available."""
     return SUPPORTED_TYPES.get(datatype)
 
 
@@ -259,6 +274,7 @@ def apply_search_and_filters(
     query: str,
     filters: dict[str, list[str]],
 ) -> list[dict]:
+    """Apply text search and facet filters to dataset listing items."""
     # Text search
     if query:
         q = query.lower()
@@ -466,6 +482,7 @@ def parse_investigation_file(path: Path) -> dict[str, object]:
 
 
 def list_study_files(study_dir: Path) -> list[dict[str, Any]]:
+    """Return metadata for files contained in a study directory."""
     files: list[dict[str, Any]] = []
 
     for root, _, filenames in os.walk(study_dir):
