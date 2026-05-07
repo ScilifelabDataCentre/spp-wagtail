@@ -4,15 +4,10 @@ from __future__ import annotations
 
 import logging
 import mimetypes
-import os
-import re
 from contextlib import ExitStack
 from pathlib import Path
-from typing import Any
 from urllib.parse import unquote
 
-from django.conf import settings
-from django.core.cache import cache
 from django.http import FileResponse, Http404, HttpRequest, HttpResponse
 from django.shortcuts import render
 from django.views import View
@@ -168,7 +163,7 @@ class DownloadStudyFile(View):
         if requested_path.is_absolute():
             logger.warning("Rejecting absolute relpath request: %s", relpath)
             raise Http404("Invalid file path")
-        
+
         data_root = get_data_root()
 
         if not data_root.is_dir():

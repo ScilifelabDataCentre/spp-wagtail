@@ -18,26 +18,14 @@ from django.conf import settings
 from django.core.cache import cache
 from django.utils import timezone
 
+from portal_data.SUPPORTED_TYPES import SUPPORTED_TYPES
+
 logger = logging.getLogger(__name__)
 
 @dataclass(frozen=True)
 class DataTypeConfig:
     label: str
     default_facets: tuple[str, ...]
-
-SUPPORTED_TYPES: dict[str, DataTypeConfig] = {
-    "metabolomics": DataTypeConfig(
-        label="Metabolomics",
-        default_facets=(
-            "year",
-            "platforms",
-            "technology",
-            "factors",
-            "design_types",
-            "repository",
-        ),
-    ),
-}
 
 ACCESSION_RE = re.compile(r"^MTBLS\d+$")
 
