@@ -1,0 +1,25 @@
+{% comment %}
+    This template is used to render the list of highlights and editorials on the highlights and editorials index page,
+    individual highlight/editorial pages, and topic pages. It is also used for HTMX requests. It is included in the
+    relevant page templates to maintain a consistent layout and styling across the site.
+{% endcomment %}
+
+{% load wagtailimages_tags %}
+
+{% partialdef articles_grid %}
+
+{% if articles_list %}
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 lg:gap-3">
+    {% for article in articles_list %}
+        <!-- Render each article -->
+        <div class="article">
+            {% image article.image format-webp as thumbnail %}
+            {% include "cms/components/content_card.html#content_card" with url=article.url image=thumbnail.url title=article.title description=article.description date=article.first_published_at badge_text=article.get_article_type_display topics=article.topics only %}
+        </div>
+    {% endfor %}
+{% elif request.htmx %}
+    <p class="text-center text-pp-dark-grey">No articles found for given search query and/or selected filters.</p>
+{% endif %}
+</div>
+
+{% endpartialdef %}
