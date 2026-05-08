@@ -1,5 +1,9 @@
 """Tests for topic pages."""
 
+from unittest.mock import MagicMock, PropertyMock, patch
+
+from django.apps import apps
+from django.test import RequestFactory
 from wagtail.models import Page, Site
 from wagtail.test.utils import WagtailPageTestCase
 
@@ -9,6 +13,8 @@ from cms.tests.utils import create_test_image
 #######################################################################
 ############# Helper classes and functions for testing ################
 #######################################################################
+
+REAL_GET_MODEL = apps.get_model
 
 
 class BasePageTestCase(WagtailPageTestCase):
@@ -32,6 +38,18 @@ class BasePageTestCase(WagtailPageTestCase):
         cls.topics_index = TopicsIndexPage(title="Topics", slug="topics")
         cls.home.add_child(instance=cls.topics_index)
         cls.topics_index.save_revision().publish()
+
+
+class MockHighlightsAndEditorialsPage:
+    """Mock class for HighlightsAndEditorialsPage to be used in tests."""
+
+    objects = MagicMock()
+
+
+class MockHighlightsAndEditorialsIndexPage:
+    """Mock class for HighlightsAndEditorialsIndexPage to be used in tests."""
+
+    objects = MagicMock()
 
 
 ######################################################################
@@ -82,6 +100,36 @@ class TestTopicsIndexPage(BasePageTestCase):
 class TestTopicPage(BasePageTestCase):
     """Tests for the TopicPage model."""
 
+    @classmethod
+    def setUpTestData(cls) -> None:
+        """Create a HighlightsAndEditorialsPage instance for testing."""
+
+        super().setUpTestData()
+        cls.factory = RequestFactory()
+
+        img = create_test_image(title="Test Image", file_name="test_image.jpg")
+        cls.topic_page = TopicPage(
+            title="Test Topic",
+            slug="test-topic",
+            description="A test topic page.",
+            image=img,
+        )
+        cls.topics_index.add_child(instance=cls.topic_page)
+        cls.topic_page.save_revision().publish()
+
+    def mock_get_model(self, app_label: str, model_name: str) -> MagicMock:
+        """Mock function to replace apps.get_model during tests."""
+        model_map = {
+            "HighlightsAndEditorialsPage": MockHighlightsAndEditorialsPage,
+            "HighlightsAndEditorialsIndexPage": MockHighlightsAndEditorialsIndexPage,
+        }
+
+        if model_name in model_map:
+            return model_map[model_name]
+
+        # fallback to actual Django behaviour
+        return REAL_GET_MODEL(app_label, model_name)
+
     def test_parent_page_type_restriction(self):
         """Test that only TopicsIndexPage can be a parent of TopicPage."""
         self.assertEqual(TopicPage.parent_page_types, ["cms.TopicsIndexPage"])
@@ -102,15 +150,54 @@ class TestTopicPage(BasePageTestCase):
 
     def test_topic_page_can_be_created_under_index(self):
         """Test that a TopicPage can be created under a TopicsIndexPage."""
-        img = create_test_image(title="Test Image", file_name="test_image.jpg")
-        topic_page = TopicPage(
-            title="Test Topic",
-            slug="test-topic",
-            description="A test topic page.",
-            image=img,
-        )
-        self.topics_index.add_child(instance=topic_page)
-        topic_page.save_revision().publish()
+        self.assertTrue(TopicPage.objects.filter(id=self.topic_page.id).exists())
+        self.assertEqual(self.topic_page.get_parent().specific, self.topics_index)
 
-        self.assertTrue(TopicPage.objects.filter(id=topic_page.id).exists())
-        self.assertEqual(topic_page.get_parent().specific, self.topics_index)
+    def test_related_highlights_and_editorials_returns_filtered_articles(self) -> None:
+        """Test that the related_highlights_and_editorials property returns as expected queryset."""
+        mock_queryset = MagicMock()
+
+        (
+            MockHighlightsAndEditorialsPage.objects.live.return_value.public.return_value.filter.return_value.distinct.return_value.order_by.return_value
+        ) = mock_queryset
+
+        with patch(
+            "cms.pages.topics.apps.get_model", side_effect=self.mock_get_model
+        ) as mock_get_model:
+            result = self.topic_page.related_highlights_and_editorials
+
+        self.assertEqual(result, mock_queryset)
+        mock_get_model.assert_any_call("cms", "HighlightsAndEditorialsPage")
+        (
+            MockHighlightsAndEditorialsPage.objects.live.return_value.public.return_value.filter.assert_called_once_with(
+                article_topics__topic=self.topic_page
+            )
+        )
+
+    def test_get_context_adds_new_context_values(self) -> None:
+        """Test that the get_context method adds the expected values to the context."""
+        request = self.factory.get("/")
+
+        mock_index_page = MagicMock()
+        mock_index_page.url = "/highlights-and-editorials/"
+
+        (
+            MockHighlightsAndEditorialsIndexPage.objects.live.return_value.first.return_value
+        ) = mock_index_page
+
+        related_articles = [MagicMock(), MagicMock()]
+
+        with (
+            patch("cms.pages.topics.apps.get_model", side_effect=self.mock_get_model),
+            patch.object(
+                TopicPage,
+                "related_highlights_and_editorials",
+                new_callable=PropertyMock,
+                return_value=related_articles,
+            ),
+        ):
+            context = self.topic_page.get_context(request)
+
+        self.assertEqual(context["page_heading"], "Topics")
+        self.assertEqual(context["related_highlights_and_editorials"], related_articles)
+        self.assertEqual(context["articles_index_url"], "/highlights-and-editorials/")
