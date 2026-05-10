@@ -1,7 +1,6 @@
 """CMS pages for highlights and editorials."""
 
-from collections.abc import Iterator
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from django.db import models
 from django.http import HttpRequest, HttpResponse
@@ -16,6 +15,10 @@ from wagtail.models import Orderable, Page
 
 from cms.blocks import AlertBlock
 from cms.services.highlights_and_editorials import get_related_articles, validate_filters
+
+# Only import TopicPage for type checking to avoid circular imports
+if TYPE_CHECKING:
+    from cms.pages.topics import TopicPage
 
 ARTICLE_TYPE_CHOICES = [
     ("data-highlight", "Data Highlight"),
@@ -281,7 +284,7 @@ class HighlightsAndEditorialsPage(Page):
     ]
 
     @property
-    def topics(self) -> Iterator:
+    def topics(self) -> list[TopicPage]:
         """Return a sorted list of topics associated with this article."""
         return sorted((rel.topic for rel in self.article_topics.all()), key=lambda t: t.title)
 
