@@ -2,6 +2,7 @@
 
 from typing import Any
 
+from django.apps import apps
 from django.db import models
 from django.http import HttpRequest
 from wagtail.admin.panels import FieldPanel, MultiFieldPanel
@@ -100,8 +101,24 @@ class TopicPage(Page):
         ),
     ]
 
+    @property
+    def related_highlights_and_editorials(self) -> models.QuerySet:
+        """Return highlights and editorials related to this topic."""
+        article_model = apps.get_model("cms", "HighlightsAndEditorialsPage")
+        return (
+            article_model.objects.live()
+            .public()
+            .filter(article_topics__topic=self)
+            .distinct()
+            .order_by("-first_published_at")
+        )
+
     def get_context(self, request: HttpRequest) -> dict[str, Any]:
         """Add the parent page's title to the context for display on the topic page."""
         context = super().get_context(request)
         context["page_heading"] = self.get_parent().specific.title
+        context["related_highlights_and_editorials"] = self.related_highlights_and_editorials
+        context["articles_index_url"] = (
+            apps.get_model("cms", "HighlightsAndEditorialsIndexPage").objects.live().first().url
+        )
         return context
