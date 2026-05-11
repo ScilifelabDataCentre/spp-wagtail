@@ -2,12 +2,10 @@
 from __future__ import annotations
 
 from django.db import models
-
+from portal_data.context import build_portal_data_context
 from wagtail.admin.panels import FieldPanel
 from wagtail.fields import RichTextField
 from wagtail.models import Page
-
-from portal_data.context import build_portal_data_context
 
 
 class PortalDataPage(Page):
