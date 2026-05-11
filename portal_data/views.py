@@ -20,6 +20,8 @@ from portal_data.services import (
     list_study_files,
 )
 
+from .context import build_portal_data_context
+
 logger = logging.getLogger(__name__)
 
 
@@ -32,61 +34,12 @@ def _positive_int(value: str | None, default: int) -> int:
 
 
 class DataTypeList(View):
-    """Render a paginated, searchable listing for a portal data type."""
-
     template_name = "portal_data/index.html"
 
     def get(self, request: HttpRequest, *args: object, **kwargs: object) -> HttpResponse:
-        """Render the dataset listing for the requested data type."""
         datatype = str(kwargs["datatype"])
-        config = get_datatype_config(datatype)
-
-        if config is None:
-            return render(
-                request,
-                self.template_name,
-                {"error": f"Unknown data type: {datatype}"},
-            )
-
-        query = request.GET.get("q", "").strip()
-        page = _positive_int(request.GET.get("page"), 1)
-        size = _positive_int(request.GET.get("size"), 25)
-
-        facet_names = request.GET.getlist("facet") or list(config.default_facets)
-        filters = {
-            field: request.GET.getlist(field)
-            for field in facet_names
-            if request.GET.getlist(field)
-        }
-
-        listing = get_dataset_listing(
-            datatype=datatype,
-            query=query,
-            filters=filters,
-            facet_names=facet_names,
-        )
-
-        filtered_items = listing["items"]
-        start = (page - 1) * size
-        end = start + size
-
-        return render(
-            request,
-            self.template_name,
-            {
-                "datatype": datatype,
-                "datatype_label": config.label,
-                "query": query,
-                "filters": filters,
-                "facets": listing["facets"],
-                "has_facets": listing["has_facets"],
-                "items": filtered_items[start:end],
-                "total": len(filtered_items),
-                "page": page,
-                "size": size,
-            },
-        )
-
+        context = build_portal_data_context(request, datatype=datatype)
+        return render(request, self.template_name, context)
 
 class StudyFiles(View):
     """Render a simple file browser for a study directory on the PVC.
