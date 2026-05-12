@@ -57,10 +57,12 @@ def get_dataset_listing(
 ) -> dict[str, Any]:
     """Return filtered studies and facets for the listing page."""
     all_items = load_all_items(datatype)
-    filtered_items = apply_search_and_filters(all_items, query, filters)
+
+    searched_items = apply_text_search(all_items, query)
+    filtered_items = apply_facet_filters(searched_items, filters)
 
     facets = build_facets(
-        items=filtered_items,
+        items=searched_items,
         facet_names=facet_names,
         filters=filters,
         datatype=datatype,
@@ -72,6 +74,15 @@ def get_dataset_listing(
         "facets": facets,
         "has_facets": any(bool(buckets) for buckets in facets.values()),
     }
+def apply_search_and_filters(
+    items: list[dict],
+    query: str,
+    filters: dict[str, list[str]],
+) -> list[dict]:
+    """Old method for compatability, can be remove if we move to full wagtail."""
+    return apply_facet_filters(apply_text_search(items, query), filters)
+
+
 
 def get_data_root() -> Path:
     """Return the configured datasets root.
@@ -510,3 +521,72 @@ def list_study_files(study_dir: Path) -> list[dict[str, Any]]:
 
     files.sort(key=lambda file: file["relpath"])
     return files
+
+def apply_text_search(items: list[dict], query: str) -> list[dict]:
+    """Apply text search to dataset listing items."""
+    if not query:
+        return items
+
+    q = query.lower()
+
+    def matches_text(it: dict[str, Any]) -> bool:
+        if q in str(it.get("title", "")).lower():
+            return True
+
+        if q in str(it.get("id", "")).lower():
+            return True
+
+        if q in str(it.get("accession", "")).lower():
+            return True
+
+        if q in str(it.get("description", "")).lower():
+            return True
+
+        tags = it.get("tags", [])
+        if isinstance(tags, str):
+            return q in tags.lower()
+
+        return any(q in str(tag).lower() for tag in tags)
+
+    return [it for it in items if matches_text(it)]
+
+
+def apply_facet_filters(
+    items: list[dict],
+    filters: dict[str, list[str]],
+) -> list[dict]:
+    """Apply selected facet filters to dataset listing items."""
+    if not filters:
+        return items
+
+    filtered_items = items
+
+    for field, values in filters.items():
+        if not values:
+            continue
+
+        values_set = {str(v) for v in values}
+
+        def matches_filter(
+            it: dict[str, Any],
+            *,
+            _field: str = field,
+            _values_set: set[str] = values_set,
+        ) -> bool:
+            field_value = it.get(_field)
+
+            if field_value is None:
+                return False
+
+            if isinstance(field_value, list):
+                return any(
+                    str(v) in _values_set
+                    for v in field_value
+                    if v is not None and v != ""
+                )
+
+            return str(field_value) in _values_set
+
+        filtered_items = [it for it in filtered_items if matches_filter(it)]
+
+    return filtered_items
