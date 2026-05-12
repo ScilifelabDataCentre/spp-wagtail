@@ -32,17 +32,19 @@ def build_portal_data_context(
     if config is None:
         return {
             "datatype": datatype,
-            "datatype_label": datatype,
-            "error": f"Unknown data type: {datatype}",
-            "query": "",
-            "filters": {},
-            "facets": {},
-            "has_facets": False,
-            "items": [],
-            "total": 0,
-            "page_number": 1,
-            "size": default_size,
-        }
+            "datatype_label": config.label,
+            "query": query,
+            "filters": filters,
+            "facet_names": facet_names,
+            "facets": listing["facets"],
+            "has_facets": listing["has_facets"],
+            "items": filtered_items[start:end],
+            "total": len(filtered_items),
+            "page_number": page_number,
+            "size": size,
+            "form_action": request.path,
+            "reset_url": request.path,
+            }
 
     query = request.GET.get("q", "").strip()
     page_number = positive_int(request.GET.get("page"), 1)
@@ -68,13 +70,17 @@ def build_portal_data_context(
 
     return {
         "datatype": datatype,
-        "datatype_label": config.label,
-        "query": query,
-        "filters": filters,
-        "facets": listing["facets"],
-        "has_facets": listing["has_facets"],
-        "items": filtered_items[start:end],
-        "total": len(filtered_items),
-        "page_number": page_number,
-        "size": size,
+        "datatype_label": datatype,
+        "error": f"Unknown data type: {datatype}",
+        "query": "",
+        "filters": {},
+        "facet_names": [],
+        "facets": {},
+        "has_facets": False,
+        "items": [],
+        "total": 0,
+        "page_number": 1,
+        "size": default_size,
+        "form_action": request.path,
+        "reset_url": request.path,
     }
