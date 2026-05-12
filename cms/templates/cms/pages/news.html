@@ -1,0 +1,30 @@
+{% extends "cms/base.html" %}
+
+{% load static %}
+{% load wagtailcore_tags wagtailimages_tags %}
+
+{% block content %}
+
+{% image page.image format-webp as cover %}
+<article>
+    <h3>{{ page.title }}</h3>
+    <p class="text-sm text-pp-dark-grey mb-6">{{ page.first_published_at|date:"F d, Y" }}</p>
+    <img src="{{ cover.url }}" alt="{{ page.title }}" class="w-full h-64 sm:h-96 object-cover rounded-lg">
+
+    <div class="mt-6">
+        {% include_block page.content %}
+    </div>
+
+    <div class="flex justify-between items-center mb-6">
+        <a href="{{ parent_page }}"
+        class="text-pp-mid-blue hover:text-pp-dark-blue hover:underline transition-colors duration-200"
+        >
+            ← Back to News
+        </a>
+        <p class="text-sm text-pp-dark-grey">
+        Last updated: {{ page.last_published_at|date:"F d, Y" }}
+        </p>
+    </div>
+</article>
+
+{% endblock %}
