@@ -1,0 +1,116 @@
+{
+  $schema: 'https://docs.renovatebot.com/renovate-schema.json',
+  extends: [
+    'config:recommended',
+  ],
+  baseBranchPatterns: [
+    'staging',
+  ],
+  kubernetes: {
+    managerFilePatterns: [
+      '/^omero-kustomization/(base|components)/.+\\.ya?ml$/',
+      '/^infra/.+\\.ya?ml$/',
+    ],
+  },
+  argocd: {
+    managerFilePatterns: [
+      '/^infra/.*\\.ya?ml$/',
+    ],
+  },
+  packageRules: [
+    {
+      description: 'OMERO images (server, web, ms, zarr, oauth) – full patch, manual review',
+      matchManagers: [
+        'kubernetes',
+        'kustomize',
+      ],
+      matchDatasources: [
+        'docker',
+      ],
+      matchPackageNames: [
+        'openmicroscopy/omero-web',
+        'openmicroscopy/omero-web-standalone',
+        'ghcr.io/scilifelabdatacentre/omero-server-extended',
+        'openmicroscopy/omero-oauth',
+        '/^openmicroscopy/omero-ms-.*$/',
+      ],
+      matchFileNames: [
+        'omero-kustomization/overlays/**/patches/**/*.yml',
+        'omero-kustomization/overlays/**/patches/**/*.yaml',
+        'omero-kustomization/overlays/**/*.yml',
+        'omero-kustomization/overlays/**/*.yaml',
+      ],
+      versioning: 'semver',
+      automerge: false,
+      groupName: 'omero application images',
+    },
+    {
+      description: 'Supporting infrastructure images in omero-kustomization -- allow automatic patch/minor bumps, overlays only',
+      matchManagers: [
+        'kubernetes',
+        'kustomize',
+      ],
+      matchDatasources: [
+        'docker',
+      ],
+      matchPackageNames: [
+        'postgres',
+        'redis',
+        'nginx',
+        'bitnami/postgresql',
+        'bitnami/redis',
+      ],
+      matchFileNames: [
+        'omero-kustomization/overlays/**/patches/**/*.yml',
+        'omero-kustomization/overlays/**/patches/**/*.yaml',
+        'omero-kustomization/overlays/**/*.yml',
+        'omero-kustomization/overlays/**/*.yaml',
+      ],
+      matchUpdateTypes: [
+        'minor',
+        'patch',
+      ],
+      automerge: true,
+      automergeType: 'branch',
+      groupName: 'infra images',
+    },
+    {
+      description: 'Disable image tag updates in omero-kustomization/base',
+      matchManagers: [
+        'kubernetes',
+        'kustomize',
+      ],
+      matchDatasources: [
+        'docker',
+      ],
+      matchFileNames: [
+        'omero-kustomization/base/**/*.yml',
+        'omero-kustomization/base/**/*.yaml',
+      ],
+      enabled: false,
+    },
+    {
+      description: 'Infrastructure Helm charts in ArgoCD Applications – automatic minor/patch updates',
+      matchManagers: [
+        'argocd',
+      ],
+      matchDatasources: [
+        'helm',
+      ],
+      matchFileNames: [
+        'infra/**/*.yml',
+        'infra/**/*.yaml',
+      ],
+      matchPackageNames: [
+        'kube-prometheus-stack',
+      ],
+      matchUpdateTypes: [
+        'minor',
+        'patch',
+      ],
+      automerge: true,
+      automergeType: 'branch',
+      groupName: 'infra helm charts',
+    },
+  ],
+}
