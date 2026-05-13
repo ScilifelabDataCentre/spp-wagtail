@@ -11,9 +11,11 @@ from wagtail.blocks import RichTextBlock
 from wagtail.fields import StreamField
 from wagtail.images import get_image_model_string
 from wagtail.models import Page
+from wagtail.snippets.widgets import AdminSnippetChooser
 
 from cms.blocks import AlertBlock, CardBlock, CardGridBlock, DataTableBlock
 from cms.forms import PlpProjectPageForm
+from cms.snippets import PlpCategory
 
 
 class PlpProjectPage(Page):
@@ -72,7 +74,7 @@ class PlpProjectPage(Page):
 
     content_panels = Page.content_panels + [
         FieldPanel("image"),
-        FieldPanel("category"),
+        FieldPanel("category", widget=AdminSnippetChooser(PlpCategory)),
         FieldPanel("content"),
     ]
 
