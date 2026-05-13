@@ -75,6 +75,30 @@ class TestCollapsibleBlock(SimpleTestCase):
         self.assertIn("Timeline of the program", html)
         self.assertIn("data-table-timeline", html)
 
+    def test_data_table_caption_inside_collapsible_is_screen_reader_only(self) -> None:
+        """Nested data_table caption keeps its id (aria) but is visually hidden via wrapper.
+
+        The collapsible ``<summary>`` already shows the section label; the inner
+        ``DataTableBlock`` caption would duplicate it as a visible ``<h3>`` without
+        a scoped ``sr-only`` rule on the collapsible body wrapper.
+        """
+        value = self.block.to_python(
+            {
+                "label": "Timeline of the program",
+                "body": [
+                    {"type": "data_table", "value": _data_table_value("timeline")},
+                ],
+            }
+        )
+
+        html = self.block.render(value)
+        sr_only_variant = "[&_[id^='data-table-'][id$='-title']]:sr-only"
+        caption_id = 'id="data-table-timeline-title"'
+
+        self.assertIn(sr_only_variant, html)
+        self.assertIn(caption_id, html)
+        self.assertGreater(html.find(caption_id), html.find(sr_only_variant))
+
     def test_label_is_required(self) -> None:
         """An empty label raises StructBlockValidationError on the label field."""
         value = self.block.to_python(
