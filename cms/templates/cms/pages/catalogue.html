@@ -1,0 +1,71 @@
+{% extends "cms/base.html" %}
+
+{% load static %}
+{% load wagtailcore_tags wagtailimages_tags %}
+
+{% block content %}
+
+<section id="catalogue-page-content">
+{% for block in page.content %}
+    {% if block.block_type == "card_grid" %}
+        <div id="catalogue-cards" class="md:grid md:grid-cols-4 md:gap-6 my-6">
+            <div id="catalogue-filters">
+                <div class="collapse max-md:collapse-arrow border border-secondary rounded md:sticky md:top-16 md:collapse-open">
+                    <!-- Hidden toggle to make the filter section collapsible on mobile -->
+                    <input type="checkbox" class="md:hidden" />
+
+                    <!-- Filter title -->
+                    <div class="collapse-title md:cursor-default">
+                        <h4 class="my-0">Search & Filters</h4>
+                    </div>
+
+                    <!-- Filter content -->
+                    <div class="collapse-content md:block">
+                        <div id="catalogue-filter-inputs" class="flex flex-col gap-4 px-1">
+                            <!-- Search input -->
+                            <input type="text" id="searchInput" name="search" maxlength="100"
+                                class="input input-bordered input-accent"
+                                placeholder="Search Articles" aria-label="Search">
+                            <!-- Article Type Filters -->
+                            <h5 class="my-0">{{ page.filter_label|title }}</h5>
+                            <div class="flex flex-col gap-2">
+                                {% for choice in catalogue_types %}
+                                <span>
+                                    <label class="label cursor-pointer">
+                                        <input type="checkbox" class="checkbox checkbox-accent checkbox-sm"
+                                        name="type" value="{{ choice|slugify }}"
+                                        {% if choice|slugify in type_filter %}checked{% endif %}>
+                                        <span class="label-text">{{ choice }}</span>
+                                    </label>
+                                </span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="catalogue-cards-content" class="md:col-span-3 max-md:mt-8"
+            hx-get="{{ request.path }}"
+            hx-trigger="input from:#catalogue-filter-inputs delay:300ms"
+            hx-include="#catalogue-filter-inputs input"
+            hx-target="#catalogue-list"
+            hx-swap="innerHTML"
+            hx-indicator="#catalogue-loading"
+            >
+                <div class="relative min-h-20">
+                    <div id="catalogue-loading"
+                        class="htmx-indicator absolute inset-0 bg-base-100/80 flex items-center justify-center z-10 rounded-box">
+                        <span class="loading loading-spinner text-accent loading-lg" aria-label="Loading"></span>
+                    </div>
+                    <div id="catalogue-list">
+                        {% include "cms/components/catalogue_list.html#catalogue_grid" with catalogue_list=catalogue_list only %}
+                    </div>
+                </div>
+        </div>
+    {% else %}
+        {% include_block block %}
+    {% endif %}
+{% endfor %}
+</section>
+
+{% endblock %}
