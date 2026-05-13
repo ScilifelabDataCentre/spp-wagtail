@@ -694,6 +694,28 @@ class TestPlpProjectCopyInvariants(BasePlpPageTestCase):
         self.assertFalse(form.is_valid())
         self.assertIn("copy_subpages", form.errors)
 
+    def test_non_recursive_copy_under_subproject_parent_is_rejected(self):
+        """Non-recursive copy onto a subproject must fail with a field-level error.
+
+        Wagtail's data layer already blocks the copy via ``can_copy_to`` -> 403,
+        but the form should surface a graceful ``new_parent_page`` error so the
+        UX matches the recursive and category-less branches.
+        """
+        user = self._superuser()
+        form = self._copy_form(
+            self.toplevel_dest,
+            {
+                "new_title": "Clone",
+                "new_slug": "clone-under-subproject",
+                "new_parent_page": str(self.category_less_under_dest.pk),
+                "copy_subpages": False,
+            },
+            user=user,
+        )
+
+        self.assertFalse(form.is_valid())
+        self.assertIn("new_parent_page", form.errors)
+
     def test_category_less_copy_to_index_is_rejected(self):
         """Copying a category-less PLP page onto ``PlpIndexPage`` must fail."""
         user = self._superuser()

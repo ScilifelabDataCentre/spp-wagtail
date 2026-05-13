@@ -38,6 +38,17 @@ class PlpProjectPageCopyForm(CopyForm):
                 ),
             )
 
+        if isinstance(parent_specific, PlpProjectPage) and isinstance(
+            parent_specific.get_parent().specific, PlpProjectPage
+        ):
+            self.add_error(
+                "new_parent_page",
+                forms.ValidationError(
+                    "Copying a project under a subproject is not allowed "
+                    "(would exceed the maximum nesting depth).",
+                ),
+            )
+
         if (
             isinstance(parent_specific, PlpIndexPage)
             and isinstance(source_specific, PlpProjectPage)
