@@ -37,9 +37,12 @@ class PortalDataPage(Page):
     subpage_types: list[str] = []
 
     class Meta:
+        """Metadata options for the portal data page."""
+
         verbose_name = "Portal data page"
 
-    def get_context(self, request, *args, **kwargs):  # noqa: ANN201
+    def get_context(self, request, *args, **kwargs):  # noqa: ANN201, ANN002, ANN003, ANN001
+        """Build the template context for the portal data page."""
         context = super().get_context(request, *args, **kwargs)
 
         context.update(
