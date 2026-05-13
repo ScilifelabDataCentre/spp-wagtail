@@ -4,7 +4,13 @@ from django.test import TestCase
 from wagtail.blocks import StructBlockValidationError
 from wagtail.models import Page, Site
 
-from cms.blocks.cards import CardBlock, CardGridBlock, ChildPageCardBlock
+from cms.blocks.cards import (
+    CardBlock,
+    CardGridBlock,
+    CatalogueCardBlock,
+    CatalogueCardGridBlock,
+    ChildPageCardBlock,
+)
 from cms.tests.utils import create_test_image
 
 #######################################################################
@@ -113,6 +119,127 @@ class TestCardGridBlock(TestCase):
         self.assertEqual(result["cards"][1]["image"].title, "Image 2")
         self.assertEqual(result["cards"][1]["description"], "Description for card 2")
         self.assertEqual(result["cards"][1]["url"], "https://example.com/card2")
+
+
+################################################################################
+########################   CatalogueCardBlock tests   ##########################
+################################################################################
+
+
+class TestCatalogueCardBlock(TestCase):
+    """Tests for the CatalogueCardBlock."""
+
+    def setUp(self):
+        """Set up test data."""
+        self.block = CatalogueCardBlock()
+
+    def test_valid_card_data(self):
+        """Test that valid data is accepted by the block."""
+        image = create_test_image(title="Test image", file_name="test.jpg")
+        value = self.block.to_python(
+            {
+                "image": image.id,
+                "title": "Test title",
+                "description": "Test description",
+                "url": "https://example.com",
+                "type": "test-type",
+                "keywords": "test, catalogue, card",
+            }
+        )
+
+        result = self.block.clean(value)
+
+        self.assertEqual(result["title"], "Test title")
+        self.assertEqual(result["image"].title, "Test image")
+        self.assertEqual(result["description"], "Test description")
+        self.assertEqual(result["url"], "https://example.com")
+        self.assertEqual(result["type"], "test-type")
+        self.assertEqual(result["keywords"], "test, catalogue, card")
+
+    def test_missing_required_fields(self):
+        """Test that missing required fields raise validation errors."""
+        value = self.block.to_python({})
+
+        with self.assertRaises(StructBlockValidationError) as ctx:
+            self.block.clean(value)
+
+        errors = ctx.exception.block_errors
+        self.assertIn("image", errors)
+        self.assertIn("title", errors)
+        self.assertIn("description", errors)
+        self.assertIn("url", errors)
+        self.assertIn("type", errors)
+        self.assertNotIn("keywords", errors)
+
+
+################################################################################
+######################   CatalogueCardGridBlock tests   ########################
+################################################################################
+
+
+class TestCatalogueCardGridBlock(TestCase):
+    """Tests for the CatalogueCardGridBlock."""
+
+    def setUp(self):
+        """Set up test data."""
+        self.block = CatalogueCardGridBlock()
+
+    def test_min_num_enforced(self):
+        """Test that the minimum number of cards is enforced."""
+        value = self.block.to_python(
+            {
+                "cards": [],
+            }
+        )
+
+        with self.assertRaises(StructBlockValidationError) as ctx:
+            self.block.clean(value)
+
+        errors = ctx.exception.block_errors
+        self.assertIn("cards", errors)
+
+    def test_valid_card_grid_data(self):
+        """Test that valid card grid data is accepted by the block."""
+        image1 = create_test_image(title="Image 1", file_name="image1.jpg")
+        image2 = create_test_image(title="Image 2", file_name="image2.jpg")
+
+        value = self.block.to_python(
+            {
+                "cards": [
+                    {
+                        "image": image1.id,
+                        "title": "Card 1",
+                        "description": "Description for card 1",
+                        "url": "https://example.com/card1",
+                        "type": "type1",
+                        "keywords": "keyword1, keyword2",
+                    },
+                    {
+                        "image": image2.id,
+                        "title": "Card 2",
+                        "description": "Description for card 2",
+                        "url": "https://example.com/card2",
+                        "type": "type2",
+                    },
+                ]
+            }
+        )
+
+        result = self.block.clean(value)
+
+        self.assertEqual(len(result["cards"]), 2)
+        self.assertEqual(result["cards"][0]["title"], "Card 1")
+        self.assertEqual(result["cards"][0]["image"].title, "Image 1")
+        self.assertEqual(result["cards"][0]["description"], "Description for card 1")
+        self.assertEqual(result["cards"][0]["url"], "https://example.com/card1")
+        self.assertEqual(result["cards"][0]["type"], "type1")
+        self.assertEqual(result["cards"][0]["keywords"], "keyword1, keyword2")
+        self.assertEqual(result["cards"][1]["title"], "Card 2")
+        self.assertEqual(result["cards"][1]["image"].title, "Image 2")
+        self.assertEqual(result["cards"][1]["description"], "Description for card 2")
+        self.assertEqual(result["cards"][1]["url"], "https://example.com/card2")
+        self.assertEqual(result["cards"][1]["type"], "type2")
+        self.assertEqual(result["cards"][1]["keywords"], "")
 
 
 #######################################################################
