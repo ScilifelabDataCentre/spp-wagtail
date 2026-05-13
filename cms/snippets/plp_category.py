@@ -19,8 +19,8 @@ class PlpCategory(models.Model):
 
     Attributes:
         title (str): Short admin-facing label used in dropdowns and listings.
-        slug (str): Stable identifier auto-generated from ``title`` if not
-            provided; used in URLs and template lookups.
+        slug (str): Stable identifier auto-generated from ``title`` when left
+            blank in admin; used in URLs and template lookups.
         group_label (str): Public-facing section heading rendered above the
             category's project cards on the index page.
         order (int): Ascending sort key controlling section order on the
@@ -28,7 +28,7 @@ class PlpCategory(models.Model):
     """
 
     title = models.CharField(max_length=255, unique=True)
-    slug = models.SlugField(max_length=255, unique=True)
+    slug = models.SlugField(max_length=255, unique=True, blank=True)
     group_label = models.CharField(max_length=255)
     order = models.PositiveIntegerField(default=0)
 
@@ -64,3 +64,9 @@ class PlpCategory(models.Model):
         if not self.slug:
             self.slug = slugify(self.title)
         super().save(*args, **kwargs)
+
+    def clean(self) -> None:
+        """Populate slug from title before uniqueness validation when blank."""
+        if not self.slug:
+            self.slug = slugify(self.title)
+        super().clean()

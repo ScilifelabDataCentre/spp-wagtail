@@ -2,6 +2,7 @@
 
 from django.db.models import ProtectedError
 from django.test import TestCase
+from wagtail.admin.panels import ObjectList
 from wagtail.models import Page, Site
 
 from cms.pages import HomePage, PlpIndexPage, PlpProjectPage
@@ -56,6 +57,23 @@ class PlpCategoryModelTests(TestCase):
         ordered = list(PlpCategory.objects.all())
 
         self.assertEqual(ordered, [tdp, plp2_alpha, plp1])
+
+    def test_admin_form_accepts_blank_slug_and_save_generates_it(self) -> None:
+        """Snippet model form validates with an empty slug; save stores a slug."""
+        handler = ObjectList(PlpCategory.panels).bind_to_model(PlpCategory)
+        form_class = handler.get_form_class()
+        form = form_class(
+            data={
+                "title": "Admin Category",
+                "slug": "",
+                "group_label": "Public heading",
+                "order": "0",
+            }
+        )
+
+        self.assertTrue(form.is_valid(), msg=str(form.errors))
+        instance = form.save()
+        self.assertEqual(instance.slug, "admin-category")
 
 
 class PlpCategoryProtectOnDeleteTests(TestCase):
