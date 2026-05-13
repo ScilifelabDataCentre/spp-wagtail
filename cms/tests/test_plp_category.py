@@ -2,8 +2,10 @@
 
 from django.db.models import ProtectedError
 from django.test import TestCase
+from django.urls import reverse
 from wagtail.admin.panels import ObjectList
 from wagtail.models import Page, Site
+from wagtail.test.utils import WagtailTestUtils
 
 from cms.pages import HomePage, PlpIndexPage, PlpProjectPage
 from cms.snippets import PlpCategory
@@ -74,6 +76,27 @@ class PlpCategoryModelTests(TestCase):
         self.assertTrue(form.is_valid(), msg=str(form.errors))
         instance = form.save()
         self.assertEqual(instance.slug, "admin-category")
+
+
+class PlpCategoryChooserTests(WagtailTestUtils, TestCase):
+    """Chooser modal wiring for ``PlpCategory`` (custom results + create link)."""
+
+    def test_chooser_results_include_create_link_when_categories_exist(self) -> None:
+        """Non-empty chooser listing still exposes the snippet add URL (regression: F-001)."""
+        self.login()
+        PlpCategory.objects.create(
+            title="Existing category",
+            slug="existing-category",
+            group_label="Public heading",
+            order=1,
+        )
+        chooser_viewset = PlpCategory.snippet_viewset.chooser_viewset
+        results_url = reverse(chooser_viewset.get_url_name("choose_results"))
+        response = self.client.get(results_url)
+
+        self.assertEqual(response.status_code, 200)
+        add_url = reverse(PlpCategory.snippet_viewset.get_url_name("add"))
+        self.assertContains(response, add_url)
 
 
 class PlpCategoryProtectOnDeleteTests(TestCase):

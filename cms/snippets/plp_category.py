@@ -4,9 +4,16 @@ from django.db import models
 from django.utils.text import slugify
 from wagtail.admin.panels import FieldPanel
 from wagtail.snippets.models import register_snippet
+from wagtail.snippets.views.chooser import (
+    ChooseResultsView,
+    ChooseView,
+    SnippetChooserViewSet,
+)
+from wagtail.snippets.views.snippets import SnippetViewSet
+
+_CHOOSER_RESULTS_TEMPLATE = "cms/admin/plp_category_chooser_results.html"
 
 
-@register_snippet
 class PlpCategory(models.Model):
     """Editor-managed category for grouping PLP project pages on the index.
 
@@ -70,3 +77,35 @@ class PlpCategory(models.Model):
         if not self.slug:
             self.slug = slugify(self.title)
         super().clean()
+
+
+class _PlpCategoryChooseView(ChooseView):
+    results_template_name = _CHOOSER_RESULTS_TEMPLATE
+
+
+class _PlpCategoryChooseResultsView(ChooseResultsView):
+    results_template_name = _CHOOSER_RESULTS_TEMPLATE
+
+
+class PlpCategoryChooserViewSet(SnippetChooserViewSet):
+    """Chooser viewset that adds a 'Create new PLP category' link above results.
+
+    The default snippet chooser only shows a create affordance when the listing
+    is empty. Swapping the results template adds a link to the snippet's add
+    view at the top of the listing so editors can jump out and create another
+    category when entries already exist; the empty-state link from the parent
+    template is preserved.
+    """
+
+    choose_view_class = _PlpCategoryChooseView
+    choose_results_view_class = _PlpCategoryChooseResultsView
+
+
+class PlpCategoryViewSet(SnippetViewSet):
+    """Snippet viewset wiring the custom chooser into ``PlpCategory``."""
+
+    model = PlpCategory
+    chooser_viewset_class = PlpCategoryChooserViewSet
+
+
+register_snippet(PlpCategoryViewSet)
