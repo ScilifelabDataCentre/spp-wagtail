@@ -74,14 +74,6 @@ def get_dataset_listing(
         "facets": facets,
         "has_facets": any(bool(buckets) for buckets in facets.values()),
     }
-def apply_search_and_filters(
-    items: list[dict],
-    query: str,
-    filters: dict[str, list[str]],
-) -> list[dict]:
-    """Old method for compatability, can be remove if we move to full wagtail."""
-    return apply_facet_filters(apply_text_search(items, query), filters)
-
 
 
 def get_data_root() -> Path:

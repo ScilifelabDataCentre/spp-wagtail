@@ -17,7 +17,6 @@ from django.views import View
 from portal_data.services import (
     ACCESSION_RE,
     get_data_root,
-    get_dataset_listing,
     get_datatype_config,
     list_study_files,
 )
@@ -36,9 +35,12 @@ def _positive_int(value: str | None, default: int) -> int:
 
 
 class DataTypeList(View):
+    """Display the portal data index page for a specific data type."""
+
     template_name = "portal_data/index.html"
 
     def get(self, request: HttpRequest, *args: object, **kwargs: object) -> HttpResponse:
+        """Render the portal data index page for the requested data type."""
         datatype = str(kwargs["datatype"])
         context = build_portal_data_context(request, datatype=datatype)
         return render(request, self.template_name, context)
@@ -65,7 +67,7 @@ class StudyFiles(View):
         if not data_root.is_dir():
             logger.error("DATASETS_ROOT does not exist or is not a directory: %s", data_root)
             raise Http404("Study storage not available")
-        
+
         portal_data_index_url = getattr(
             settings,
              "PORTAL_DATA_INDEX_URL",
