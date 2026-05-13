@@ -14,13 +14,16 @@ the page layer:
   live POST to ``wagtailadmin_pages:add`` via ``WagtailPageTestCase.client``)
 """
 
+from typing import Any
+
+from django.contrib.auth.base_user import AbstractBaseUser
 from django.http import HttpResponse
 from django.urls import reverse
 from wagtail.models import Page, Site
 from wagtail.test.utils import WagtailPageTestCase
 from wagtail.test.utils.form_data import nested_form_data, streamfield
 
-from cms.forms import PlpProjectPageForm
+from cms.forms import PlpProjectPageCopyForm, PlpProjectPageForm
 from cms.pages import HomePage, PlpIndexPage, PlpProjectPage
 from cms.snippets import PlpCategory
 from cms.tests.utils import create_test_image
@@ -602,3 +605,162 @@ class TestPlpProjectFormCategoryRequired(BasePlpPageTestCase):
         self.assertTrue(
             PlpProjectPage.objects.descendant_of(self.toplevel).filter(slug="probe").exists()
         )
+
+
+######################################################################
+############# Test suite for PlpProjectPage copy form ##############
+######################################################################
+
+
+class TestPlpProjectCopyInvariants(BasePlpPageTestCase):
+    """``PlpProjectPageCopyForm`` mirrors PLP depth-1 and top-level category rules."""
+
+    @classmethod
+    def setUpTestData(cls) -> None:
+        """Source tree with subprojects plus a destination top-level sibling."""
+        super().setUpTestData()
+
+        cls.toplevel_with_child = PlpProjectPage(
+            title="Parent With Child",
+            slug="parent-with-child",
+            image=cls.image_a,
+            category=cls.category_first,
+        )
+        cls.index.add_child(instance=cls.toplevel_with_child)
+        cls.toplevel_with_child.save_revision().publish()
+
+        cls.child_under_src = PlpProjectPage(
+            title="Nested",
+            slug="nested-under-src",
+            image=cls.image_b,
+            category=None,
+        )
+        cls.toplevel_with_child.add_child(instance=cls.child_under_src)
+        cls.child_under_src.save_revision().publish()
+
+        cls.toplevel_dest = PlpProjectPage(
+            title="Destination Top",
+            slug="destination-top",
+            image=cls.image_c,
+            category=cls.category_first,
+        )
+        cls.index.add_child(instance=cls.toplevel_dest)
+        cls.toplevel_dest.save_revision().publish()
+
+        cls.category_less_under_dest = PlpProjectPage(
+            title="Category-less Sub",
+            slug="category-less-sub",
+            image=cls.image_a,
+            category=None,
+        )
+        cls.toplevel_dest.add_child(instance=cls.category_less_under_dest)
+        cls.category_less_under_dest.save_revision().publish()
+
+    def _superuser(self) -> AbstractBaseUser:
+        """Return the logged-in superuser (creates one on first call)."""
+        return self.login()
+
+    def _copy_form(
+        self,
+        page: Page,
+        data: dict[str, Any],
+        *,
+        user: AbstractBaseUser | None = None,
+    ) -> PlpProjectPageCopyForm:
+        user = user or self._superuser()
+        parent = page.get_parent()
+        can_publish = parent.permissions_for_user(user).can_publish_subpage()
+        return PlpProjectPageCopyForm(
+            data=data,
+            user=user,
+            page=page,
+            can_publish=can_publish,
+        )
+
+    def test_recursive_copy_under_project_parent_is_rejected(self):
+        """Recursive ``copy_subpages`` under ``PlpProjectPage`` must fail validation."""
+        user = self._superuser()
+        form = self._copy_form(
+            self.toplevel_with_child,
+            {
+                "new_title": "Clone",
+                "new_slug": "clone-under-dest",
+                "new_parent_page": str(self.toplevel_dest.pk),
+                "copy_subpages": True,
+            },
+            user=user,
+        )
+
+        self.assertFalse(form.is_valid())
+        self.assertIn("copy_subpages", form.errors)
+
+    def test_category_less_copy_to_index_is_rejected(self):
+        """Copying a category-less PLP page onto ``PlpIndexPage`` must fail."""
+        user = self._superuser()
+        form = self._copy_form(
+            self.category_less_under_dest,
+            {
+                "new_title": "Promoted Copy",
+                "new_slug": "promoted-to-index",
+                "new_parent_page": str(self.index.pk),
+            },
+            user=user,
+        )
+
+        self.assertFalse(form.is_valid())
+        self.assertIn("new_parent_page", form.errors)
+
+    def test_recursive_copy_to_index_allowed_when_root_has_category(self):
+        """Recursive copy to the PLP index is valid when the copied root has a category."""
+        user = self._superuser()
+        form = self._copy_form(
+            self.toplevel_with_child,
+            {
+                "new_title": "Index Clone",
+                "new_slug": "index-clone-unique",
+                "new_parent_page": str(self.index.pk),
+                "copy_subpages": True,
+            },
+            user=user,
+        )
+
+        self.assertTrue(form.is_valid(), msg=dict(form.errors))
+
+    def test_page_model_registers_copy_form_class(self):
+        """Admin copy view resolves ``PlpProjectPage.copy_form_class``."""
+        self.assertIs(PlpProjectPage.copy_form_class, PlpProjectPageCopyForm)
+
+    def test_admin_copy_post_recursive_under_project_surfaces_copy_error(self):
+        """Live ``wagtailadmin_pages:copy`` POST rejects recursive copy under a project."""
+        self.login()
+        url = reverse("wagtailadmin_pages:copy", args=[self.toplevel_with_child.pk])
+        response = self.client.post(
+            url,
+            {
+                "new_title": "Clone",
+                "new_slug": "clone-via-admin",
+                "new_parent_page": self.toplevel_dest.pk,
+                "copy_subpages": "on",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.context["form"].is_valid())
+        self.assertIn("copy_subpages", response.context["form"].errors)
+
+    def test_admin_copy_post_category_less_to_index_surfaces_parent_error(self):
+        """Live copy POST to the index fails for a category-less source page."""
+        self.login()
+        url = reverse("wagtailadmin_pages:copy", args=[self.category_less_under_dest.pk])
+        response = self.client.post(
+            url,
+            {
+                "new_title": "Promoted",
+                "new_slug": "promoted-via-admin",
+                "new_parent_page": self.index.pk,
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.context["form"].is_valid())
+        self.assertIn("new_parent_page", response.context["form"].errors)

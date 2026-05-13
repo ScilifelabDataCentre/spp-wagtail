@@ -14,7 +14,7 @@ from wagtail.models import Page
 from wagtail.snippets.widgets import AdminSnippetChooser
 
 from cms.blocks import AlertBlock, CardBlock, CardGridBlock, DataTableBlock
-from cms.forms import PlpProjectPageForm
+from cms.forms import PlpProjectPageCopyForm, PlpProjectPageForm
 from cms.snippets import PlpCategory
 
 
@@ -79,6 +79,7 @@ class PlpProjectPage(Page):
     ]
 
     base_form_class = PlpProjectPageForm
+    copy_form_class = PlpProjectPageCopyForm
 
     @classmethod
     def can_create_at(cls, parent: Page) -> bool:

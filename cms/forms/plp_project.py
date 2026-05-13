@@ -1,14 +1,57 @@
-"""Admin form for ``PlpProjectPage`` enforcing the top-level category rule."""
+"""Admin forms for ``PlpProjectPage`` (edit and copy)."""
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from django import forms
 from wagtail.admin.forms import WagtailAdminPageForm
+from wagtail.admin.forms.pages import CopyForm
 
 if TYPE_CHECKING:
     from cms.snippets.plp_category import PlpCategory
+
+
+class PlpProjectPageCopyForm(CopyForm):
+    """Blocks copy operations that would break PLP depth-1 or top-level category rules."""
+
+    def clean(self) -> dict[str, Any]:
+        """Apply Wagtail copy validation plus PLP nesting and category rules."""
+        cleaned_data = super().clean()
+
+        parent_page = cleaned_data.get("new_parent_page") or self.page.get_parent()
+        if parent_page is None:
+            return cleaned_data
+
+        from cms.pages.plp_index import PlpIndexPage
+        from cms.pages.plp_project import PlpProjectPage
+
+        parent_specific = parent_page.specific
+        source_specific = self.page.specific
+
+        if cleaned_data.get("copy_subpages") and isinstance(parent_specific, PlpProjectPage):
+            self.add_error(
+                "copy_subpages",
+                forms.ValidationError(
+                    "Copying subpages under another PLP project is not allowed "
+                    "(would exceed the maximum nesting depth).",
+                ),
+            )
+
+        if (
+            isinstance(parent_specific, PlpIndexPage)
+            and isinstance(source_specific, PlpProjectPage)
+            and source_specific.category_id is None
+        ):
+            self.add_error(
+                "new_parent_page",
+                forms.ValidationError(
+                    "A category is required when copying to the PLP overview; "
+                    "set one on the source page first.",
+                ),
+            )
+
+        return cleaned_data
 
 
 class PlpProjectPageForm(WagtailAdminPageForm):
