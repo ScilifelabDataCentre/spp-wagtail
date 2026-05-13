@@ -8,8 +8,10 @@ from contextlib import ExitStack
 from pathlib import Path
 from urllib.parse import unquote
 
+from django.conf import settings
 from django.http import FileResponse, Http404, HttpRequest, HttpResponse
 from django.shortcuts import render
+from django.urls import reverse
 from django.views import View
 
 from portal_data.services import (
@@ -63,6 +65,12 @@ class StudyFiles(View):
         if not data_root.is_dir():
             logger.error("DATASETS_ROOT does not exist or is not a directory: %s", data_root)
             raise Http404("Study storage not available")
+        
+        portal_data_index_url = getattr(
+            settings,
+             "PORTAL_DATA_INDEX_URL",
+             reverse("portal_data:index", kwargs={"datatype": datatype}),
+        )
 
         study_dir = data_root / accession
         if not study_dir.is_dir():
@@ -82,8 +90,9 @@ class StudyFiles(View):
                 "datatype": datatype,
                 "accession": accession,
                 "files": files,
+                "portal_data_index_url": portal_data_index_url,
             },
-        )
+            )
 
 
 class DownloadStudyFile(View):

@@ -44,7 +44,7 @@ class PortalDataPage(Page):
         context.update(
             build_portal_data_context(
                 request,
-                datatype=self.datatype,
+                datatype=self.datatype.strip(),
                 default_size=self.default_page_size,
             )
         )
