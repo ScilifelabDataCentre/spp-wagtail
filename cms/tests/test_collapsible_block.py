@@ -1,0 +1,106 @@
+"""Unit tests for ``CollapsibleBlock`` validation and rendering."""
+
+from __future__ import annotations
+
+from typing import Any
+
+from django.test import SimpleTestCase
+from wagtail.blocks import StructBlockValidationError
+
+from cms.blocks.collapsible import CollapsibleBlock
+
+
+def _data_table_value(table_id: str = "timeline") -> dict[str, Any]:
+    """Return a minimal ``DataTableBlock`` value dict that survives ``to_python``.
+
+    The shape mirrors the JSON Wagtail emits when a ``TypedTableBlock``
+    is serialised inside a StreamField, with a non-empty caption (required
+    by ``DataTableBlock.clean``) and a single text row.
+    """
+    return {
+        "table_id": table_id,
+        "show_controls": False,
+        "per_page": "10",
+        "table": {
+            "columns": [
+                {"type": "text", "heading": "Date"},
+                {"type": "text", "heading": "Milestone"},
+            ],
+            "rows": [{"values": ["2025-06-01", "PLPTDP25 Call"]}],
+            "caption": "Timeline of the PLP program",
+        },
+    }
+
+
+class TestCollapsibleBlock(SimpleTestCase):
+    """Tests for the CollapsibleBlock structural and rendering contract."""
+
+    def setUp(self) -> None:
+        """Create a fresh block under test."""
+        self.block = CollapsibleBlock()
+
+    def test_renders_details_summary_with_label_and_text_body(self) -> None:
+        """Rendered HTML wraps the label and a text body inside <details>/<summary>."""
+        value = self.block.to_python(
+            {
+                "label": "Timeline of the program",
+                "body": [
+                    {"type": "text", "value": "<p>Inner timeline copy</p>"},
+                ],
+            }
+        )
+
+        html = self.block.render(value)
+
+        self.assertIn("<details", html)
+        self.assertIn("<summary", html)
+        self.assertIn("Timeline of the program", html)
+        self.assertIn("Inner timeline copy", html)
+
+    def test_renders_inner_data_table_marker(self) -> None:
+        """An inner DataTableBlock contributes its unique id marker to the output."""
+        value = self.block.to_python(
+            {
+                "label": "Timeline of the program",
+                "body": [
+                    {"type": "data_table", "value": _data_table_value("timeline")},
+                ],
+            }
+        )
+
+        html = self.block.render(value)
+
+        self.assertIn("<details", html)
+        self.assertIn("<summary", html)
+        self.assertIn("Timeline of the program", html)
+        self.assertIn("data-table-timeline", html)
+
+    def test_label_is_required(self) -> None:
+        """An empty label raises StructBlockValidationError on the label field."""
+        value = self.block.to_python(
+            {
+                "label": "",
+                "body": [
+                    {"type": "text", "value": "<p>Body</p>"},
+                ],
+            }
+        )
+
+        with self.assertRaises(StructBlockValidationError) as ctx:
+            self.block.clean(value)
+
+        self.assertIn("label", ctx.exception.block_errors)
+
+    def test_body_min_num_enforced(self) -> None:
+        """An empty body raises StructBlockValidationError on the body field."""
+        value = self.block.to_python(
+            {
+                "label": "Timeline",
+                "body": [],
+            }
+        )
+
+        with self.assertRaises(StructBlockValidationError) as ctx:
+            self.block.clean(value)
+
+        self.assertIn("body", ctx.exception.block_errors)
