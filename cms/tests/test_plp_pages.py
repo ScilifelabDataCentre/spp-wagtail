@@ -327,6 +327,56 @@ class TestPlpProjectSubprojectSurfacing(BasePlpPageTestCase):
 
 
 ######################################################################
+############ Test suite for PlpProjectPage banner heading ############
+######################################################################
+
+
+class TestPlpProjectPageHeading(BasePlpPageTestCase):
+    """Published project HTML uses the PLP index title in the banner and page title in-body."""
+
+    @classmethod
+    def setUpTestData(cls) -> None:
+        """One top-level project and one subproject under it."""
+        super().setUpTestData()
+
+        cls.parent_project = PlpProjectPage(
+            title="BSL3",
+            slug="bsl3",
+            image=cls.image_a,
+            category=cls.category_first,
+        )
+        cls.index.add_child(instance=cls.parent_project)
+        cls.parent_project.save_revision().publish()
+
+        cls.subproject = PlpProjectPage(
+            title="BSL3 Facility",
+            slug="bsl3-facility",
+            image=cls.image_b,
+            category=None,
+        )
+        cls.parent_project.add_child(instance=cls.subproject)
+        cls.subproject.save_revision().publish()
+
+    def test_top_level_project_banner_and_body_titles(self):
+        """Banner ``h2`` shows the program index title; body ``h3`` shows the project."""
+        response = self.client.get(self.parent_project.url)
+
+        self.assertEqual(response.status_code, 200)
+        banner_heading = f'<h2 class="my-4">{self.index.title}</h2>'
+        self.assertContains(response, banner_heading, html=True)
+        self.assertContains(response, "<h3>BSL3</h3>", html=True)
+
+    def test_subproject_banner_and_body_titles(self):
+        """Subprojects resolve the same PLP index ancestor for the banner."""
+        response = self.client.get(self.subproject.url)
+
+        self.assertEqual(response.status_code, 200)
+        banner_heading = f'<h2 class="my-4">{self.index.title}</h2>'
+        self.assertContains(response, banner_heading, html=True)
+        self.assertContains(response, "<h3>BSL3 Facility</h3>", html=True)
+
+
+######################################################################
 ######### Test suite for PlpProjectPage.can_create_at gate ###########
 ######################################################################
 

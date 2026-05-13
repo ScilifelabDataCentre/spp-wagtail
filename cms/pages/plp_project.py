@@ -125,10 +125,17 @@ class PlpProjectPage(Page):
         return not (isinstance(parent_specific, PlpIndexPage) and self.category_id is None)
 
     def get_context(self, request: HttpRequest) -> dict[str, Any]:
-        """Expose ``subprojects``, ``parent_title``, and ``parent_is_index`` to the template."""
+        """Expose ``subprojects``, ``parent_title``, ``parent_is_index``, and ``page_heading``.
+
+        ``page_heading`` is the PLP program index title so the site base banner shows the
+        program name while the project template keeps ``<h3>{{ page.title }}</h3>``.
+        """
         from cms.pages.plp_index import PlpIndexPage
 
         context = super().get_context(request)
+        plp_index = self.get_ancestors().type(PlpIndexPage).specific().first()
+        if plp_index is not None:
+            context["page_heading"] = plp_index.title
         context["subprojects"] = self.get_children().type(PlpProjectPage).live().specific()
         parent_specific = self.get_parent().specific
         context["parent_title"] = parent_specific.title
