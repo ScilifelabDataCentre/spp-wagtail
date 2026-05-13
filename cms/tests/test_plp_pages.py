@@ -313,6 +313,18 @@ class TestPlpProjectSubprojectSurfacing(BasePlpPageTestCase):
         self.assertFalse(context["parent_is_index"])
         self.assertEqual(context["parent_title"], self.parent_project.title)
 
+    def test_detail_template_renders_and_omits_subprojects_section(self):
+        """HTML shows Subprojects only when child projects exist."""
+        parent_response = self.client.get(self.parent_project.url)
+        self.assertEqual(parent_response.status_code, 200)
+        self.assertContains(parent_response, "Subprojects")
+        self.assertContains(parent_response, "BSL3 Facility")
+        self.assertContains(parent_response, "BSL3 Network")
+
+        lonely_response = self.client.get(self.lonely_project.url)
+        self.assertEqual(lonely_response.status_code, 200)
+        self.assertNotContains(lonely_response, "Subprojects")
+
 
 ######################################################################
 ######### Test suite for PlpProjectPage.can_create_at gate ###########
