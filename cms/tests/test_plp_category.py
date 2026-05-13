@@ -1,8 +1,12 @@
 """Tests for the PLP category snippet."""
 
+from django.db.models import ProtectedError
 from django.test import TestCase
+from wagtail.models import Page, Site
 
+from cms.pages import HomePage, PlpIndexPage, PlpProjectPage
 from cms.snippets import PlpCategory
+from cms.tests.utils import create_test_image
 
 
 class PlpCategoryModelTests(TestCase):
@@ -52,3 +56,49 @@ class PlpCategoryModelTests(TestCase):
         ordered = list(PlpCategory.objects.all())
 
         self.assertEqual(ordered, [tdp, plp2_alpha, plp1])
+
+
+class PlpCategoryProtectOnDeleteTests(TestCase):
+    """``PlpCategory`` is referenced by ``PlpProjectPage.category`` with PROTECT."""
+
+    @classmethod
+    def setUpTestData(cls) -> None:
+        """Build a minimal site tree with one PLP project referencing a category."""
+        root = Page.get_first_root_node()
+        for child in root.get_children():
+            child.delete()
+        root = Page.get_first_root_node()
+        cls.home = HomePage(title="Home", slug="home")
+        root.add_child(instance=cls.home)
+        Site.objects.update_or_create(
+            is_default_site=True,
+            defaults={"hostname": "testserver", "root_page": cls.home},
+        )
+
+        cls.index = PlpIndexPage(title="PLP Program", slug="plp-program")
+        cls.home.add_child(instance=cls.index)
+        cls.index.save_revision().publish()
+
+        cls.category = PlpCategory.objects.create(
+            title="PLP1",
+            slug="plp1",
+            group_label="Pandemic Laboratory Preparedness Capabilities round 1",
+            order=1,
+        )
+
+        image = create_test_image(title="Test image", file_name="test.jpg")
+        cls.project = PlpProjectPage(
+            title="BSL3 Capability",
+            slug="bsl3",
+            image=image,
+            category=cls.category,
+        )
+        cls.index.add_child(instance=cls.project)
+        cls.project.save_revision().publish()
+
+    def test_delete_referenced_category_raises_protected_error(self) -> None:
+        """Deleting a category that a project FKs to must raise ``ProtectedError``."""
+        with self.assertRaises(ProtectedError):
+            self.category.delete()
+
+        self.assertTrue(PlpCategory.objects.filter(pk=self.category.pk).exists())
