@@ -128,3 +128,49 @@ class TestCollapsibleBlock(SimpleTestCase):
             self.block.clean(value)
 
         self.assertIn("body", ctx.exception.block_errors)
+
+    def test_clean_forces_show_controls_false_on_nested_data_table(self) -> None:
+        """``show_controls=True`` on a nested ``data_table`` is coerced to ``False``.
+
+        HTMX search/pagination URLs target ``cms:table_partial``, whose lookup
+        only scans top-level page blocks — a nested controlled table would 404.
+        """
+        table_value = _data_table_value("timeline")
+        table_value["show_controls"] = True
+        value = self.block.to_python(
+            {
+                "label": "Timeline",
+                "body": [
+                    {"type": "data_table", "value": table_value},
+                ],
+            }
+        )
+
+        cleaned = self.block.clean(value)
+
+        child = cleaned["body"][0]
+        self.assertEqual(child.block_type, "data_table")
+        self.assertFalse(child.value["show_controls"])
+
+    def test_rendered_nested_data_table_omits_htmx_controls(self) -> None:
+        """Rendered HTML for a nested ``data_table`` never emits ``hx-get`` URLs.
+
+        ``CollapsibleBlock.clean`` flips ``show_controls`` to ``False``, so the
+        data-table component template skips both the search/per-page bar and
+        the pagination buttons — keeping the 404-prone partial URL out of the DOM.
+        """
+        table_value = _data_table_value("timeline")
+        table_value["show_controls"] = True
+        value = self.block.to_python(
+            {
+                "label": "Timeline",
+                "body": [
+                    {"type": "data_table", "value": table_value},
+                ],
+            }
+        )
+
+        html = self.block.render(self.block.clean(value))
+
+        self.assertNotIn("hx-get", html)
+        self.assertNotIn("data-table-timeline-controls", html)
