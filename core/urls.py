@@ -41,7 +41,13 @@ if settings.DEBUG:
     # Serve media files in development
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
+
 urlpatterns += [
+        # Wagtail-facing portal data file routes.
+    path(
+        "data/",
+        include("portal_data.wagtail_urls", namespace="portal_data_wagtail"),
+    ),
     path(settings.WAGTAILADMIN_URL, include(wagtailadmin_urls)),
     path("cms/", include("cms.urls")),
     path("portal-data/", include("portal_data.urls", namespace="portal_data")),
