@@ -21,11 +21,11 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Ruff lint
-        uses: astral-sh/ruff-action@v3
+        uses: astral-sh/ruff-action@v4.0.0
         with:
           args: check .
 
       - name: Ruff format (check only)
-        uses: astral-sh/ruff-action@v3
+        uses: astral-sh/ruff-action@v4.0.0
         with:
           args: format --check --diff .
