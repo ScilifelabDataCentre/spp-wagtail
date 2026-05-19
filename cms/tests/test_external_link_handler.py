@@ -16,8 +16,31 @@ class TestExternalLinkNewTabHandler(SimpleTestCase):
     def test_expand_db_attributes(self):
         """Test that the expand_db_attributes method returns the correct HTML."""
         attrs = {"href": "https://example.com"}
-        expected_html = "<a href='https://example.com' target='_blank' rel='noopener noreferrer'>"
-        self.assertEqual(ExternalLinkNewTabHandler.expand_db_attributes(attrs), expected_html)
+        result = ExternalLinkNewTabHandler.expand_db_attributes(attrs)
+
+        self.assertTrue(result.startswith("<a "))
+        self.assertTrue(result.endswith(">"))
+        self.assertIn('href="https://example.com"', result)
+        self.assertIn('target="_blank"', result)
+        self.assertIn('rel="noopener noreferrer"', result)
+
+    def test_expand_db_attributes_preserves_existing_rel_tokens(self):
+        """It should preserve existing rel tokens while appending required ones."""
+        attrs = {"href": "https://example.com", "rel": "nofollow"}
+
+        result = ExternalLinkNewTabHandler.expand_db_attributes(attrs)
+
+        self.assertIn('rel="nofollow noopener noreferrer"', result)
+
+    def test_expand_db_attributes_deduplicates_rel_tokens(self):
+        """It should not duplicate noopener/noreferrer if already present."""
+        attrs = {"href": "https://example.com", "rel": "noopener noreferrer"}
+
+        result = ExternalLinkNewTabHandler.expand_db_attributes(attrs)
+
+        # should still contain them once, not duplicated
+        self.assertIn('rel="noopener noreferrer"', result)
+        self.assertNotIn("noopener noreferrer noopener noreferrer", result)
 
     def test_expand_db_attributes_escapes_href(self):
         """Test that the expand_db_attributes method escapes the href attribute."""
@@ -27,6 +50,16 @@ class TestExternalLinkNewTabHandler(SimpleTestCase):
 
         self.assertIn("&lt;script&gt;", result)
         self.assertNotIn("<script>", result)
+
+    def test_expand_db_attributes_prevents_attribute_breakout(self):
+        """It should escape quotes to prevent HTML attribute injection."""
+        attrs = {"href": 'https://example.com" onclick="alert(1)'}
+
+        result = ExternalLinkNewTabHandler.expand_db_attributes(attrs)
+
+        # Ensure quotes are escaped so attributes cannot break out
+        self.assertIn("&quot;", result)
+        self.assertNotIn('onclick="', result)
 
     def test_expand_db_attributes_requires_href(self):
         """Test that the expand_db_attributes method raises a KeyError if href is missing."""
