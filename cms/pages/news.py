@@ -45,7 +45,12 @@ class NewsIndexPage(Page):
         """Add child news articles to the context."""
         context = super().get_context(request)
         context["all_news"] = (
-            self.get_children().type(NewsPage).live().specific().order_by("-first_published_at")
+            self.get_children()
+            .type(NewsPage)
+            .live()
+            .public()
+            .specific()
+            .order_by("-first_published_at")
         )
         return context
 
