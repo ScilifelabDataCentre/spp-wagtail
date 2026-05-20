@@ -13,48 +13,6 @@ from wagtail.models import Page
 from cms.blocks import AlertBlock
 
 
-class NewsIndexPage(Page):
-    """A page listing all news articles.
-
-    This page is intended to be used as a parent page for NewsPage instances.
-    Only one instance of this page can exist. Child news pages will be listed
-    as cards on this page.
-
-    Attributes:
-        content (StreamField): A stream field for the page content, allowing rich text.
-    """
-
-    max_count = 1
-    template = "cms/pages/news_index.html"
-    parent_page_types = ["cms.HomePage"]
-    subpage_types = ["cms.NewsPage"]
-
-    content = StreamField(
-        [
-            ("text", RichTextBlock()),
-            ("alert", AlertBlock()),
-        ],
-        blank=True,
-    )
-
-    content_panels = Page.content_panels + [
-        FieldPanel("content"),
-    ]
-
-    def get_context(self, request: HttpRequest) -> dict[str, Any]:
-        """Add child news articles to the context."""
-        context = super().get_context(request)
-        context["all_news"] = (
-            self.get_children()
-            .type(NewsPage)
-            .live()
-            .public()
-            .specific()
-            .order_by("-first_published_at")
-        )
-        return context
-
-
 class NewsPage(Page):
     """A page representing a single news article.
 
@@ -116,6 +74,8 @@ class NewsPage(Page):
 
     def get_context(self, request: HttpRequest) -> dict[str, Any]:
         """Add the parent page's title to the context for display on the news page."""
+        from cms.pages.news_index import NewsIndexPage
+
         context = super().get_context(request)
         parent = self.get_parent().specific
         if parent and isinstance(parent, NewsIndexPage):
