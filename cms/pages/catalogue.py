@@ -100,7 +100,7 @@ class CataloguePage(Page):
     def get_context(self, request: HttpRequest) -> dict[str, Any]:
         """Add cards and card types to the template context."""
         context = super().get_context(request)
-        context["catalogue_types"] = sorted(self.card_types)
+        context["catalogue_types"] = self.card_types
         context["catalogue_list"] = self.cards
 
         # Validate and clean the query parameters for filtering

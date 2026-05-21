@@ -25,8 +25,8 @@
                             <!-- Search input -->
                             <input type="text" id="searchInput" name="search" maxlength="100"
                                 class="input input-bordered input-accent"
-                                placeholder="Search Articles" aria-label="Search">
-                            <!-- Article Type Filters -->
+                                placeholder="Search Catalogue" aria-label="Search">
+                            <!-- Catalogue Type Filters -->
                             <h5 class="my-0">{{ page.filter_label|title }}</h5>
                             <div class="flex flex-col gap-2">
                                 {% for choice in catalogue_types %}
@@ -61,6 +61,7 @@
                         {% include "cms/components/catalogue_list.html#catalogue_grid" with catalogue_list=catalogue_list only %}
                     </div>
                 </div>
+            </div>
         </div>
     {% else %}
         {% include_block block %}
