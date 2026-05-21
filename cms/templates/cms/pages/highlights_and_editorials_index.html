@@ -8,6 +8,8 @@
 <!-- Content from CMS -->
 {% include_block page.content %}
 
+{% if articles_list %}
+
 <!-- Search Bar -->
 <div class="md:grid md:grid-cols-4 md:gap-6 mt-8">
     <section id="article-search-and-filters">
@@ -80,5 +82,22 @@
         </div>
     </section>
 </div>
+
+{% else %}
+<!-- No Articles Message -->
+<div class="text-center py-16">
+    <div class="max-w-md mx-auto">
+        <div class="w-20 h-20 bg-pp-pale-grey rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg class="w-10 h-10 text-pp-dark-grey" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
+            </svg>
+        </div>
+        <h3 class="text-xl font-semibold text-pp-dark-grey mb-2">No Data Highlights and Editorials Available</h3>
+        <p class="text-pp-dark-grey">
+            There are currently no data highlights and editorials available. Please check back later.
+        </p>
+    </div>
+</div>
+{% endif %}
 
 {% endblock %}

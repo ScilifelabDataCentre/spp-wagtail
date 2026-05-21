@@ -74,11 +74,13 @@ class NewsPage(Page):
 
     def get_context(self, request: HttpRequest) -> dict[str, Any]:
         """Add the parent page's title to the context for display on the news page."""
+
+        # Importing here to avoid circular imports
         from cms.pages.news_index import NewsIndexPage
 
         context = super().get_context(request)
-        parent = self.get_parent().specific
-        if parent and isinstance(parent, NewsIndexPage):
+        parent = self.get_ancestors().type(NewsIndexPage).specific().first()
+        if parent:
             context["page_heading"] = parent.title
             context["parent_page"] = parent.url
         return context
