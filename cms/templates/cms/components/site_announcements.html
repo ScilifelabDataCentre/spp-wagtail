@@ -1,4 +1,4 @@
-{% load site_announcements %}
+{% load site_announcements wagtailcore_tags %}
 {% get_site_announcements as announcements %}
 {% if announcements %}
 <section aria-label="Site announcements">
@@ -36,7 +36,7 @@
                             <span class="sr-only">Announcement:</span>
                         {% endif %}
                         <div class="flex-1 min-w-0">
-                            {{ a.message|announcement_rich_text }}
+                            {{ a.message|richtext }}
                         </div>
                     </div>
                 </div>
