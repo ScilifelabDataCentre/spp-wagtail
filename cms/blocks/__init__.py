@@ -8,6 +8,7 @@ from .cards import (
     CatalogueCardGridBlock,
     ChildPageCardBlock,
 )
+from .collapsible import CollapsibleBlock
 from .data_table import DataTableBlock
 from .pp_node_info import NodeBlock
 
@@ -18,6 +19,7 @@ __all__ = [
     "CatalogueCardBlock",
     "CatalogueCardGridBlock",
     "ChildPageCardBlock",
+    "CollapsibleBlock",
     "DataTableBlock",
     "NodeBlock",
 ]
