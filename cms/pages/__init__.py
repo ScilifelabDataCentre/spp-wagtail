@@ -1,5 +1,6 @@
 """Wagtail CMS Page models."""
 
+from .catalogue import CataloguePage
 from .highlights_and_editorials import (
     HighlightsAndEditorialsPage,
     HighlightsAndEditorialsTopic,
@@ -10,12 +11,15 @@ from .news import NewsPage
 from .news_index import NewsIndexPage
 from .outbreaks import OutbreakPage
 from .outbreaks_index import OutbreaksIndexPage
+from .plp_index import PlpIndexPage
+from .plp_project import PlpProjectPage
 from .section_index import SectionIndexPage
 from .standard_page import StandardPage
 from .topics import TopicPage
 from .topics_index import TopicsIndexPage
 
 __all__ = [
+    "CataloguePage",
     "HighlightsAndEditorialsIndexPage",
     "HighlightsAndEditorialsPage",
     "HighlightsAndEditorialsTopic",
@@ -24,6 +28,8 @@ __all__ = [
     "NewsPage",
     "OutbreakPage",
     "OutbreaksIndexPage",
+    "PlpIndexPage",
+    "PlpProjectPage",
     "SectionIndexPage",
     "StandardPage",
     "TopicPage",
