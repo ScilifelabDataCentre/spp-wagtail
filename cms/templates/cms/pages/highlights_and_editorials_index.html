@@ -72,13 +72,14 @@
     hx-swap="innerHTML"
     hx-indicator="#article-loading"
     >
-    <div class="relative min-h-20">
-        <div id="article-loading"
-             class="htmx-indicator absolute inset-0 bg-base-100/80 flex items-center justify-center z-10 rounded-box">
-            <span class="loading loading-spinner text-accent loading-lg" aria-label="Loading"></span>
-        </div>
-        <div id="articles-list">
-            {% include "cms/components/highlights_and_editorials_list.html#articles_grid" with articles_list=articles_list only %}
+        <div class="relative min-h-20">
+            <div id="article-loading"
+                class="htmx-indicator absolute inset-0 bg-base-100/80 flex items-center justify-center z-10 rounded-box">
+                <span class="loading loading-spinner text-accent loading-lg" aria-label="Loading"></span>
+            </div>
+            <div id="articles-list">
+                {% include "cms/components/highlights_and_editorials_list.html#articles_grid" with articles_list=articles_list only %}
+            </div>
         </div>
     </section>
 </div>
