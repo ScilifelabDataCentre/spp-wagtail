@@ -1,4 +1,4 @@
-"""Standard content page model with a StreamField body."""
+"""Standard catalogue page model with a StreamField body."""
 
 from typing import Any
 
@@ -93,7 +93,7 @@ class CataloguePage(Page):
         return sorted(cards, key=lambda x: x["title"].lower())
 
     @cached_property
-    def card_types(self) -> set[str]:
+    def card_types(self) -> list[str]:
         """Get unique card types from the cards for filtering options."""
         return sorted({t.strip() for card in self.cards for t in card["type"].split(",")})
 
