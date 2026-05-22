@@ -1,7 +1,7 @@
 """Tests for the external link handler."""
 
 from django.test import SimpleTestCase
-from wagtail.rich_text import features
+from wagtail.rich_text import expand_db_html, features
 
 from cms.handlers.external_link import ExternalLinkNewTabHandler
 
@@ -65,6 +65,22 @@ class TestExternalLinkNewTabHandler(SimpleTestCase):
         """Test that the expand_db_attributes method raises a KeyError if href is missing."""
         with self.assertRaises(KeyError):
             ExternalLinkNewTabHandler.expand_db_attributes({})
+
+    def test_expand_db_html_uses_registered_external_link_handler(self):
+        """Test that the expand_db_html function uses the registered external link handler."""
+        html = expand_db_html('<p><a href="https://example.com">link</a></p>')
+
+        self.assertIn('href="https://example.com"', html)
+        self.assertIn('target="_blank"', html)
+        self.assertIn('rel="noopener noreferrer"', html)
+
+    def test_expand_db_html_leaves_internal_relative_links_untouched(self):
+        """Test that internal relative links are not modified by the external link handler."""
+        html = expand_db_html('<p><a href="/about">about</a></p>')
+
+        self.assertIn('href="/about"', html)
+        self.assertNotIn('target="_blank"', html)
+        self.assertNotIn('rel="noopener noreferrer"', html)
 
 
 class TestExternalLinkFeature(SimpleTestCase):
