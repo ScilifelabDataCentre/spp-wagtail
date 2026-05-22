@@ -70,7 +70,7 @@ class PlpIndexPage(Page):
 
         context = super().get_context(request)
 
-        children = self.get_children().type(PlpProjectPage).live().specific()
+        children = self.get_children().type(PlpProjectPage).live().public().specific()
         projects_by_category = {}
         for project in children:
             if project.category_id is None:
