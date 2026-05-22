@@ -81,6 +81,12 @@ class PlpProjectPage(Page):
     base_form_class = PlpProjectPageForm
     copy_form_class = PlpProjectPageCopyForm
 
+    class Meta:
+        """Display name for the PLP project page type in the admin."""
+
+        verbose_name = "PLP project page"
+        verbose_name_plural = "PLP project pages"
+
     @classmethod
     def can_create_at(cls, parent: Page) -> bool:
         """Reject admin "Add child page" of a third-level descendant.

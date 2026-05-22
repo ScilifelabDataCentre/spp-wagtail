@@ -47,6 +47,12 @@ class PlpIndexPage(Page):
         FieldPanel("content"),
     ]
 
+    class Meta:
+        """Display name for the PLP program index page type in the admin."""
+
+        verbose_name = "PLP program page"
+        verbose_name_plural = "PLP program pages"
+
     def get_context(self, request: HttpRequest) -> dict[str, Any]:
         """Build ``category_groups`` for the template.
 
