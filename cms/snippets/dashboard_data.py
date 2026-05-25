@@ -63,6 +63,27 @@ class DashboardData(models.Model):
         """Return slug and upload timestamp."""
         return f"{self.dashboard_slug} ({self.uploaded_at:%Y-%m-%d %H:%M})"
 
+    def save(self, *args: object, **kwargs: object) -> None:
+        """Generate Plotly figures from CSV on new uploads.
+
+        If this is a new upload (csv_file present and data is empty), runs
+        the viz service to populate the data JSONField. After saving, ensures
+        this row is marked as current if is_current is True.
+        """
+        if self.csv_file and not self.data:
+            from cms.services.dashboard_viz import generate_figures
+
+            try:
+                figures = generate_figures(self.dashboard_slug, self.csv_file.path)
+                self.data = figures
+            except (FileNotFoundError, ValueError):
+                pass
+
+        super().save(*args, **kwargs)
+
+        if self.is_current:
+            self.mark_as_current()
+
     @classmethod
     def get_current(cls, dashboard_slug: str) -> DashboardData | None:
         """Return the current data row for a dashboard, or None."""
