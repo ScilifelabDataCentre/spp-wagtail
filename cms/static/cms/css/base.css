@@ -8,7 +8,7 @@
 
 @import "tailwindcss/theme.css" layer(theme);
 @import "tailwindcss/preflight.css" layer(reboot);
-@import "tailwindcss/utilities.css" layer(tw-utilities);
+@import "tailwindcss/utilities.css" layer(tw-utilities) source("../../..");
 
 /* Global theme with Pathogens portal visual identity colours */
 @theme {
