@@ -9,6 +9,7 @@ from .home import HomePage
 
 from .outbreaks import OutbreakPage, OutbreaksIndexPage
 from .portal_data import PortalDataPage
+from .outbreaks import OutbreakPage, OutbreaksIndexPage
 from .section_index import SectionIndexPage
 from .standard_page import StandardPage
 from .topics import TopicPage, TopicsIndexPage
@@ -22,6 +23,8 @@ __all__ = [
     "OutbreaksIndexPage",
     "PortalDataPage",
     "HomePage",
+    "OutbreakPage",
+    "OutbreaksIndexPage",
     "SectionIndexPage",
     "StandardPage",
     "TopicPage",
