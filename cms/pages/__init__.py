@@ -21,6 +21,7 @@ __all__ = [
     "OutbreakPage",
     "OutbreaksIndexPage",
     "PortalDataPage",
+    "HomePage",
     "SectionIndexPage",
     "StandardPage",
     "TopicPage",

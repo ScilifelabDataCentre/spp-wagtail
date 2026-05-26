@@ -117,19 +117,6 @@ class TestTopicPage(BasePageTestCase):
         cls.topics_index.add_child(instance=cls.topic_page)
         cls.topic_page.save_revision().publish()
 
-    def mock_get_model(self, app_label: str, model_name: str) -> MagicMock:
-        """Mock function to replace apps.get_model during tests."""
-        model_map = {
-            "HighlightsAndEditorialsPage": MockHighlightsAndEditorialsPage,
-            "HighlightsAndEditorialsIndexPage": MockHighlightsAndEditorialsIndexPage,
-        }
-
-        if model_name in model_map:
-            return model_map[model_name]
-
-        # fallback to actual Django behaviour
-        return REAL_GET_MODEL(app_label, model_name)
-
     def test_parent_page_type_restriction(self):
         """Test that only TopicsIndexPage can be a parent of TopicPage."""
         self.assertEqual(TopicPage.parent_page_types, ["cms.TopicsIndexPage"])
@@ -162,12 +149,12 @@ class TestTopicPage(BasePageTestCase):
         ) = mock_queryset
 
         with patch(
-            "cms.pages.topics.apps.get_model", side_effect=self.mock_get_model
-        ) as mock_get_model:
+            "cms.pages.highlights_and_editorials.HighlightsAndEditorialsPage",
+            MockHighlightsAndEditorialsPage,
+        ):
             result = self.topic_page.related_highlights_and_editorials
 
         self.assertEqual(result, mock_queryset)
-        mock_get_model.assert_any_call("cms", "HighlightsAndEditorialsPage")
         (
             MockHighlightsAndEditorialsPage.objects.live.return_value.public.return_value.filter.assert_called_once_with(
                 article_topics__topic=self.topic_page
@@ -188,7 +175,10 @@ class TestTopicPage(BasePageTestCase):
         related_articles = [MagicMock(), MagicMock()]
 
         with (
-            patch("cms.pages.topics.apps.get_model", side_effect=self.mock_get_model),
+            patch(
+                "cms.pages.highlights_and_editorials_index.HighlightsAndEditorialsIndexPage",
+                MockHighlightsAndEditorialsIndexPage,
+            ),
             patch.object(
                 TopicPage,
                 "related_highlights_and_editorials",
@@ -201,3 +191,4 @@ class TestTopicPage(BasePageTestCase):
         self.assertEqual(context["page_heading"], "Topics")
         self.assertEqual(context["related_highlights_and_editorials"], related_articles)
         self.assertEqual(context["articles_index_url"], "/highlights-and-editorials/")
+
