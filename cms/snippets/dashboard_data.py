@@ -1,13 +1,13 @@
-"""Dashboard data storage snippet."""
+"""Dashboard data upload snippet."""
 
 from django.db import models
-from wagtail.admin.panels import FieldPanel
+from wagtail.admin.panels import FieldPanel, MultiFieldPanel
 from wagtail.snippets.models import register_snippet
 from wagtail.snippets.views.snippets import SnippetViewSet
 
 
 class DashboardData(models.Model):
-    """Stores uploaded CSV data and pre-computed Plotly figures for a dashboard.
+    """Stores uploaded data and pre-computed Plotly figures for a dashboard.
 
     Each row represents one upload for a dashboard. The ``is_current`` flag marks
     which row is actively served on the public site. Previous rows are kept for
@@ -15,11 +15,12 @@ class DashboardData(models.Model):
 
     All dashboards share this single table, differentiated by ``dashboard_slug``.
     The page reads the current row to render pre-computed Plotly charts, and
-    serves the stored CSV file for visitor download.
+    serves the stored file for visitor download.
 
     Attributes:
+        dashboard_title: Human-readable title for admin display.
         dashboard_slug: Identifies which dashboard this data belongs to.
-        csv_file: The uploaded CSV file, stored for visitor download and
+        csv_file: The uploaded data file, stored for visitor download and
             re-generation of figures when viz scripts change.
         data: Pre-computed Plotly figure JSON keyed by figure_id.
         uploaded_at: When the data was uploaded.
@@ -27,21 +28,40 @@ class DashboardData(models.Model):
         is_current: Whether this is the active row for this dashboard.
     """
 
+    dashboard_title = models.CharField(
+        max_length=255,
+        default="",
+        help_text="Human-readable dashboard name for admin display.",
+    )
     dashboard_slug = models.SlugField(max_length=255, db_index=True)
-    csv_file = models.FileField(upload_to="dashboard_data/csv/")
+    csv_file = models.FileField(upload_to="dashboard_data/")
     data = models.JSONField(default=dict, blank=True)
     uploaded_at = models.DateTimeField(auto_now_add=True)
     uploaded_by = models.CharField(max_length=255, blank=True)
     is_current = models.BooleanField(default=True, db_index=True)
 
     panels = [
-        FieldPanel(
-            "dashboard_slug",
-            help_text="Slug identifying which dashboard this data belongs to.",
+        MultiFieldPanel(
+            [
+                FieldPanel("dashboard_title"),
+                FieldPanel(
+                    "dashboard_slug",
+                    help_text="Slug identifying which dashboard this data belongs to.",
+                ),
+            ],
+            heading="Dashboard",
         ),
         FieldPanel(
             "csv_file",
-            help_text="CSV file containing the dashboard data.",
+            help_text="Data file (CSV or Excel) for this dashboard.",
+        ),
+        FieldPanel(
+            "data",
+            help_text=(
+                "Pre-computed Plotly figure JSON keyed by figure_id. "
+                "Leave empty to auto-generate from the uploaded file, "
+                "or paste JSON directly for historic dashboards."
+            ),
         ),
         FieldPanel(
             "is_current",
@@ -53,33 +73,36 @@ class DashboardData(models.Model):
         """Settings for the DashboardData model."""
 
         ordering = ["-uploaded_at"]
-        verbose_name = "Dashboard data"
-        verbose_name_plural = "Dashboard data"
+        verbose_name = "Dashboard data upload"
+        verbose_name_plural = "Dashboard data uploads"
         indexes = [
             models.Index(fields=["dashboard_slug", "is_current"]),
         ]
 
     def __str__(self) -> str:
-        """Return slug and upload timestamp."""
-        return f"{self.dashboard_slug} ({self.uploaded_at:%Y-%m-%d %H:%M})"
+        """Return title and upload timestamp."""
+        return f"{self.dashboard_title} ({self.uploaded_at:%Y-%m-%d %H:%M})"
 
     def save(self, *args: object, **kwargs: object) -> None:
-        """Generate Plotly figures from CSV on new uploads.
+        """Generate Plotly figures from uploaded file on new uploads.
 
-        If this is a new upload (csv_file present and data is empty), runs
-        the viz service to populate the data JSONField. After saving, ensures
-        this row is marked as current if is_current is True.
+        Saves first to persist the file to disk, then runs the viz service
+        to populate the data JSONField, and saves again with the figures.
         """
-        if self.csv_file and not self.data:
-            from cms.services.dashboard_viz import generate_figures
+        needs_figures = bool(self.csv_file and not self.data)
+
+        super().save(*args, **kwargs)
+
+        if needs_figures:
+            from dashboard_viz import generate_figures
 
             try:
                 figures = generate_figures(self.dashboard_slug, self.csv_file.path)
-                self.data = figures
-            except (FileNotFoundError, ValueError):
+                if figures:
+                    self.data = figures
+                    super().save(update_fields=["data"])
+            except FileNotFoundError, ValueError:
                 pass
-
-        super().save(*args, **kwargs)
 
         if self.is_current:
             self.mark_as_current()
@@ -87,29 +110,33 @@ class DashboardData(models.Model):
     @classmethod
     def get_current(cls, dashboard_slug: str) -> DashboardData | None:
         """Return the current data row for a dashboard, or None."""
-        return cls.objects.filter(
-            dashboard_slug=dashboard_slug, is_current=True
-        ).first()
+        return cls.objects.filter(dashboard_slug=dashboard_slug, is_current=True).first()
 
     def mark_as_current(self) -> None:
         """Mark this row as current and un-mark any previous current row."""
-        DashboardData.objects.filter(
-            dashboard_slug=self.dashboard_slug, is_current=True
-        ).exclude(pk=self.pk).update(is_current=False)
+        DashboardData.objects.filter(dashboard_slug=self.dashboard_slug, is_current=True).exclude(
+            pk=self.pk
+        ).update(is_current=False)
         if not self.is_current:
             self.is_current = True
             self.save(update_fields=["is_current"])
 
 
 class DashboardDataViewSet(SnippetViewSet):
-    """Wagtail admin viewset for the DashboardData snippet.
-
-    Controls the snippet list-view columns, ordering, and filtering.
-    """
+    """Wagtail admin viewset for the Dashboard Data Upload snippet."""
 
     model = DashboardData
+    icon = "doc-full-inverse"
+    menu_label = "Dashboard Data Upload"
+    menu_name = "dashboard-data-upload"
     ordering = ["-uploaded_at"]
-    list_display = ["dashboard_slug", "uploaded_at", "uploaded_by", "is_current"]
+    list_display = [
+        "dashboard_title",
+        "dashboard_slug",
+        "uploaded_at",
+        "uploaded_by",
+        "is_current",
+    ]
     list_filter = ["dashboard_slug", "is_current"]
 
 
