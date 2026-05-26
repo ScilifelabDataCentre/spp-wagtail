@@ -6,8 +6,8 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 
 from cms.services.dashboard_data_validation import validate_csv
-from cms.services.dashboard_viz import generate_figures
 from cms.snippets.dashboard_data import DashboardData
+from dashboard_viz import generate_figures
 
 
 class TestCsvValidation(TestCase):
