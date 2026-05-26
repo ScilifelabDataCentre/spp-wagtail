@@ -138,7 +138,7 @@ COPY ./ /app/
 RUN cp /usr/local/lib/daisyui.mjs /app/cms/static/cms/css/daisyui.mjs \
     && cp /usr/local/lib/daisyui-theme.mjs /app/cms/static/cms/css/daisyui-theme.mjs \
     && tailwindcss \
-        --input /base.css \
+        --input /app/cms/static/cms/css/base.css \
         --output /portal.css \
         --no-cache \
         --minify
