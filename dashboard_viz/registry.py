@@ -24,8 +24,7 @@ def generate_figures(dashboard_slug: str, csv_file_path: str | Path) -> dict[str
         Dict mapping figure_id to Plotly figure JSON.
     """
     registry: dict[str, str] = {
-        # "serology-statistics": "cms.services.dashboard_viz.serology",
-        # "vaccines": "cms.services.dashboard_viz.vaccines",
+        "npc-statistics": "dashboard_viz.npc_statistics",
     }
 
     module_path = registry.get(dashboard_slug)
