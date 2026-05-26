@@ -24,7 +24,10 @@ class StaticFigureBlock(StructBlock):
     )
     image_url = URLBlock(
         required=False,
-        help_text="External image URL (e.g., Github, blobserver SVG). Used when no image is uploaded.",
+        help_text=(
+            "External image URL (e.g., Github, blobserver SVG)."
+            " Used when no image is uploaded."
+        ),
     )
     caption = CharBlock(required=False, help_text="Text displayed below the figure.")
     alt_text = TextBlock(
