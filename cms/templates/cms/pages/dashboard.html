@@ -1,0 +1,25 @@
+{% extends "cms/base.html" %}
+
+{% load wagtailcore_tags %}
+
+{% block content %}
+
+{% include_block page.content %}
+
+{{ figures|json_script:"dashboard-figures-data" }}
+
+<script src="https://cdn.plot.ly/plotly-3.4.0.min.js" integrity="sha256-KEmPoupLpFyGMyGAiOsiNDbKDKAvxXAn/W+oQa0ZAfk=" crossorigin="anonymous"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        var figuresData = JSON.parse(document.getElementById("dashboard-figures-data").textContent);
+        document.querySelectorAll("[data-figure-id]").forEach(function(el) {
+            var figureId = el.getAttribute("data-figure-id");
+            var figureJson = figuresData[figureId];
+            if (figureJson) {
+                Plotly.newPlot(el, figureJson.data, figureJson.layout, {responsive: true});
+            }
+        });
+    });
+</script>
+
+{% endblock %}

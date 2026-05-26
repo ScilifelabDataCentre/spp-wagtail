@@ -1,6 +1,13 @@
 """Plotly figure block for rendering pre-computed charts."""
 
-from wagtail.blocks import CharBlock, IntegerBlock, StructBlock, TextBlock, URLBlock
+from wagtail.blocks import (
+    BooleanBlock,
+    CharBlock,
+    IntegerBlock,
+    StructBlock,
+    TextBlock,
+    URLBlock,
+)
 
 
 class PlotlyFigureBlock(StructBlock):
@@ -15,6 +22,7 @@ class PlotlyFigureBlock(StructBlock):
         caption: Optional text displayed below the chart.
         height: Chart height in pixels.
         script_github_url: Link to the viz script in this repo on GitHub.
+        show_data_download: Whether to show a data download link below the chart.
         alt_text: Accessibility description of the chart.
     """
 
@@ -27,6 +35,11 @@ class PlotlyFigureBlock(StructBlock):
     script_github_url = URLBlock(
         required=False,
         help_text="Link to the viz script in this repo on GitHub.",
+    )
+    show_data_download = BooleanBlock(
+        required=False,
+        default=False,
+        help_text="Show a link to download the underlying data file.",
     )
     alt_text = TextBlock(
         required=True,

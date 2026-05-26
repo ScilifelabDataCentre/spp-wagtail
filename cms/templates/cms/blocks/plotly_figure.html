@@ -7,16 +7,20 @@
     </div>
 
     {% if value.caption %}
-    <figcaption class="text-sm text-gray-600 mt-2">
+    <figcaption class="text-sm italic text-gray-500 mt-2 text-center">
         {{ value.caption }}
     </figcaption>
     {% endif %}
 
     {% if value.script_github_url %}
     <p class="text-sm mt-1">
-        <a href="{{ value.script_github_url }}" class="link" target="_blank" rel="noopener">
-            Code used to produce plot
-        </a>
+        The script used to produce this plot is available on <a href="{{ value.script_github_url }}" class="link" target="_blank" rel="noopener">GitHub</a>.
+    </p>
+    {% endif %}
+
+    {% if value.show_data_download and dashboard_data and dashboard_data.csv_file %}
+    <p class="text-sm mt-1">
+        The data underlying this visualisation is available for <a href="{{ dashboard_data.csv_file.url }}" class="link">download</a>.
     </p>
     {% endif %}
 </figure>
