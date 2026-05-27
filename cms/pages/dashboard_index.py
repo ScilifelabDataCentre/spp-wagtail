@@ -42,14 +42,13 @@ class DashboardIndexPage(Page):
         """Add child dashboards grouped by data_status to the context."""
 
         # Importing here to avoid circular imports
-        from cms.pages.dashboard import DATA_STATUS_CHOICES, DashboardPage
+        from cms.pages.dashboard import DATA_STATUS_CHOICES
 
         context = super().get_context(request)
         context["dashboards"] = {}
         for status_key, _label in DATA_STATUS_CHOICES:
             dashboards = (
                 self.get_children()
-                .type(DashboardPage)
                 .live()
                 .public()
                 .filter(dashboardpage__data_status=status_key)
