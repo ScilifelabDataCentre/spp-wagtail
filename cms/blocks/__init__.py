@@ -10,6 +10,7 @@ from .cards import (
 )
 from .collapsible import CollapsibleBlock
 from .data_table import DataTableBlock
+from .last_updated import LastUpdatedBlock
 from .plotly_figure import PlotlyFigureBlock
 from .pp_node_info import NodeBlock
 from .static_figure import StaticFigureBlock
@@ -23,6 +24,7 @@ __all__ = [
     "ChildPageCardBlock",
     "CollapsibleBlock",
     "DataTableBlock",
+    "LastUpdatedBlock",
     "NodeBlock",
     "PlotlyFigureBlock",
     "StaticFigureBlock",

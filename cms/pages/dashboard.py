@@ -10,7 +10,7 @@ from wagtail.fields import StreamField
 from wagtail.images import get_image_model_string
 from wagtail.models import Page
 
-from cms.blocks import AlertBlock, PlotlyFigureBlock, StaticFigureBlock
+from cms.blocks import AlertBlock, LastUpdatedBlock, PlotlyFigureBlock, StaticFigureBlock
 
 DATA_STATUS_CHOICES = [
     ("active", "Active"),
@@ -52,6 +52,7 @@ class DashboardPage(Page):
         [
             ("text", RichTextBlock()),
             ("alert", AlertBlock()),
+            ("last_updated", LastUpdatedBlock()),
             ("plotly_figure", PlotlyFigureBlock()),
             ("static_figure", StaticFigureBlock()),
         ],

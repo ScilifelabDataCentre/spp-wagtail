@@ -1,0 +1,6 @@
+{% if data_updated_at %}
+<p class="my-4 text-sm text-pp-dark-grey">
+    <span class="font-medium text-pp-mid-blue">{{ value.label|default:"Last updated" }}:</span>
+    <time datetime="{{ data_updated_at|date:'Y-m-d' }}">{{ data_updated_at|date:"F j, Y" }}</time>{% if value.suffix %}<span class="opacity-80"> {{ value.suffix }}</span>{% endif %}
+</p>
+{% endif %}
