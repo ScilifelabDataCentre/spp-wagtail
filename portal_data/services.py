@@ -210,7 +210,7 @@ def load_all_items(datatype: str) -> list[dict]:
     if not data_root.is_dir():
         return []
 
-    items: list[dict] = []
+    items = []
 
     for study_dir in sorted(data_root.iterdir(), key=lambda p: p.name):
         if not study_dir.is_dir():
