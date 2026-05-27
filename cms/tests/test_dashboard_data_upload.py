@@ -6,8 +6,8 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 
 from cms.snippets.dashboard_data import DashboardData
+from cms.tests.utils import validate_csv
 from dashboard_viz import generate_figures
-from dashboard_viz.utils import validate_csv
 
 
 class TestCsvValidation(TestCase):
@@ -17,7 +17,7 @@ class TestCsvValidation(TestCase):
         """Test that a well-formed CSV with header and data passes."""
         content = b"date,value\n2024-01-01,100\n2024-01-02,200\n"
         file = BytesIO(content)
-        result = validate_csv(file, "serology-statistics")
+        result = validate_csv(file)
 
         self.assertTrue(result.is_valid)
         self.assertEqual(result.row_count, 2)
@@ -26,7 +26,7 @@ class TestCsvValidation(TestCase):
     def test_empty_file_fails(self) -> None:
         """Test that an empty file fails validation."""
         file = BytesIO(b"")
-        result = validate_csv(file, "serology-statistics")
+        result = validate_csv(file)
 
         self.assertFalse(result.is_valid)
         self.assertIn("empty", result.errors[0].lower())
@@ -34,14 +34,14 @@ class TestCsvValidation(TestCase):
     def test_whitespace_only_file_fails(self) -> None:
         """Test that a file with only whitespace fails validation."""
         file = BytesIO(b"   \n  \n  ")
-        result = validate_csv(file, "serology-statistics")
+        result = validate_csv(file)
 
         self.assertFalse(result.is_valid)
 
     def test_header_only_fails(self) -> None:
         """Test that a CSV with only a header row fails."""
         file = BytesIO(b"date,value\n")
-        result = validate_csv(file, "serology-statistics")
+        result = validate_csv(file)
 
         self.assertFalse(result.is_valid)
         self.assertIn("header", result.errors[0].lower())
@@ -49,7 +49,7 @@ class TestCsvValidation(TestCase):
     def test_non_utf8_file_fails(self) -> None:
         """Test that a non-UTF-8 file fails validation."""
         file = BytesIO(b"\xff\xfe\x00\x01")
-        result = validate_csv(file, "serology-statistics")
+        result = validate_csv(file)
 
         self.assertFalse(result.is_valid)
         self.assertIn("UTF-8", result.errors[0])
@@ -58,7 +58,7 @@ class TestCsvValidation(TestCase):
         """Test that file position is reset after validation."""
         content = b"col1,col2\na,b\n"
         file = BytesIO(content)
-        validate_csv(file, "test-dashboard")
+        validate_csv(file)
 
         self.assertEqual(file.tell(), 0)
 
