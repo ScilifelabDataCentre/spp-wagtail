@@ -7,7 +7,7 @@ from wagtail.blocks import RichTextBlock
 from wagtail.fields import RichTextField, StreamField
 from wagtail.models import Page
 
-from cms.blocks import AlertBlock, DataTableBlock
+from cms.blocks import AlertBlock
 from portal_data.context import build_portal_data_context
 
 
