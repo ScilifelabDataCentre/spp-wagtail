@@ -9,6 +9,10 @@ import importlib
 from pathlib import Path
 from typing import Any, BinaryIO
 
+import structlog
+
+LOGGER = structlog.get_logger(__name__)
+
 
 def generate_figures(
     dashboard_slug: str,
@@ -32,7 +36,30 @@ def generate_figures(
 
     module_path = registry.get(dashboard_slug)
     if module_path is None:
+        LOGGER.info("dashboard_viz.unregistered_slug", dashboard_slug=dashboard_slug)
         return {}
 
-    module = importlib.import_module(module_path)
-    return module.generate_figures(source_file)
+    LOGGER.info(
+        "dashboard_viz.generating_figures",
+        dashboard_slug=dashboard_slug,
+        module=module_path,
+    )
+    try:
+        module = importlib.import_module(module_path)
+        figures = module.generate_figures(source_file)
+    except Exception as exc:
+        LOGGER.warning(
+            "dashboard_viz.generation_failed",
+            dashboard_slug=dashboard_slug,
+            module=module_path,
+            error=str(exc),
+            exc_info=True,
+        )
+        raise
+
+    LOGGER.info(
+        "dashboard_viz.generation_complete",
+        dashboard_slug=dashboard_slug,
+        figure_count=len(figures),
+    )
+    return figures
