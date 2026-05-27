@@ -1,4 +1,4 @@
-"""CSV validation service for dashboard data uploads."""
+"""CSV validation utilities for dashboard data uploads."""
 
 import csv
 import io

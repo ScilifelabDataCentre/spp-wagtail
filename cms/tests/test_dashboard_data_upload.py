@@ -5,9 +5,9 @@ from io import BytesIO
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 
-from cms.services.dashboard_data_validation import validate_csv
 from cms.snippets.dashboard_data import DashboardData
 from dashboard_viz import generate_figures
+from dashboard_viz.utils import validate_csv
 
 
 class TestCsvValidation(TestCase):
