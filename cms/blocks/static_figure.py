@@ -1,6 +1,10 @@
 """Static figure block for SVG/PNG images."""
 
+from typing import Any
+
+from django.core.exceptions import ValidationError
 from wagtail.blocks import CharBlock, StructBlock, TextBlock, URLBlock
+from wagtail.blocks.struct_block import StructBlockValidationError
 from wagtail.images.blocks import ImageChooserBlock
 
 
@@ -33,6 +37,21 @@ class StaticFigureBlock(StructBlock):
         required=True,
         help_text="Accessibility description of the figure.",
     )
+
+    def clean(self, value: dict[str, Any]) -> dict[str, Any]:
+        """Validate that at least one image source is provided."""
+        cleaned = super().clean(value)
+        image = cleaned.get("image")
+        image_url = (cleaned.get("image_url") or "").strip()
+        if not image and not image_url:
+            message = "Please provide either an uploaded image or an external image URL."
+            raise StructBlockValidationError(
+                block_errors={
+                    "image": ValidationError(message),
+                    "image_url": ValidationError(message),
+                },
+            )
+        return cleaned
 
     class Meta:
         """Block metadata."""
