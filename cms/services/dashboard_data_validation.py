@@ -40,7 +40,7 @@ def validate_csv(file: BinaryIO, dashboard_slug: str) -> ValidationResult:
     try:
         content = file.read().decode("utf-8")
         file.seek(0)
-    except (UnicodeDecodeError, AttributeError):
+    except UnicodeDecodeError, AttributeError:
         return ValidationResult(is_valid=False, errors=["File is not valid UTF-8 text."])
 
     if not content.strip():
