@@ -286,16 +286,16 @@ def _cumulative_tests(npc_data: pd.DataFrame) -> dict[str, Any]:
     return figure_to_json(fig)
 
 
-def generate_figures(csv_file_path: str | Path) -> dict[str, Any]:
+def generate_figures(source_file: str | Path) -> dict[str, Any]:
     """Generate all 6 NPC statistics Plotly figures from the CSV.
 
     Args:
-        csv_file_path: Path to the NPC statistics CSV file.
+        source_file: Path or file-like object for the NPC statistics CSV.
 
     Returns:
         Dict mapping figure_id to Plotly figure JSON.
     """
-    npc_data = pd.read_csv(csv_file_path)
+    npc_data = pd.read_csv(source_file)
 
     return {
         "npc_total_tests": _total_tests(npc_data),

@@ -1,5 +1,6 @@
 """Dashboard data upload snippet."""
 
+import structlog
 from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models
 from django.utils import timezone
@@ -7,6 +8,10 @@ from wagtail.admin.panels import FieldPanel, MultiFieldPanel
 from wagtail.models import RevisionMixin
 from wagtail.snippets.models import register_snippet
 from wagtail.snippets.views.snippets import SnippetViewSet
+
+from dashboard_viz.utils.file_hash import calculate_file_hash
+
+LOGGER = structlog.get_logger(__name__)
 
 
 class DashboardData(RevisionMixin, models.Model):
@@ -20,6 +25,7 @@ class DashboardData(RevisionMixin, models.Model):
         dashboard_slug: Unique identifier matching the dashboard page slug.
         source_file: The uploaded source data file (CSV, Excel, etc.), stored
             for visitor download and re-generation of figures when viz scripts change.
+        source_file_hash: SHA-256 of ``source_file``; used to detect file changes.
         data: Pre-computed Plotly figure JSON keyed by figure_id.
         data_updated_at: Public-facing date for when the underlying data was last updated.
             Set automatically to today when ``source_file`` changes; editors can override.
@@ -38,6 +44,7 @@ class DashboardData(RevisionMixin, models.Model):
         help_text="Must match the dashboard page slug. One data upload per dashboard.",
     )
     source_file = models.FileField(upload_to="dashboard_data/")
+    source_file_hash = models.CharField(max_length=64, blank=True, editable=False)
     data = models.JSONField(default=dict, blank=True)
     data_updated_at = models.DateField(
         null=True,
@@ -72,7 +79,7 @@ class DashboardData(RevisionMixin, models.Model):
             "data",
             help_text=(
                 "Pre-computed Plotly figure JSON keyed by figure_id. "
-                "Leave empty to auto-generate from the uploaded file, "
+                "Auto-regenerated when the source file changes, "
                 "or paste JSON directly for historic dashboards."
             ),
         ),
@@ -90,40 +97,40 @@ class DashboardData(RevisionMixin, models.Model):
         return f"{self.dashboard_title} ({self.uploaded_at:%Y-%m-%d %H:%M})"
 
     def save(self, *args: object, **kwargs: object) -> None:
-        """Generate Plotly figures from uploaded file on new uploads.
+        """Persist the row and regenerate figures when the source file changes."""
+        file_changed = False
 
-        Saves first to persist the file to disk, then runs the viz service
-        to populate the data JSONField, and saves again with the figures.
-        Sets ``data_updated_at`` to today when ``source_file`` changes.
-        """
-        if self._source_file_changed():
+        if self.source_file:
+            new_hash = calculate_file_hash(self.source_file)
+
+            if self.pk:
+                old_hash = (
+                    type(self)
+                    .objects.filter(pk=self.pk)
+                    .values_list("source_file_hash", flat=True)
+                    .first()
+                )
+                file_changed = old_hash != new_hash
+            else:
+                file_changed = True
+
+            self.source_file_hash = new_hash
+
+        if file_changed:
             self.data_updated_at = timezone.localdate()
-
-        needs_figures = bool(self.source_file and not self.data)
-
-        super().save(*args, **kwargs)
-
-        if needs_figures:
             from dashboard_viz import generate_figures
 
             try:
-                figures = generate_figures(self.dashboard_slug, self.source_file.path)
-                if figures:
-                    self.data = figures
-                    super().save(update_fields=["data"])
-            except FileNotFoundError, ValueError:
-                pass
+                figures = generate_figures(self.dashboard_slug, self.source_file)
+                self.data = figures or {}
+            except (FileNotFoundError, ValueError) as exc:
+                LOGGER.warning(
+                    "dashboard_data.generate_figures_failed",
+                    dashboard_slug=self.dashboard_slug,
+                    error=str(exc),
+                )
 
-    def _source_file_changed(self) -> bool:
-        """Return True if ``source_file`` is new or replaced on this save."""
-        if not self.source_file:
-            return False
-        if self.pk is None:
-            return True
-        old_name = (
-            DashboardData.objects.filter(pk=self.pk).values_list("source_file", flat=True).first()
-        )
-        return old_name != self.source_file.name
+        super().save(*args, **kwargs)
 
     @classmethod
     def get_current(cls, dashboard_slug: str) -> DashboardData | None:

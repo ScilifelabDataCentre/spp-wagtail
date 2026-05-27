@@ -2,6 +2,7 @@
 
 from datetime import date
 from io import BytesIO
+from unittest.mock import patch
 
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
@@ -135,3 +136,42 @@ class TestDashboardDataSaveIntegration(TestCase):
             uploaded_by="testuser",
         )
         self.assertEqual(row.data, {})
+        self.assertEqual(len(row.source_file_hash), 64)
+
+    @patch("dashboard_viz.generate_figures", return_value={"chart": {"data": []}})
+    def test_regenerates_figures_when_file_changes_with_existing_data(
+        self,
+        mock_generate: object,
+    ) -> None:
+        """Test that figure JSON is regenerated when the source file hash changes."""
+        row = DashboardData.objects.create(
+            dashboard_slug="test-dashboard",
+            source_file=SimpleUploadedFile("old.csv", b"a,b\n1,2\n", "text/csv"),
+            data={"old_chart": {"data": [1]}},
+            uploaded_by="testuser",
+        )
+        self.assertEqual(mock_generate.call_count, 1)
+
+        row.source_file = SimpleUploadedFile("new.csv", b"x,y\n9,9\n", "text/csv")
+        row.save()
+        row.refresh_from_db()
+
+        self.assertEqual(mock_generate.call_count, 2)
+        self.assertEqual(row.data, {"chart": {"data": []}})
+
+    @patch("dashboard_viz.generate_figures", return_value={"chart": {}})
+    def test_does_not_regenerate_figures_without_file_change(
+        self,
+        mock_generate: object,
+    ) -> None:
+        """Test that saving other fields does not call generate_figures again."""
+        row = DashboardData.objects.create(
+            dashboard_slug="other-dashboard",
+            source_file=SimpleUploadedFile("data.csv", b"a,b\n1,2\n", "text/csv"),
+            uploaded_by="testuser",
+        )
+        self.assertEqual(mock_generate.call_count, 1)
+
+        row.uploaded_by = "another-editor"
+        row.save()
+        self.assertEqual(mock_generate.call_count, 1)

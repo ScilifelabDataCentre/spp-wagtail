@@ -77,11 +77,12 @@ class TestDashboardPageContext(DashboardPageTestCase):
     def test_get_context_includes_figures_from_dashboard_data(self) -> None:
         """Test that get_context provides figures from DashboardData."""
         csv_file = SimpleUploadedFile("data.csv", b"a,b\n1,2\n", "text/csv")
-        DashboardData.objects.create(
+        data_row = DashboardData.objects.create(
             dashboard_slug="serology-statistics",
             source_file=csv_file,
-            data={"chart_1": {"data": [], "layout": {}}},
         )
+        data_row.data = {"chart_1": {"data": [], "layout": {}}}
+        data_row.save(update_fields=["data"])
 
         request = self.client.get(self.page.url).wsgi_request
         context = self.page.get_context(request)
@@ -103,8 +104,9 @@ class TestDashboardPageContext(DashboardPageTestCase):
         data_row = DashboardData.objects.create(
             dashboard_slug="serology-statistics",
             source_file=csv_file,
-            data={"fig_a": {"data": [1], "layout": {}}},
         )
+        data_row.data = {"fig_a": {"data": [1], "layout": {}}}
+        data_row.save(update_fields=["data"])
 
         request = self.client.get(self.page.url).wsgi_request
         context = self.page.get_context(request)

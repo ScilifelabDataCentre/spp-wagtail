@@ -22,9 +22,10 @@ class TestDashboardDataModel(TestCase):
             dashboard_title="Serology statistics",
             dashboard_slug="serology-statistics",
             source_file=cls.source_file,
-            data={"serology_chart": {"data": [], "layout": {}}},
             uploaded_by="testuser",
         )
+        cls.dashboard_data.data = {"serology_chart": {"data": [], "layout": {}}}
+        cls.dashboard_data.save(update_fields=["data"])
 
     def test_str_representation_includes_title(self) -> None:
         """Test that string representation includes the dashboard title."""

@@ -7,18 +7,21 @@ the registry that dispatches to the correct service based on dashboard_slug.
 
 import importlib
 from pathlib import Path
-from typing import Any
+from typing import Any, BinaryIO
 
 
-def generate_figures(dashboard_slug: str, csv_file_path: str | Path) -> dict[str, Any]:
-    """Generate all Plotly figures for a dashboard from its CSV file.
+def generate_figures(
+    dashboard_slug: str,
+    source_file: str | Path | BinaryIO,
+) -> dict[str, Any]:
+    """Generate all Plotly figures for a dashboard from its source data file.
 
     Dispatches to the dashboard-specific viz service module. If no specific
     service exists for the given slug, returns an empty dict.
 
     Args:
         dashboard_slug: Identifies which viz service to use.
-        csv_file_path: Path to the CSV file to read.
+        source_file: Path or file-like object for the source data file.
 
     Returns:
         Dict mapping figure_id to Plotly figure JSON.
@@ -32,4 +35,4 @@ def generate_figures(dashboard_slug: str, csv_file_path: str | Path) -> dict[str
         return {}
 
     module = importlib.import_module(module_path)
-    return module.generate_figures(csv_file_path)
+    return module.generate_figures(source_file)
