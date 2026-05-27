@@ -3,7 +3,7 @@
 from typing import Any
 
 from django.core.exceptions import ValidationError
-from wagtail.blocks import CharBlock, StructBlock, TextBlock, URLBlock
+from wagtail.blocks import CharBlock, StructBlock, URLBlock
 from wagtail.blocks.struct_block import StructBlockValidationError
 from wagtail.images.blocks import ImageChooserBlock
 
@@ -32,10 +32,13 @@ class StaticFigureBlock(StructBlock):
             "External image URL (e.g., Github, blobserver SVG). Used when no image is uploaded."
         ),
     )
-    caption = CharBlock(required=False, help_text="Text displayed below the figure.")
-    alt_text = TextBlock(
+    alt_text = CharBlock(
         required=True,
-        help_text="Accessibility description of the figure.",
+        help_text="Accessibility description (alt attribute) for the image.",
+    )
+    caption = CharBlock(
+        required=False,
+        help_text="Optional visible caption below the figure (separate from alt text).",
     )
 
     def clean(self, value: dict[str, Any]) -> dict[str, Any]:
