@@ -1,6 +1,7 @@
 """Dashboard data upload snippet."""
 
 from django.db import models
+from django.utils import timezone
 from wagtail.admin.panels import FieldPanel, MultiFieldPanel
 from wagtail.snippets.models import register_snippet
 from wagtail.snippets.views.snippets import SnippetViewSet
@@ -24,6 +25,7 @@ class DashboardData(models.Model):
             for visitor download and re-generation of figures when viz scripts change.
         data: Pre-computed Plotly figure JSON keyed by figure_id.
         data_updated_at: Public-facing date for when the underlying data was last updated.
+            Set automatically to today when ``source_file`` changes; editors can override.
         uploaded_at: Automatic timestamp when this row was saved in Wagtail (audit only).
         uploaded_by: Username of the editor who uploaded.
         is_current: Whether this is the active row for this dashboard.
@@ -42,13 +44,13 @@ class DashboardData(models.Model):
         blank=True,
         help_text=(
             "Date shown on the public dashboard as when the underlying data was last updated. "
-            "Set this to the real data freshness date when migrating historic dashboards "
-            "(not the Wagtail upload date)."
+            "Updates automatically to today when the source file is replaced; you can override "
+            "manually (e.g. historic migration date)."
         ),
     )
     uploaded_at = models.DateTimeField(
         auto_now_add=True,
-        help_text="When this row was first saved in Wagtail (audit only; not shown as data freshness).",
+        help_text="When this row was first saved in Wagtail (audit only; not public freshness).",
     )
     uploaded_by = models.CharField(max_length=255, blank=True)
     is_current = models.BooleanField(default=True, db_index=True)
@@ -102,7 +104,11 @@ class DashboardData(models.Model):
 
         Saves first to persist the file to disk, then runs the viz service
         to populate the data JSONField, and saves again with the figures.
+        Sets ``data_updated_at`` to today when ``source_file`` changes.
         """
+        if self._source_file_changed():
+            self.data_updated_at = timezone.localdate()
+
         needs_figures = bool(self.source_file and not self.data)
 
         super().save(*args, **kwargs)
@@ -120,6 +126,17 @@ class DashboardData(models.Model):
 
         if self.is_current:
             self.mark_as_current()
+
+    def _source_file_changed(self) -> bool:
+        """Return True if ``source_file`` is new or replaced on this save."""
+        if not self.source_file:
+            return False
+        if self.pk is None:
+            return True
+        old_name = (
+            DashboardData.objects.filter(pk=self.pk).values_list("source_file", flat=True).first()
+        )
+        return old_name != self.source_file.name
 
     @classmethod
     def get_current(cls, dashboard_slug: str) -> DashboardData | None:
