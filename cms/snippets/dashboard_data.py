@@ -23,7 +23,8 @@ class DashboardData(models.Model):
         source_file: The uploaded source data file (CSV, Excel, etc.), stored
             for visitor download and re-generation of figures when viz scripts change.
         data: Pre-computed Plotly figure JSON keyed by figure_id.
-        uploaded_at: When the data was uploaded.
+        data_updated_at: Public-facing date for when the underlying data was last updated.
+        uploaded_at: Automatic timestamp when this row was saved in Wagtail (audit only).
         uploaded_by: Username of the editor who uploaded.
         is_current: Whether this is the active row for this dashboard.
     """
@@ -36,7 +37,19 @@ class DashboardData(models.Model):
     dashboard_slug = models.SlugField(max_length=255, db_index=True)
     source_file = models.FileField(upload_to="dashboard_data/")
     data = models.JSONField(default=dict, blank=True)
-    uploaded_at = models.DateTimeField(auto_now_add=True)
+    data_updated_at = models.DateField(
+        null=True,
+        blank=True,
+        help_text=(
+            "Date shown on the public dashboard as when the underlying data was last updated. "
+            "Set this to the real data freshness date when migrating historic dashboards "
+            "(not the Wagtail upload date)."
+        ),
+    )
+    uploaded_at = models.DateTimeField(
+        auto_now_add=True,
+        help_text="When this row was first saved in Wagtail (audit only; not shown as data freshness).",
+    )
     uploaded_by = models.CharField(max_length=255, blank=True)
     is_current = models.BooleanField(default=True, db_index=True)
 
@@ -55,6 +68,7 @@ class DashboardData(models.Model):
             "source_file",
             help_text="Source data file (CSV, Excel, etc.) for this dashboard.",
         ),
+        FieldPanel("data_updated_at"),
         FieldPanel(
             "data",
             help_text=(
@@ -133,6 +147,7 @@ class DashboardDataViewSet(SnippetViewSet):
     list_display = [
         "dashboard_title",
         "dashboard_slug",
+        "data_updated_at",
         "uploaded_at",
         "uploaded_by",
         "is_current",

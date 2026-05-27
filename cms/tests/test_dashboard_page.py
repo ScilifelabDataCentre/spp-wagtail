@@ -113,6 +113,24 @@ class TestDashboardPageContext(DashboardPageTestCase):
 
         self.assertEqual(context["dashboard_data"].pk, data_row.pk)
 
+    def test_get_context_includes_data_updated_at(self) -> None:
+        """Test that get_context exposes the public data freshness date."""
+        from datetime import date
+
+        source_file = SimpleUploadedFile("data3.csv", b"x,y\n3,4\n", "text/csv")
+        DashboardData.objects.create(
+            dashboard_slug="serology-statistics",
+            source_file=source_file,
+            data={},
+            data_updated_at=date(2024, 3, 1),
+            is_current=True,
+        )
+
+        request = self.client.get(self.page.url).wsgi_request
+        context = self.page.get_context(request)
+
+        self.assertEqual(context["data_updated_at"], date(2024, 3, 1))
+
 
 class TestDashboardIndexPageModel(DashboardPageTestCase):
     """Tests for the DashboardIndexPage model."""

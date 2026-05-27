@@ -18,6 +18,7 @@ class TestDashboardDataModel(TestCase):
             content_type="text/csv",
         )
         cls.dashboard_data = DashboardData.objects.create(
+            dashboard_title="Serology statistics",
             dashboard_slug="serology-statistics",
             source_file=cls.source_file,
             data={"serology_chart": {"data": [], "layout": {}}},
@@ -25,10 +26,10 @@ class TestDashboardDataModel(TestCase):
             is_current=True,
         )
 
-    def test_str_representation_includes_slug(self) -> None:
-        """Test that string representation includes the dashboard slug."""
+    def test_str_representation_includes_title(self) -> None:
+        """Test that string representation includes the dashboard title."""
         result = str(self.dashboard_data)
-        self.assertIn("serology-statistics", result)
+        self.assertIn("Serology statistics", result)
 
     def test_ordering_is_newest_first(self) -> None:
         """Test that default ordering is by uploaded_at descending."""
@@ -44,6 +45,15 @@ class TestDashboardDataModel(TestCase):
             self.dashboard_data.data,
             {"serology_chart": {"data": [], "layout": {}}},
         )
+
+    def test_data_updated_at_optional(self) -> None:
+        """Test that data_updated_at can be set independently of uploaded_at."""
+        from datetime import date
+
+        self.dashboard_data.data_updated_at = date(2024, 6, 15)
+        self.dashboard_data.save(update_fields=["data_updated_at"])
+        self.dashboard_data.refresh_from_db()
+        self.assertEqual(self.dashboard_data.data_updated_at, date(2024, 6, 15))
 
 
 class TestDashboardDataGetCurrent(TestCase):
