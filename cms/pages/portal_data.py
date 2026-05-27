@@ -3,9 +3,11 @@ from __future__ import annotations
 
 from django.db import models
 from wagtail.admin.panels import FieldPanel
-from wagtail.fields import RichTextField
+from wagtail.blocks import RichTextBlock
+from wagtail.fields import RichTextField, StreamField
 from wagtail.models import Page
 
+from cms.blocks import AlertBlock, DataTableBlock
 from portal_data.context import build_portal_data_context
 
 
@@ -27,11 +29,16 @@ class PortalDataPage(Page):
 
     default_page_size = models.PositiveIntegerField(default=25)
 
+    content = StreamField(
+        [
+            ("text", RichTextBlock()),
+            ("alert", AlertBlock()),
+        ],
+        blank=True,
+    )
+
     content_panels = Page.content_panels + [
-        FieldPanel("intro"),
-        FieldPanel("help_text"),
-        FieldPanel("datatype"),
-        FieldPanel("default_page_size"),
+        FieldPanel("content"),
     ]
 
     subpage_types: list[str] = []
