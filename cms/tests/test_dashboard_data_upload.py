@@ -88,7 +88,6 @@ class TestDashboardDataSaveIntegration(TestCase):
             dashboard_slug="test-dashboard",
             source_file=source_file,
             uploaded_by="testuser",
-            is_current=True,
         )
         self.assertEqual(row.data_updated_at, date.today())
 
@@ -99,7 +98,6 @@ class TestDashboardDataSaveIntegration(TestCase):
             dashboard_slug="test-dashboard",
             source_file=source_file,
             uploaded_by="testuser",
-            is_current=True,
         )
         row.data_updated_at = date(2020, 1, 1)
         row.save(update_fields=["data_updated_at"])
@@ -117,7 +115,6 @@ class TestDashboardDataSaveIntegration(TestCase):
             dashboard_slug="test-dashboard",
             source_file=source_file,
             uploaded_by="testuser",
-            is_current=True,
         )
         historic_date = date(2019, 5, 10)
         row.data_updated_at = historic_date
@@ -136,27 +133,5 @@ class TestDashboardDataSaveIntegration(TestCase):
             dashboard_slug="unregistered-dashboard",
             source_file=csv_file,
             uploaded_by="testuser",
-            is_current=True,
         )
         self.assertEqual(row.data, {})
-
-    def test_save_marks_as_current(self) -> None:
-        """Test that saving with is_current=True marks previous rows as not current."""
-        csv1 = SimpleUploadedFile("old.csv", b"a,b\n1,2\n", "text/csv")
-        old_row = DashboardData.objects.create(
-            dashboard_slug="test-dashboard",
-            source_file=csv1,
-            uploaded_by="testuser",
-            is_current=True,
-        )
-
-        csv2 = SimpleUploadedFile("new.csv", b"a,b\n3,4\n", "text/csv")
-        DashboardData.objects.create(
-            dashboard_slug="test-dashboard",
-            source_file=csv2,
-            uploaded_by="testuser",
-            is_current=True,
-        )
-
-        old_row.refresh_from_db()
-        self.assertFalse(old_row.is_current)

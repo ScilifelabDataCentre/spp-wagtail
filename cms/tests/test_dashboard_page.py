@@ -81,7 +81,6 @@ class TestDashboardPageContext(DashboardPageTestCase):
             dashboard_slug="serology-statistics",
             source_file=csv_file,
             data={"chart_1": {"data": [], "layout": {}}},
-            is_current=True,
         )
 
         request = self.client.get(self.page.url).wsgi_request
@@ -105,7 +104,6 @@ class TestDashboardPageContext(DashboardPageTestCase):
             dashboard_slug="serology-statistics",
             source_file=csv_file,
             data={"fig_a": {"data": [1], "layout": {}}},
-            is_current=True,
         )
 
         request = self.client.get(self.page.url).wsgi_request
@@ -118,13 +116,13 @@ class TestDashboardPageContext(DashboardPageTestCase):
         from datetime import date
 
         source_file = SimpleUploadedFile("data3.csv", b"x,y\n3,4\n", "text/csv")
-        DashboardData.objects.create(
+        data_row = DashboardData.objects.create(
             dashboard_slug="serology-statistics",
             source_file=source_file,
             data={},
-            data_updated_at=date(2024, 3, 1),
-            is_current=True,
         )
+        data_row.data_updated_at = date(2024, 3, 1)
+        data_row.save(update_fields=["data_updated_at"])
 
         request = self.client.get(self.page.url).wsgi_request
         context = self.page.get_context(request)
