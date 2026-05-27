@@ -1,7 +1,8 @@
-{% load wagtailcore_tags %}
+{% load plotly_js wagtailcore_tags %}
 
 <figure class="my-8" role="img" aria-label="{{ value.alt_text }}">
     {% if plot_html %}
+    {% plotlyjs_once %}
     <div class="plotly-figure" style="height: {{ value.height }}px;">
         {{ plot_html|safe }}
     </div>
