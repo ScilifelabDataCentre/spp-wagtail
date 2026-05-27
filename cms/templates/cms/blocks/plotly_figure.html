@@ -21,9 +21,9 @@
     </p>
     {% endif %}
 
-    {% if value.show_data_download and dashboard_data and dashboard_data.csv_file %}
+    {% if value.show_data_download and dashboard_data and dashboard_data.source_file %}
     <p class="text-sm mt-1">
-        The data underlying this visualisation is available for <a href="{{ dashboard_data.csv_file.url }}" class="link">download</a>.
+        The data underlying this visualisation is available for <a href="{{ dashboard_data.source_file.url }}" class="link">download</a>.
     </p>
     {% endif %}
 </figure>

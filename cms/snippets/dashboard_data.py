@@ -20,8 +20,8 @@ class DashboardData(models.Model):
     Attributes:
         dashboard_title: Human-readable title for admin display.
         dashboard_slug: Identifies which dashboard this data belongs to.
-        csv_file: The uploaded data file, stored for visitor download and
-            re-generation of figures when viz scripts change.
+        source_file: The uploaded source data file (CSV, Excel, etc.), stored
+            for visitor download and re-generation of figures when viz scripts change.
         data: Pre-computed Plotly figure JSON keyed by figure_id.
         uploaded_at: When the data was uploaded.
         uploaded_by: Username of the editor who uploaded.
@@ -34,7 +34,7 @@ class DashboardData(models.Model):
         help_text="Human-readable dashboard name for admin display.",
     )
     dashboard_slug = models.SlugField(max_length=255, db_index=True)
-    csv_file = models.FileField(upload_to="dashboard_data/")
+    source_file = models.FileField(upload_to="dashboard_data/")
     data = models.JSONField(default=dict, blank=True)
     uploaded_at = models.DateTimeField(auto_now_add=True)
     uploaded_by = models.CharField(max_length=255, blank=True)
@@ -52,8 +52,8 @@ class DashboardData(models.Model):
             heading="Dashboard",
         ),
         FieldPanel(
-            "csv_file",
-            help_text="Data file (CSV or Excel) for this dashboard.",
+            "source_file",
+            help_text="Source data file (CSV, Excel, etc.) for this dashboard.",
         ),
         FieldPanel(
             "data",
@@ -89,7 +89,7 @@ class DashboardData(models.Model):
         Saves first to persist the file to disk, then runs the viz service
         to populate the data JSONField, and saves again with the figures.
         """
-        needs_figures = bool(self.csv_file and not self.data)
+        needs_figures = bool(self.source_file and not self.data)
 
         super().save(*args, **kwargs)
 
@@ -97,7 +97,7 @@ class DashboardData(models.Model):
             from dashboard_viz import generate_figures
 
             try:
-                figures = generate_figures(self.dashboard_slug, self.csv_file.path)
+                figures = generate_figures(self.dashboard_slug, self.source_file.path)
                 if figures:
                     self.data = figures
                     super().save(update_fields=["data"])

@@ -79,7 +79,7 @@ class TestDashboardPageContext(DashboardPageTestCase):
         csv_file = SimpleUploadedFile("data.csv", b"a,b\n1,2\n", "text/csv")
         DashboardData.objects.create(
             dashboard_slug="serology-statistics",
-            csv_file=csv_file,
+            source_file=csv_file,
             data={"chart_1": {"data": [], "layout": {}}},
             is_current=True,
         )
@@ -103,7 +103,7 @@ class TestDashboardPageContext(DashboardPageTestCase):
         csv_file = SimpleUploadedFile("data2.csv", b"x,y\n3,4\n", "text/csv")
         data_row = DashboardData.objects.create(
             dashboard_slug="serology-statistics",
-            csv_file=csv_file,
+            source_file=csv_file,
             data={"fig_a": {"data": [1], "layout": {}}},
             is_current=True,
         )

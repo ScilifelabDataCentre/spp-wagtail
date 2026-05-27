@@ -85,7 +85,7 @@ class TestDashboardDataSaveIntegration(TestCase):
         csv_file = SimpleUploadedFile("test.csv", b"a,b\n1,2\n", "text/csv")
         row = DashboardData.objects.create(
             dashboard_slug="unregistered-dashboard",
-            csv_file=csv_file,
+            source_file=csv_file,
             uploaded_by="testuser",
             is_current=True,
         )
@@ -96,7 +96,7 @@ class TestDashboardDataSaveIntegration(TestCase):
         csv1 = SimpleUploadedFile("old.csv", b"a,b\n1,2\n", "text/csv")
         old_row = DashboardData.objects.create(
             dashboard_slug="test-dashboard",
-            csv_file=csv1,
+            source_file=csv1,
             uploaded_by="testuser",
             is_current=True,
         )
@@ -104,7 +104,7 @@ class TestDashboardDataSaveIntegration(TestCase):
         csv2 = SimpleUploadedFile("new.csv", b"a,b\n3,4\n", "text/csv")
         DashboardData.objects.create(
             dashboard_slug="test-dashboard",
-            csv_file=csv2,
+            source_file=csv2,
             uploaded_by="testuser",
             is_current=True,
         )
