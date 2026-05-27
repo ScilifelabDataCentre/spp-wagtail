@@ -38,6 +38,8 @@ class PortalDataPage(Page):
     )
 
     content_panels = Page.content_panels + [
+        FieldPanel("datatype"),
+        FieldPanel("default_page_size"),
         FieldPanel("content"),
     ]
 
