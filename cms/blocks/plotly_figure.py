@@ -3,14 +3,7 @@
 from typing import Any
 
 from django.core.cache import cache
-from wagtail.blocks import (
-    BooleanBlock,
-    CharBlock,
-    IntegerBlock,
-    StructBlock,
-    TextBlock,
-    URLBlock,
-)
+from wagtail.blocks import BooleanBlock, CharBlock, IntegerBlock, StructBlock, URLBlock
 
 from dashboard_viz.utils import plot_html_from_json
 
@@ -34,7 +27,14 @@ class PlotlyFigureBlock(StructBlock):
         required=True,
         help_text="Key matching a figure in the DashboardData JSON.",
     )
-    caption = CharBlock(required=False, help_text="Text displayed below the chart.")
+    alt_text = CharBlock(
+        required=True,
+        help_text="Accessibility description (aria-label) for the chart.",
+    )
+    caption = CharBlock(
+        required=False,
+        help_text="Optional visible caption below the chart (separate from alt text).",
+    )
     height = IntegerBlock(default=500, help_text="Chart height in pixels.")
     script_github_url = URLBlock(
         required=False,
@@ -44,10 +44,6 @@ class PlotlyFigureBlock(StructBlock):
         required=False,
         default=False,
         help_text="Show a link to download the underlying data file.",
-    )
-    alt_text = TextBlock(
-        required=True,
-        help_text="Accessibility description of the chart.",
     )
 
     CACHE_TIMEOUT_SECONDS = 60 * 60 * 24
