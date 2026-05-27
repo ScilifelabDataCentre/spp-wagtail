@@ -16,8 +16,9 @@ class PlotlyFigureBlock(StructBlock):
 
     Attributes:
         figure_id: Key matching a figure in the DashboardData JSON dict.
-        caption: Optional text displayed below the chart.
+        alt_text: Accessibility description of the chart.
         height: Chart height in pixels.
+        caption: Optional text displayed below the chart.
         script_github_url: Link to the viz script in this repo on GitHub.
         show_data_download: Whether to show a data download link below the chart.
         alt_text: Accessibility description of the chart.
@@ -31,11 +32,15 @@ class PlotlyFigureBlock(StructBlock):
         required=True,
         help_text="Accessibility description (aria-label) for the chart.",
     )
+    height = IntegerBlock(
+        required=True,
+        default=500,
+        help_text="Chart height in pixels.",
+    )
     caption = CharBlock(
         required=False,
         help_text="Optional visible caption below the chart (separate from alt text).",
     )
-    height = IntegerBlock(default=500, help_text="Chart height in pixels.")
     script_github_url = URLBlock(
         required=False,
         help_text="Link to the viz script in this repo on GitHub.",
