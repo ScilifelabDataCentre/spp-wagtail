@@ -4,9 +4,13 @@ from __future__ import annotations
 
 from typing import Any
 
+from django.core.paginator import Paginator
 from django.http import HttpRequest
 
 from .services import get_dataset_listing, get_datatype_config
+
+DEFAULT_SIZE = 25
+DEFAULT_SIZE_OPTIONS: tuple[int, ...] = (25, 50, 100)
 
 
 def positive_int(value: str | None, default: int) -> int:
@@ -28,7 +32,8 @@ def build_portal_data_context(
     request: HttpRequest,
     *,
     datatype: object,
-    default_size: int = 25,
+    default_size: int = DEFAULT_SIZE,
+    size_options: tuple[int, ...] = DEFAULT_SIZE_OPTIONS,
 ) -> dict[str, Any]:
     """Build the listing context shared by Django views and Wagtail pages."""
 
@@ -50,15 +55,24 @@ def build_portal_data_context(
             "has_facets": False,
             "items": [],
             "total": 0,
-            "page_number": 1,
+            "page_obj": None,
+            "page_range": [],
             "size": default_size,
+            "size_options": size_options,
             "form_action": request.path,
             "reset_url": request.path,
         }
 
     query = request.GET.get("q", "").strip()
     page_number = positive_int(request.GET.get("page"), 1)
-    size = positive_int(request.GET.get("size"), default_size)
+
+    raw_size = request.GET.get("size", default_size)
+    try:
+        size = int(raw_size)
+    except (TypeError, ValueError):
+        size = default_size
+    if size not in size_options:
+        size = default_size
 
     facet_names = request.GET.getlist("facet") or list(config.default_facets)
     filters = {
@@ -74,9 +88,12 @@ def build_portal_data_context(
         facet_names=facet_names,
     )
 
-    filtered_items = listing["items"]
-    start = (page_number - 1) * size
-    end = start + size
+    paginator = Paginator(listing["items"], size)
+    page_obj = paginator.get_page(page_number)
+    page_range = [
+        None if p == Paginator.ELLIPSIS else p
+        for p in paginator.get_elided_page_range(page_obj.number, on_each_side=2, on_ends=1)
+    ]
 
     return {
         "datatype": datatype,
@@ -87,10 +104,12 @@ def build_portal_data_context(
         "facet_names": facet_names,
         "facets": listing["facets"],
         "has_facets": listing["has_facets"],
-        "items": filtered_items[start:end],
-        "total": len(filtered_items),
-        "page_number": page_number,
+        "items": page_obj.object_list,
+        "total": paginator.count,
+        "page_obj": page_obj,
+        "page_range": page_range,
         "size": size,
+        "size_options": size_options,
         "form_action": request.path,
         "reset_url": request.path,
     }
