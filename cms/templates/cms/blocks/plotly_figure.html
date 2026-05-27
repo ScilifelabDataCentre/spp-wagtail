@@ -1,10 +1,13 @@
 {% load wagtailcore_tags %}
 
 <figure class="my-8" role="img" aria-label="{{ value.alt_text }}">
-    <div id="plotly-{{ value.figure_id }}"
-         style="height: {{ value.height }}px;"
-         data-figure-id="{{ value.figure_id }}">
+    {% if plot_html %}
+    <div class="plotly-figure" style="height: {{ value.height }}px;">
+        {{ plot_html|safe }}
     </div>
+    {% else %}
+    <p class="text-sm text-gray-500">Chart data is not available for this figure.</p>
+    {% endif %}
 
     {% if value.caption %}
     <figcaption class="text-sm italic text-gray-500 mt-2 text-center">
