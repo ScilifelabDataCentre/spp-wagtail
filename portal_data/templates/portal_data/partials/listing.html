@@ -1,0 +1,207 @@
+<div class="grid grid-cols-1 gap-6 lg:grid-cols-12">
+
+    <aside class="space-y-4 lg:col-span-3">
+        {% if has_facets %}
+            {% for f, buckets in facets.items %}
+                {% if buckets %}
+                    {% with facet_id=f|slugify %}
+                    <div class="collapse collapse-arrow border border-secondary rounded bg-base-100 shadow-sm">
+                        <input type="checkbox" checked>
+                        <div class="collapse-title font-semibold capitalize text-sm">
+                            {{ f }}
+                        </div>
+
+                        <div class="collapse-content">
+                            <ul class="mt-1 list-none space-y-1 pl-0">
+                                {% for b in buckets|slice:":4" %}
+                                    <li>
+                                        <label class="label cursor-pointer justify-start gap-2">
+                                            <input
+                                                type="checkbox"
+                                                name="{{ f }}"
+                                                value="{{ b.value }}"
+                                                {% if b.checked %}checked{% endif %}
+                                                class="checkbox checkbox-accent checkbox-sm"
+                                            >
+                                            <span class="label-text">{{ b.value }}</span>
+                                            <span class="badge badge-ghost badge-sm ml-auto">{{ b.count }}</span>
+                                        </label>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+
+                            {% if buckets|length > 4 %}
+                                <ul id="facet-more-{{ facet_id }}" class="mt-1 hidden list-none space-y-1 pl-0">
+                                    {% for b in buckets|slice:"4:" %}
+                                        <li>
+                                            <label class="label cursor-pointer justify-start gap-2">
+                                                <input
+                                                type="checkbox"
+                                                name="{{ f }}"
+                                                value="{{ b.value }}"
+                                                {% if b.checked %}checked{% endif %}
+                                                class="checkbox checkbox-accent checkbox-sm"
+                                            >
+                                                <span class="label-text">{{ b.value }}</span>
+                                                <span class="badge badge-ghost badge-sm ml-auto">{{ b.count }}</span>
+                                            </label>
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+
+                                <button
+                                    type="button"
+                                    class="facet-toggle btn btn-ghost btn-xs mt-2 text-accent underline"
+                                    data-target="facet-more-{{ facet_id }}"
+                                    data-collapsed-text="Show more"
+                                    data-expanded-text="Show less"
+                                    aria-expanded="false"
+                                    aria-controls="facet-more-{{ facet_id }}"
+                                >
+                                    Show more
+                                </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endwith %}
+                {% endif %}
+            {% endfor %}
+        {% else %}
+            <div class="rounded border border-pp-pale-grey bg-white p-4 text-sm italic text-pp-dark-grey shadow-sm">
+                No filters remaining for this search.
+            </div>
+        {% endif %}
+    </aside>
+
+    <main class="lg:col-span-9">
+        {% if error %}
+            <p class="rounded border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+                {{ error }}
+            </p>
+        {% else %}
+            <div class="mb-3 text-sm text-pp-dark-grey">
+                Showing {{ items|length }} of {{ total }} datasets.
+            </div>
+
+            <ul class="mt-0 list-none space-y-4 pl-0">
+                {% for it in items %}
+                    <li class="rounded border border-pp-pale-grey bg-white p-4 shadow-sm transition hover:shadow-md md:p-5">
+                        <div class="flex items-start justify-between gap-3">
+                            <h3 class="text-xl text-pp-almost-black">
+                                {{ it.title }}
+                            </h3>
+                        </div>
+
+                        {% if it.description %}
+                            <p class="mt-2 text-sm leading-relaxed text-pp-dark-grey">
+                                {% with it.description|striptags|wordcount as desc_words %}
+                                    {% if desc_words > 100 %}
+                                        <span id="desc-short-{{ it.id }}">
+                                            {{ it.description|truncatewords_html:50|safe }}
+                                        </span>
+                                        <span id="desc-full-{{ it.id }}" class="hidden">
+                                            {{ it.description|safe }}
+                                        </span>
+                                        <button
+                                            type="button"
+                                            class="toggle-description btn btn-ghost btn-xs ml-1 text-accent underline"
+                                            data-id="{{ it.id }}"
+                                        >
+                                            Show more
+                                        </button>
+                                    {% else %}
+                                        {{ it.description|safe }}
+                                    {% endif %}
+                                {% endwith %}
+                            </p>
+                        {% endif %}
+
+                        <dl class="mt-3 space-y-1 text-xs text-pp-dark-grey">
+                            {% if it.public_release_date %}
+                                <div class="flex gap-1">
+                                    <dt class="font-semibold">Public release:</dt>
+                                    <dd>{{ it.public_release_date }}</dd>
+                                </div>
+                            {% endif %}
+
+                            {% if it.license %}
+                                <div class="flex gap-1">
+                                    <dt class="font-semibold">License:</dt>
+                                    <dd>{{ it.license }}</dd>
+                                </div>
+                            {% endif %}
+
+                            {% if it.platforms %}
+                                <div class="flex gap-1">
+                                    <dt class="font-semibold">Platform(s):</dt>
+                                    <dd>{{ it.platforms|join:", " }}</dd>
+                                </div>
+                            {% endif %}
+
+                            {% if it.factors %}
+                                <div class="flex gap-1">
+                                    <dt class="font-semibold">Factors:</dt>
+                                    <dd>{{ it.factors|join:", " }}</dd>
+                                </div>
+                            {% endif %}
+                        </dl>
+
+                        <div class="mt-3 flex flex-wrap items-center gap-2">
+                            {% if it.publication_doi %}
+                                <a
+                                    href="https://doi.org/{{ it.publication_doi|cut:'https://doi.org/' }}"
+                                    target="_blank"
+                                    rel="noopener"
+                                    class="btn btn-outline btn-sm"
+                                >
+                                    Publication
+                                </a>
+                            {% endif %}
+
+                            <a
+                                href="{% url 'portal_data_wagtail:data_files' accession=it.accession %}"
+                                class="btn btn-primary btn-sm ml-auto"
+                            >
+                                Download data
+                            </a>
+
+                            <a
+                                href="{{ it.repo_url }}"
+                                target="_blank"
+                                rel="noopener"
+                                class="btn btn-outline btn-sm"
+                            >
+                                View in MetaboLights
+                            </a>
+                        </div>
+                    </li>
+                {% empty %}
+                    <li class="rounded border border-pp-pale-grey bg-white p-4 text-sm text-pp-dark-grey shadow-sm">
+                        No datasets found.
+                    </li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+
+        {% if page_obj.has_other_pages %}
+            <nav class="join mt-6 flex justify-center">
+                {% for p in page_range %}
+                    {% if p is None %}
+                        <span class="join-item btn btn-disabled">…</span>
+                    {% else %}
+                        <a
+                            href="?{% if pagination_query %}{{ pagination_query }}&{% endif %}page={{ p }}"
+                            class="join-item btn {% if p == page_obj.number %}btn-active{% endif %}"
+                            hx-get="?{% if pagination_query %}{{ pagination_query }}&{% endif %}page={{ p }}"
+                            hx-target="#portal-data-listing"
+                            hx-swap="innerHTML"
+                            hx-push-url="true"
+                        >
+                            {{ p }}
+                        </a>
+                    {% endif %}
+                {% endfor %}
+            </nav>
+        {% endif %}
+    </main>
+</div>
