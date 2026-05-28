@@ -60,9 +60,8 @@ class DashboardDataForm(WagtailAdminModelForm):
         if not result.is_valid:
             raise ValidationError(result.errors[0])
 
-        dashboard_slug = (
-            self.cleaned_data.get("dashboard_slug")
-            or getattr(self.instance, "dashboard_slug", "")
+        dashboard_slug = self.cleaned_data.get("dashboard_slug") or getattr(
+            self.instance, "dashboard_slug", ""
         )
         if column_error := validate_source_columns(dashboard_slug, result.columns):
             raise ValidationError(column_error)
@@ -179,18 +178,22 @@ class DashboardData(RevisionMixin, models.Model):
         if self.source_file:
             rewind_source_file(self.source_file)
             new_hash = calculate_file_hash(self.source_file)
-            new_upload = (
-                getattr(self, "_pending_source_upload", False)
-                or _is_new_source_file_upload(self.source_file)
-            )
+            new_upload = getattr(
+                self, "_pending_source_upload", False
+            ) or _is_new_source_file_upload(self.source_file)
             if hasattr(self, "_pending_source_upload"):
                 delattr(self, "_pending_source_upload")
 
             if self.pk:
-                row = type(self).objects.filter(pk=self.pk).only(
-                    "source_file_hash",
-                    "data_updated_at",
-                ).first()
+                row = (
+                    type(self)
+                    .objects.filter(pk=self.pk)
+                    .only(
+                        "source_file_hash",
+                        "data_updated_at",
+                    )
+                    .first()
+                )
                 old_hash = row.source_file_hash if row else None
                 if original_date is None and row is not None:
                     original_date = row.data_updated_at

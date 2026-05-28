@@ -24,10 +24,7 @@ def validate_source_columns(columns: list[str]) -> str | None:
     """Return an error message when required NPC CSV columns are missing."""
     found = {column.strip() for column in columns}
     if not REQUIRED_SOURCE_COLUMNS.issubset(found):
-        return (
-            "CSV must include columns: date, count, class "
-            f"(found: {', '.join(columns)})."
-        )
+        return f"CSV must include columns: date, count, class (found: {', '.join(columns)})."
     return None
 
 

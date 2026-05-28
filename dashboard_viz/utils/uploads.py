@@ -27,7 +27,7 @@ def rewind_source_file(source_file: SourceFile) -> None:
     if hasattr(source_file, "seek"):
         try:
             source_file.seek(0)
-        except (ValueError, OSError):
+        except ValueError, OSError:
             return
 
 
@@ -147,7 +147,7 @@ def validate_csv(file: BinaryIO) -> CsvValidationResult:
     """Validate that a file is non-empty UTF-8 CSV with a header and data rows."""
     try:
         content = read_source_text(file)
-    except (UnicodeDecodeError, TypeError):
+    except UnicodeDecodeError, TypeError:
         return CsvValidationResult(is_valid=False, errors=["File is not valid UTF-8 text."])
 
     if not content.strip():
