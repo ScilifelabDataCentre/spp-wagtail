@@ -1,6 +1,7 @@
 """Wagtail CMS Page models."""
 
 from .catalogue import CataloguePage
+from .contact import ContactPage
 from .dashboard import DashboardPage, DashboardTopic
 from .dashboard_index import DashboardIndexPage
 from .highlights_and_editorials import (
@@ -23,6 +24,7 @@ from .topics_index import TopicsIndexPage
 
 __all__ = [
     "CataloguePage",
+    "ContactPage",
     "DashboardIndexPage",
     "DashboardPage",
     "DashboardTopic",
