@@ -61,6 +61,7 @@ def build_portal_data_context(
             "size_options": size_options,
             "form_action": request.path,
             "reset_url": request.path,
+            "pagination_query": "",
         }
 
     query = request.GET.get("q", "").strip()
@@ -71,10 +72,20 @@ def build_portal_data_context(
         size = int(raw_size)
     except (TypeError, ValueError):
         size = default_size
+
     if size not in size_options:
         size = default_size
 
-    facet_names = request.GET.getlist("facet") or list(config.default_facets)
+    # Facet fields are configuration, not request state.
+    #
+    # Previously, facet_names came from request.GET.getlist("facet"), with a fallback
+    # to config.default_facets. That made the UI depend on hidden "facet" inputs.
+    #
+    # With HTMX, the form submits selected facet values directly via checkbox names
+    # such as ?year=2024&repository=MetaboLights. The list of available facet groups
+    # should therefore always come from the backend config.
+    facet_names = list(config.default_facets)
+
     filters = {
         field: request.GET.getlist(field)
         for field in facet_names
@@ -92,8 +103,18 @@ def build_portal_data_context(
     page_obj = paginator.get_page(page_number)
     page_range = [
         None if p == Paginator.ELLIPSIS else p
-        for p in paginator.get_elided_page_range(page_obj.number, on_each_side=2, on_ends=1)
+        for p in paginator.get_elided_page_range(
+            page_obj.number,
+            on_each_side=2,
+            on_ends=1,
+        )
     ]
+
+    # Used by pagination links so search and selected facets survive page changes.
+    # We intentionally remove "page" because each pagination link supplies its own.
+    query_params = request.GET.copy()
+    query_params.pop("page", None)
+    pagination_query = query_params.urlencode()
 
     return {
         "datatype": datatype,
@@ -112,4 +133,5 @@ def build_portal_data_context(
         "size_options": size_options,
         "form_action": request.path,
         "reset_url": request.path,
+        "pagination_query": pagination_query,
     }

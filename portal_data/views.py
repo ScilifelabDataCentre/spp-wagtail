@@ -38,11 +38,16 @@ class DataTypeList(View):
     """Display the portal data index page for a specific data type."""
 
     template_name = "portal_data/index.html"
+    partial_template_name = "portal_data/partials/listing.html"
 
     def get(self, request: HttpRequest, *args: object, **kwargs: object) -> HttpResponse:
         """Render the portal data index page for the requested data type."""
         datatype = str(kwargs["datatype"])
         context = build_portal_data_context(request, datatype=datatype)
+
+        if request.htmx:
+            return render(request, self.partial_template_name, context)
+
         return render(request, self.template_name, context)
 
 class StudyFiles(View):
