@@ -8,7 +8,18 @@
 
 @import "tailwindcss/theme.css" layer(theme);
 @import "tailwindcss/preflight.css" layer(reboot);
-@import "tailwindcss/utilities.css" layer(tw-utilities);
+@import "tailwindcss/utilities.css" layer(tw-utilities) source(none);
+
+/* Explicit scan roots. Scoping these to known app directories keeps the
+   `--watch` subscription off `logs/` and `.venv/`. When adding a new
+   top-level app with templates, register it here with another @source line. */
+@source "../../../../cms";
+
+/* The DaisyUI plugin modules live next to base.css so '@plugin' can resolve
+   them, but they sit inside the scoped source root. Without these excludes,
+   Tailwind would scan their implementations and emit every class-like token
+   they contain (the Docker image has no .gitignore to filter them out). */
+@source not "**/daisyui*.mjs";
 
 /* Global theme with Pathogens portal visual identity colours */
 @theme {
