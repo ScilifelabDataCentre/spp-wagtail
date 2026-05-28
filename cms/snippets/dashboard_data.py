@@ -1,5 +1,7 @@
 """Dashboard data upload snippet."""
 
+from __future__ import annotations
+
 import structlog
 from django.contrib.contenttypes.fields import GenericRelation
 from django.core.exceptions import ValidationError
@@ -67,7 +69,7 @@ class DashboardDataForm(WagtailAdminModelForm):
 
         return source_file
 
-    def save(self, commit: bool = True):
+    def save(self, commit: bool = True) -> DashboardData:
         """Mark pending uploads before Django commits the file to storage."""
         if self.files.get("source_file"):
             self.instance._pending_source_upload = True
@@ -160,39 +162,6 @@ class DashboardData(RevisionMixin, models.Model):
         """Return title and upload timestamp."""
         return f"{self.dashboard_title} ({self.uploaded_at:%Y-%m-%d %H:%M})"
 
-    def _clear_save_feedback(self) -> None:
-        for attr in (
-            "_duplicate_source_upload",
-            "_regenerated_figure_count",
-            "_regeneration_error",
-            "_regeneration_empty",
-        ):
-            if hasattr(self, attr):
-                delattr(self, attr)
-
-    def _regenerate_figures_from_storage(self, original_date: object) -> None:
-        """Generate figures from the committed source file and update ``data``."""
-        from dashboard_viz import generate_figures
-
-        self.refresh_from_db(fields=["source_file", "source_file_hash", "dashboard_slug"])
-        rewind_source_file(self.source_file)
-
-        LOGGER.info(
-            "dashboard_data.regenerating_figures",
-            dashboard_slug=self.dashboard_slug,
-            source_file_hash=self.source_file_hash,
-        )
-        figures = generate_figures(self.dashboard_slug, self.source_file)
-        self.data = figures or {}
-        self.data_updated_at = timezone.localdate()
-        self._regenerated_figure_count = len(self.data)
-        if not self.data:
-            self._regeneration_empty = True
-            LOGGER.warning(
-                "dashboard_data.regeneration_empty",
-                dashboard_slug=self.dashboard_slug,
-            )
-
     def save(self, *args: object, **kwargs: object) -> None:
         """Persist the row and regenerate figures when the source file changes."""
         if getattr(self, _SKIP_FILE_HOOK_ATTR, False):
@@ -273,6 +242,39 @@ class DashboardData(RevisionMixin, models.Model):
         except cls.DoesNotExist:
             return None
 
+    def _clear_save_feedback(self) -> None:
+        for attr in (
+            "_duplicate_source_upload",
+            "_regenerated_figure_count",
+            "_regeneration_error",
+            "_regeneration_empty",
+        ):
+            if hasattr(self, attr):
+                delattr(self, attr)
+
+    def _regenerate_figures_from_storage(self, original_date: object) -> None:
+        """Generate figures from the committed source file and update ``data``."""
+        from dashboard_viz import generate_figures
+
+        self.refresh_from_db(fields=["source_file", "source_file_hash", "dashboard_slug"])
+        rewind_source_file(self.source_file)
+
+        LOGGER.info(
+            "dashboard_data.regenerating_figures",
+            dashboard_slug=self.dashboard_slug,
+            source_file_hash=self.source_file_hash,
+        )
+        figures = generate_figures(self.dashboard_slug, self.source_file)
+        self.data = figures or {}
+        self.data_updated_at = timezone.localdate()
+        self._regenerated_figure_count = len(self.data)
+        if not self.data:
+            self._regeneration_empty = True
+            LOGGER.warning(
+                "dashboard_data.regeneration_empty",
+                dashboard_slug=self.dashboard_slug,
+            )
+
 
 def get_dashboard_data_save_feedback(instance: DashboardData) -> tuple[str | None, str]:
     """Return custom admin feedback text and Wagtail message level, if any."""
@@ -323,7 +325,8 @@ def apply_uploaded_by(instance: DashboardData, request: object) -> None:
 class DashboardDataUploadedByMixin:
     """Record which editor uploaded (or re-uploaded) the source file."""
 
-    def save_instance(self):
+    def save_instance(self) -> object:
+        """Set ``uploaded_by`` on the snippet before Wagtail persists it."""
         apply_uploaded_by(self.form.instance, self.request)
         return super().save_instance()
 
@@ -337,6 +340,7 @@ class DashboardDataNoAutosaveMixin:
     """
 
     def setup(self, request: object, *args: object, **kwargs: object) -> None:
+        """Disable autosave so file uploads are not saved until Save is clicked."""
         super().setup(request, *args, **kwargs)
         self.autosave_enabled = False
 
@@ -345,6 +349,7 @@ class DashboardDataSnippetSaveMessagesMixin:
     """Mixin for snippet create/edit views that surfaces upload feedback."""
 
     def save_action(self) -> object:
+        """Show upload/regeneration feedback instead of the default success message."""
         message, level = get_dashboard_data_save_feedback(self.object)
         if message is not None:
             method = getattr(admin_messages, level, admin_messages.success)

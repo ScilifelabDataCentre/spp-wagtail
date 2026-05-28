@@ -5,12 +5,12 @@ import hashlib
 import io
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import BinaryIO, TypeAlias
+from typing import BinaryIO
 
 import pandas as pd
 from django.db.models.fields.files import FieldFile
 
-SourceFile: TypeAlias = str | Path | BinaryIO
+type SourceFile = str | Path | BinaryIO
 
 
 def is_field_file(source_file: object) -> bool:

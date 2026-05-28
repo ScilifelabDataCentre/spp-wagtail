@@ -1,7 +1,5 @@
 """Last updated block for dashboard data freshness dates."""
 
-from typing import Any
-
 from wagtail.blocks import CharBlock, StructBlock
 
 
@@ -10,7 +8,8 @@ class LastUpdatedBlock(StructBlock):
 
     The date comes from ``DashboardData.data_updated_at`` (set in the upload
     snippet), passed through ``DashboardPage.get_context()`` as ``data_updated_at``.
-    If no date is set, nothing is rendered.
+    Wagtail merges page context into block templates automatically, so this block
+    does not need a custom ``get_context``. If no date is set, nothing is rendered.
 
     Attributes:
         label: Heading before the date (default "Last updated").
@@ -26,17 +25,6 @@ class LastUpdatedBlock(StructBlock):
         required=False,
         help_text='Optional text after the date (e.g. "(no longer updating)").',
     )
-
-    def get_context(
-        self,
-        value: dict[str, Any],
-        parent_context: dict | None = None,
-    ) -> dict[str, Any]:
-        """Expose the public data freshness date from the page context."""
-        context = super().get_context(value, parent_context)
-        parent_context = parent_context or {}
-        context["data_updated_at"] = parent_context.get("data_updated_at")
-        return context
 
     class Meta:
         """Block metadata."""

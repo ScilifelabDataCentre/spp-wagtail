@@ -337,9 +337,10 @@ class TestDashboardDataSaveIntegration(TestCase):
 
     def test_latest_revision_save_preserves_duplicate_feedback(self) -> None:
         """Test that Wagtail revision bookkeeping does not clear upload feedback flags."""
+        npc_csv = b"date,class,count\n2024-01-01,positive,1\n"
         row = DashboardData.objects.create(
             dashboard_slug="revision-feedback-dashboard",
-            source_file=SimpleUploadedFile("npc.csv", b"date,class,count\n2024-01-01,positive,1\n", "text/csv"),
+            source_file=SimpleUploadedFile("npc.csv", npc_csv, "text/csv"),
         )
         row._duplicate_source_upload = True
         row.save(update_fields=["latest_revision"])
@@ -380,11 +381,11 @@ class TestDashboardDataAdminMessages(TestCase):
 
         from cms.snippets.dashboard_data import DashboardDataEditView
 
-        User = get_user_model()
-        admin = User.objects.create_superuser(
+        user_model = get_user_model()
+        admin = user_model.objects.create_superuser(
             username="autosave-test",
             email="autosave@test.example",
-            password="password",
+            password="testpass",  # noqa: S106
         )
         row = DashboardData.objects.create(
             dashboard_slug="autosave-dashboard",
@@ -466,9 +467,10 @@ class TestDashboardDataFormValidation(TestCase):
 
         from cms.snippets.dashboard_data import DashboardData, DashboardDataForm
 
+        csv_content = b"date,count,class\n2024-01-01,1,positive\n"
         row = DashboardData.objects.create(
             dashboard_slug="form-test-dashboard",
-            source_file=SimpleUploadedFile("data.csv", b"date,count,class\n2024-01-01,1,positive\n", "text/csv"),
+            source_file=SimpleUploadedFile("data.csv", csv_content, "text/csv"),
         )
         form_class = ObjectList(DashboardData.panels).bind_to_model(DashboardData).get_form_class()
         self.assertTrue(issubclass(form_class, DashboardDataForm))
@@ -503,11 +505,11 @@ class TestUploadedBy(TestCase):
 
         from cms.snippets.dashboard_data import DashboardData, apply_uploaded_by
 
-        User = get_user_model()
-        admin = User.objects.create_superuser(
+        user_model = get_user_model()
+        admin = user_model.objects.create_superuser(
             username="upload-editor",
             email="upload@test.example",
-            password="password",
+            password="testpass",  # noqa: S106
         )
         request = RequestFactory().post("/", {})
         request.user = admin
@@ -523,22 +525,24 @@ class TestUploadedBy(TestCase):
 
         from cms.snippets.dashboard_data import DashboardData, apply_uploaded_by
 
-        User = get_user_model()
-        admin = User.objects.create_superuser(
+        user_model = get_user_model()
+        admin = user_model.objects.create_superuser(
             username="reupload-editor",
             email="reupload@test.example",
-            password="password",
+            password="testpass",  # noqa: S106
         )
+        csv_content = b"date,count,class\n2024-01-01,1,positive\n"
         row = DashboardData.objects.create(
             dashboard_slug="reupload-by-test",
             dashboard_title="Reupload test",
             uploaded_by="original-editor",
-            source_file=SimpleUploadedFile("data.csv", b"date,count,class\n2024-01-01,1,positive\n", "text/csv"),
+            source_file=SimpleUploadedFile("data.csv", csv_content, "text/csv"),
         )
 
+        new_csv = b"date,count,class\n2024-01-02,2,negative\n"
         request = RequestFactory().post(
             "/",
-            {"source_file": SimpleUploadedFile("new.csv", b"date,count,class\n2024-01-02,2,negative\n", "text/csv")},
+            {"source_file": SimpleUploadedFile("new.csv", new_csv, "text/csv")},
         )
         request.user = admin
         apply_uploaded_by(row, request)
@@ -551,17 +555,18 @@ class TestUploadedBy(TestCase):
 
         from cms.snippets.dashboard_data import DashboardData, apply_uploaded_by
 
-        User = get_user_model()
-        admin = User.objects.create_superuser(
+        user_model = get_user_model()
+        admin = user_model.objects.create_superuser(
             username="metadata-editor",
             email="metadata@test.example",
-            password="password",
+            password="testpass",  # noqa: S106
         )
+        csv_content = b"date,count,class\n2024-01-01,1,positive\n"
         row = DashboardData.objects.create(
             dashboard_slug="metadata-by-test",
             dashboard_title="Metadata test",
             uploaded_by="original-editor",
-            source_file=SimpleUploadedFile("data.csv", b"date,count,class\n2024-01-01,1,positive\n", "text/csv"),
+            source_file=SimpleUploadedFile("data.csv", csv_content, "text/csv"),
         )
 
         request = RequestFactory().post("/", {})
