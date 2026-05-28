@@ -158,8 +158,8 @@ class DashboardData(RevisionMixin, models.Model):
         verbose_name_plural = "Dashboard data uploads"
 
     def __str__(self) -> str:
-        """Return title and upload timestamp."""
-        return f"{self.dashboard_title} ({self.uploaded_at:%Y-%m-%d %H:%M})"
+        """Return the admin display label for this upload."""
+        return self.dashboard_title or self.dashboard_slug
 
     def save(self, *args: object, **kwargs: object) -> None:
         """Persist the row and regenerate figures when the source file changes."""
