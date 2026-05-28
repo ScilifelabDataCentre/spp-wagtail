@@ -3,7 +3,7 @@
 from django import template
 from django.template.loader import render_to_string
 
-from dashboard_viz.utils.plotly import get_plotlyjs_cdn_param
+from dashboard_visualisation.utils.plotly import get_plotlyjs_cdn_param
 
 register = template.Library()
 

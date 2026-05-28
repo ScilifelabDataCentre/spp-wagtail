@@ -5,7 +5,7 @@ from io import BytesIO
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import SimpleTestCase
 
-from dashboard_viz.utils.uploads import calculate_file_hash
+from dashboard_visualisation.utils.uploads import calculate_file_hash
 
 
 class TestCalculateFileHash(SimpleTestCase):

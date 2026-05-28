@@ -1,11 +1,11 @@
-"""Minimal viz module for ``dashboard_viz`` registry tests only."""
+"""Minimal viz module for ``dashboard_visualisation`` registry tests only."""
 
 from typing import Any
 
 import plotly.express as px
 
-from dashboard_viz.utils import figure_to_json
-from dashboard_viz.utils.uploads import SourceFile, read_csv_dataframe, rewind_source_file
+from dashboard_visualisation.utils import figure_to_json
+from dashboard_visualisation.utils.uploads import SourceFile, read_csv_dataframe, rewind_source_file
 
 REQUIRED_SOURCE_COLUMNS = frozenset({"date", "value"})
 

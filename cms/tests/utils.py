@@ -6,7 +6,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from PIL import Image as PILImage
 from wagtail.images import get_image_model
 
-from dashboard_viz.utils.uploads import CsvValidationResult, validate_csv
+from dashboard_visualisation.utils.uploads import CsvValidationResult, validate_csv
 
 __all__ = ["CsvValidationResult", "create_test_image", "validate_csv"]
 

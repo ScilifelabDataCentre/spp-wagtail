@@ -5,7 +5,7 @@ from typing import Any
 from django.core.cache import cache
 from wagtail.blocks import BooleanBlock, CharBlock, IntegerBlock, StructBlock, URLBlock
 
-from dashboard_viz.utils import plot_html_from_json
+from dashboard_visualisation.utils import plot_html_from_json
 
 
 class PlotlyFigureBlock(StructBlock):

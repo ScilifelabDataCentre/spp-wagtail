@@ -3,7 +3,7 @@
 from django.template import Context, Template
 from django.test import SimpleTestCase
 
-from dashboard_viz.utils.plotly import get_plotlyjs_cdn_param
+from dashboard_visualisation.utils.plotly import get_plotlyjs_cdn_param
 
 
 class TestPlotlyCdn(SimpleTestCase):

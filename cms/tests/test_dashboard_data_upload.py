@@ -9,9 +9,9 @@ from django.test import TestCase
 
 from cms.snippets.dashboard_data import DashboardData, get_dashboard_data_save_feedback
 from cms.tests.utils import validate_csv
-from dashboard_viz import generate_figures
-from dashboard_viz.registry import VIZ_MODULES
-from dashboard_viz.utils.uploads import calculate_file_hash
+from dashboard_visualisation import generate_figures
+from dashboard_visualisation.registry import VIZ_MODULES
+from dashboard_visualisation.utils.uploads import calculate_file_hash
 
 SAMPLE_DASHBOARD_SLUG = "sample-dashboard"
 SAMPLE_VIZ_MODULE = "cms.tests.sample_viz"
@@ -205,7 +205,7 @@ class TestDashboardDataSaveIntegration(TestCase):
         self.assertEqual(row.data, {})
         self.assertEqual(len(row.source_file_hash), 64)
 
-    @patch("dashboard_viz.generate_figures", return_value={"chart": {"data": []}})
+    @patch("dashboard_visualisation.generate_figures", return_value={"chart": {"data": []}})
     def test_regenerates_figures_when_file_changes_with_existing_data(
         self,
         mock_generate: object,
@@ -226,7 +226,7 @@ class TestDashboardDataSaveIntegration(TestCase):
         self.assertEqual(mock_generate.call_count, 2)
         self.assertEqual(row.data, {"chart": {"data": []}})
 
-    @patch("dashboard_viz.generate_figures", return_value={"chart": {}})
+    @patch("dashboard_visualisation.generate_figures", return_value={"chart": {}})
     def test_does_not_regenerate_figures_without_file_change(
         self,
         mock_generate: object,
@@ -243,7 +243,7 @@ class TestDashboardDataSaveIntegration(TestCase):
         row.save()
         self.assertEqual(mock_generate.call_count, 1)
 
-    @patch("dashboard_viz.generate_figures", return_value={"chart": {"data": []}})
+    @patch("dashboard_visualisation.generate_figures", return_value={"chart": {"data": []}})
     def test_same_file_content_does_not_regenerate(
         self,
         mock_generate: object,
@@ -268,7 +268,7 @@ class TestDashboardDataSaveIntegration(TestCase):
         self.assertEqual(mock_generate.call_count, 1)
         self.assertEqual(row.data_updated_at, historic_date)
 
-    @patch("dashboard_viz.generate_figures", return_value={"chart": {"data": []}})
+    @patch("dashboard_visualisation.generate_figures", return_value={"chart": {"data": []}})
     def test_file_change_persists_even_with_update_fields(
         self,
         mock_generate: object,
@@ -311,7 +311,7 @@ class TestDashboardDataSaveIntegration(TestCase):
 
         self.assertNotEqual(pending_hash, stored_hash)
 
-    @patch("dashboard_viz.generate_figures", return_value={"chart": {"data": []}})
+    @patch("dashboard_visualisation.generate_figures", return_value={"chart": {"data": []}})
     def test_duplicate_reupload_sets_feedback_flag(
         self,
         mock_generate: object,
@@ -344,7 +344,7 @@ class TestDashboardDataSaveIntegration(TestCase):
 
         self.assertTrue(row._duplicate_source_upload)
 
-    @patch("dashboard_viz.generate_figures", side_effect=ValueError("invalid csv"))
+    @patch("dashboard_visualisation.generate_figures", side_effect=ValueError("invalid csv"))
     def test_regeneration_failure_reverts_data_updated_at(
         self,
         mock_generate: object,

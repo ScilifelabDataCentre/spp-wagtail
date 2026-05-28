@@ -1,4 +1,4 @@
-"""Dashboard visualization services."""
+"""Dashboard visualisation services (figure generation from source data)."""
 
 from .registry import generate_figures
 

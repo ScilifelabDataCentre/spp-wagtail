@@ -16,8 +16,12 @@ from wagtail.models import RevisionMixin
 from wagtail.snippets.models import register_snippet
 from wagtail.snippets.views.snippets import CreateView, EditView, SnippetViewSet
 
-from dashboard_viz.registry import validate_source_columns
-from dashboard_viz.utils.uploads import calculate_file_hash, rewind_source_file, validate_csv
+from dashboard_visualisation.registry import validate_source_columns
+from dashboard_visualisation.utils.uploads import (
+    calculate_file_hash,
+    rewind_source_file,
+    validate_csv,
+)
 
 LOGGER = structlog.get_logger(__name__)
 
@@ -251,7 +255,7 @@ class DashboardData(RevisionMixin, models.Model):
 
     def _regenerate_figures_from_storage(self, original_date: object) -> None:
         """Generate figures from the committed source file and update ``data``."""
-        from dashboard_viz import generate_figures
+        from dashboard_visualisation import generate_figures
 
         self.refresh_from_db(fields=["source_file", "source_file_hash", "dashboard_slug"])
         rewind_source_file(self.source_file)

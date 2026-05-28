@@ -10,12 +10,12 @@ from typing import Any
 
 import structlog
 
-from dashboard_viz.utils.uploads import SourceFile
+from dashboard_visualisation.utils.uploads import SourceFile
 
 LOGGER = structlog.get_logger(__name__)
 
 # Register active (non-historic) dashboard slugs here, e.g.:
-# "serology-statistics": "dashboard_viz.serology_statistics",
+# "serology-statistics": "dashboard_visualisation.serology_statistics",
 VIZ_MODULES: dict[str, str] = {}
 
 
@@ -54,11 +54,11 @@ def generate_figures(
     """
     module_path = VIZ_MODULES.get(dashboard_slug)
     if module_path is None:
-        LOGGER.info("dashboard_viz.unregistered_slug", dashboard_slug=dashboard_slug)
+        LOGGER.info("dashboard_visualisation.unregistered_slug", dashboard_slug=dashboard_slug)
         return {}
 
     LOGGER.info(
-        "dashboard_viz.generating_figures",
+        "dashboard_visualisation.generating_figures",
         dashboard_slug=dashboard_slug,
         module=module_path,
     )
@@ -67,7 +67,7 @@ def generate_figures(
         figures = module.generate_figures(source_file)
     except Exception as exc:
         LOGGER.warning(
-            "dashboard_viz.generation_failed",
+            "dashboard_visualisation.generation_failed",
             dashboard_slug=dashboard_slug,
             module=module_path,
             error=str(exc),
@@ -76,7 +76,7 @@ def generate_figures(
         raise
 
     LOGGER.info(
-        "dashboard_viz.generation_complete",
+        "dashboard_visualisation.generation_complete",
         dashboard_slug=dashboard_slug,
         figure_count=len(figures),
     )
