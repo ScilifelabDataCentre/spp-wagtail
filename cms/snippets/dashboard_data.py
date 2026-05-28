@@ -184,6 +184,7 @@ class DashboardData(RevisionMixin, models.Model):
             if hasattr(self, "_pending_source_upload"):
                 delattr(self, "_pending_source_upload")
 
+            file_changed = not self.pk
             if self.pk:
                 row = (
                     type(self)
@@ -199,8 +200,6 @@ class DashboardData(RevisionMixin, models.Model):
                     original_date = row.data_updated_at
                 file_changed = old_hash != new_hash
                 duplicate_upload = new_upload and not file_changed
-            else:
-                file_changed = True
 
             self.source_file_hash = new_hash
 
