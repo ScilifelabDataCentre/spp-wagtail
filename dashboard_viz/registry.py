@@ -14,9 +14,9 @@ from dashboard_viz.utils.uploads import SourceFile
 
 LOGGER = structlog.get_logger(__name__)
 
-VIZ_MODULES: dict[str, str] = {
-    "npc-statistics": "dashboard_viz.npc_statistics",
-}
+# Register active (non-historic) dashboard slugs here, e.g.:
+# "serology-statistics": "dashboard_viz.serology_statistics",
+VIZ_MODULES: dict[str, str] = {}
 
 
 def validate_source_columns(dashboard_slug: str, columns: list[str]) -> str | None:

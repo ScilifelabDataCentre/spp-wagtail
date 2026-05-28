@@ -10,15 +10,14 @@ from django.test import TestCase
 from cms.snippets.dashboard_data import DashboardData, get_dashboard_data_save_feedback
 from cms.tests.utils import validate_csv
 from dashboard_viz import generate_figures
+from dashboard_viz.registry import VIZ_MODULES
 from dashboard_viz.utils.uploads import calculate_file_hash
 
-MINIMAL_NPC_CSV = b"""date,class,count
-2024-01-01,positive,10
-2024-01-01,negative,20
-2024-01-01,invalid/inconclusive,1
-2024-01-08,positive,5
-2024-01-08,negative,15
-2024-01-08,invalid/inconclusive,0
+SAMPLE_DASHBOARD_SLUG = "sample-dashboard"
+SAMPLE_VIZ_MODULE = "cms.tests.sample_viz"
+MINIMAL_SAMPLE_CSV = b"""date,value
+2024-01-01,10
+2024-01-08,5
 """
 
 
@@ -87,6 +86,18 @@ class TestCsvValidation(TestCase):
 class TestGenerateFigures(TestCase):
     """Tests for the viz service registry."""
 
+    def setUp(self) -> None:
+        """Register a minimal test viz module for dispatch tests."""
+        self._viz_modules_patch = patch.dict(
+            VIZ_MODULES,
+            {SAMPLE_DASHBOARD_SLUG: SAMPLE_VIZ_MODULE},
+        )
+        self._viz_modules_patch.start()
+
+    def tearDown(self) -> None:
+        """Restore the viz module registry."""
+        self._viz_modules_patch.stop()
+
     def test_unregistered_slug_returns_empty_dict(self) -> None:
         """Test that an unregistered dashboard slug returns empty dict."""
         result = generate_figures("nonexistent-dashboard", "/fake/path.csv")
@@ -97,56 +108,42 @@ class TestGenerateFigures(TestCase):
         result = generate_figures("unknown-slug", "/any/path.csv")
         self.assertIsInstance(result, dict)
 
-    def test_npc_statistics_accepts_bytesio_without_path(self) -> None:
+    def test_registered_viz_accepts_bytesio_without_path(self) -> None:
         """Test that registered viz services read from in-memory file objects."""
-        source = BytesIO(MINIMAL_NPC_CSV)
-        result = generate_figures("npc-statistics", source)
+        source = BytesIO(MINIMAL_SAMPLE_CSV)
+        result = generate_figures(SAMPLE_DASHBOARD_SLUG, source)
 
-        self.assertEqual(
-            set(result.keys()),
-            {
-                "npc_total_tests",
-                "npc_tests_daily",
-                "npc_tests_weekly",
-                "npc_positive_fraction_daily",
-                "npc_positive_fraction_weekly",
-                "npc_cumulative_tests",
-            },
-        )
+        self.assertEqual(set(result.keys()), {"sample_chart"})
 
-    def test_npc_statistics_accepts_semicolon_delimited_csv(self) -> None:
-        """Test that NPC viz accepts semicolon-separated CSV exports."""
-        source = BytesIO(
-            b"date;class;count\n2024-01-01;positive;10\n2024-01-01;negative;20\n"
-            b"2024-01-01;invalid/inconclusive;1\n2024-01-08;positive;5\n"
-            b"2024-01-08;negative;15\n2024-01-08;invalid/inconclusive;0\n"
-        )
-        result = generate_figures("npc-statistics", source)
+    def test_registered_viz_accepts_semicolon_delimited_csv(self) -> None:
+        """Test that registered viz accepts semicolon-separated CSV exports."""
+        source = BytesIO(b"date;value\n2024-01-01;10\n2024-01-08;5\n")
+        result = generate_figures(SAMPLE_DASHBOARD_SLUG, source)
 
-        self.assertIn("npc_total_tests", result)
+        self.assertIn("sample_chart", result)
 
-    def test_npc_statistics_rewinds_file_after_prior_read(self) -> None:
+    def test_registered_viz_rewinds_file_after_prior_read(self) -> None:
         """Test that generate_figures works when the file was read earlier (e.g. hashing)."""
-        source = BytesIO(MINIMAL_NPC_CSV)
+        source = BytesIO(MINIMAL_SAMPLE_CSV)
         source.read()
-        result = generate_figures("npc-statistics", source)
+        result = generate_figures(SAMPLE_DASHBOARD_SLUG, source)
 
-        self.assertIn("npc_total_tests", result)
+        self.assertIn("sample_chart", result)
 
-    def test_npc_statistics_reads_committed_field_file(self) -> None:
+    def test_registered_viz_reads_committed_field_file(self) -> None:
         """Test that figure generation reads committed Django storage files as text."""
         row = DashboardData.objects.create(
             dashboard_slug="field-file-dashboard",
             dashboard_title="Field file dashboard",
             source_file=SimpleUploadedFile(
-                "npc.csv",
-                MINIMAL_NPC_CSV,
+                "data.csv",
+                MINIMAL_SAMPLE_CSV,
                 "text/csv",
             ),
         )
-        result = generate_figures("npc-statistics", row.source_file)
+        result = generate_figures(SAMPLE_DASHBOARD_SLUG, row.source_file)
 
-        self.assertIn("npc_total_tests", result)
+        self.assertIn("sample_chart", result)
 
 
 class TestDashboardDataSaveIntegration(TestCase):
@@ -417,7 +414,7 @@ class TestDashboardDataAdminMessages(TestCase):
         request.session = {}
         request._messages = FallbackStorage(request)
 
-        row = DashboardData(dashboard_slug="npc-statistics")
+        row = DashboardData(dashboard_slug="duplicate-message-dashboard")
         row._duplicate_source_upload = True
         message, level = get_dashboard_data_save_feedback(row)
         self.assertIsNotNone(message)
