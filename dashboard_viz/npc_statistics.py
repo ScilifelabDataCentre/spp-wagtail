@@ -9,13 +9,26 @@ This is a direct port of the legacy scripts in
 old-portal/pathogens-portal-visualisations/npctests/.
 """
 
-from pathlib import Path
 from typing import Any
 
 import pandas as pd
 import plotly.express as px
 
 from dashboard_viz.utils import figure_to_json
+from dashboard_viz.utils.uploads import SourceFile, read_csv_dataframe, rewind_source_file
+
+REQUIRED_SOURCE_COLUMNS = frozenset({"date", "count", "class"})
+
+
+def validate_source_columns(columns: list[str]) -> str | None:
+    """Return an error message when required NPC CSV columns are missing."""
+    found = {column.strip() for column in columns}
+    if not REQUIRED_SOURCE_COLUMNS.issubset(found):
+        return (
+            "CSV must include columns: date, count, class "
+            f"(found: {', '.join(columns)})."
+        )
+    return None
 
 
 def _total_tests(npc_data: pd.DataFrame) -> dict[str, Any]:
@@ -286,16 +299,18 @@ def _cumulative_tests(npc_data: pd.DataFrame) -> dict[str, Any]:
     return figure_to_json(fig)
 
 
-def generate_figures(source_file: str | Path) -> dict[str, Any]:
+def generate_figures(source_file: SourceFile) -> dict[str, Any]:
     """Generate all 6 NPC statistics Plotly figures from the CSV.
 
     Args:
-        source_file: Path or file-like object for the NPC statistics CSV.
+        source_file: Path or file-like object (e.g. Django ``FieldFile``,
+            ``BytesIO``) for the NPC statistics CSV.
 
     Returns:
         Dict mapping figure_id to Plotly figure JSON.
     """
-    npc_data = pd.read_csv(source_file)
+    rewind_source_file(source_file)
+    npc_data = read_csv_dataframe(source_file)
 
     return {
         "npc_total_tests": _total_tests(npc_data),

@@ -21,7 +21,6 @@ class PlotlyFigureBlock(StructBlock):
         caption: Optional text displayed below the chart.
         script_github_url: Link to the viz script in this repo on GitHub.
         show_data_download: Whether to show a data download link below the chart.
-        alt_text: Accessibility description of the chart.
     """
 
     figure_id = CharBlock(
@@ -70,7 +69,8 @@ class PlotlyFigureBlock(StructBlock):
         if figure_json is not None:
             page = parent_context.get("page")
             slug = getattr(page, "slug", "unknown")
-            cache_key = f"dashboard_plot_html:{slug}:{figure_id}"
+            file_hash = parent_context.get("source_file_hash") or ""
+            cache_key = f"dashboard_plot_html:{slug}:{figure_id}:{file_hash}"
             plot_html = cache.get(cache_key)
             if plot_html is None:
                 plot_html = plot_html_from_json(

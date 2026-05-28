@@ -95,6 +95,7 @@ class DashboardPage(Page):
         context["dashboard_data"] = dashboard_data
         context["figures"] = dashboard_data.data if dashboard_data else {}
         context["data_updated_at"] = dashboard_data.data_updated_at if dashboard_data else None
+        context["source_file_hash"] = dashboard_data.source_file_hash if dashboard_data else ""
 
         parent = self.get_ancestors().type(DashboardIndexPage).specific().first()
         context["page_heading"] = parent.title if parent else ""

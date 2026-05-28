@@ -6,17 +6,39 @@ the registry that dispatches to the correct service based on dashboard_slug.
 """
 
 import importlib
-from pathlib import Path
-from typing import Any, BinaryIO
+from typing import Any
 
 import structlog
 
+from dashboard_viz.utils.uploads import SourceFile
+
 LOGGER = structlog.get_logger(__name__)
+
+VIZ_MODULES: dict[str, str] = {
+    "npc-statistics": "dashboard_viz.npc_statistics",
+}
+
+
+def validate_source_columns(dashboard_slug: str, columns: list[str]) -> str | None:
+    """Return an error message when columns fail dashboard-specific checks.
+
+    Dashboards without a registered viz module, or without a column validator,
+    skip slug-specific checks (generic CSV validation still applies).
+    """
+    module_path = VIZ_MODULES.get(dashboard_slug)
+    if module_path is None:
+        return None
+
+    module = importlib.import_module(module_path)
+    validate = getattr(module, "validate_source_columns", None)
+    if validate is None:
+        return None
+    return validate(columns)
 
 
 def generate_figures(
     dashboard_slug: str,
-    source_file: str | Path | BinaryIO,
+    source_file: SourceFile,
 ) -> dict[str, Any]:
     """Generate all Plotly figures for a dashboard from its source data file.
 
@@ -30,11 +52,7 @@ def generate_figures(
     Returns:
         Dict mapping figure_id to Plotly figure JSON.
     """
-    registry: dict[str, str] = {
-        "npc-statistics": "dashboard_viz.npc_statistics",
-    }
-
-    module_path = registry.get(dashboard_slug)
+    module_path = VIZ_MODULES.get(dashboard_slug)
     if module_path is None:
         LOGGER.info("dashboard_viz.unregistered_slug", dashboard_slug=dashboard_slug)
         return {}
