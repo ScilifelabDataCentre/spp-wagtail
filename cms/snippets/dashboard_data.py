@@ -237,8 +237,8 @@ class DashboardData(RevisionMixin, models.Model):
         super().save(*args, **kwargs)
 
     @classmethod
-    def get_current(cls, dashboard_slug: str) -> DashboardData | None:
-        """Return the data row for a dashboard slug, or None."""
+    def get_data(cls, dashboard_slug: str) -> DashboardData | None:
+        """Return the dashboard data row for a slug, or None."""
         try:
             return cls.objects.get(dashboard_slug=dashboard_slug)
         except cls.DoesNotExist:

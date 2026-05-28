@@ -67,8 +67,8 @@ class TestDashboardDataModel(TestCase):
         self.assertEqual(self.dashboard_data.data_updated_at, date(2024, 6, 15))
 
 
-class TestDashboardDataGetCurrent(TestCase):
-    """Tests for the DashboardData.get_current class method."""
+class TestDashboardDataGetData(TestCase):
+    """Tests for the DashboardData.get_data class method."""
 
     @classmethod
     def setUpTestData(cls) -> None:
@@ -86,11 +86,11 @@ class TestDashboardDataGetCurrent(TestCase):
         )
 
     def test_returns_row_for_slug(self) -> None:
-        """Test that get_current returns the row for a dashboard slug."""
-        result = DashboardData.get_current("serology-statistics")
+        """Test that get_data returns the row for a dashboard slug."""
+        result = DashboardData.get_data("serology-statistics")
         self.assertEqual(result, self.row)
 
     def test_returns_none_for_missing_slug(self) -> None:
-        """Test that get_current returns None when no data exists for slug."""
-        result = DashboardData.get_current("nonexistent-dashboard")
+        """Test that get_data returns None when no data exists for slug."""
+        result = DashboardData.get_data("nonexistent-dashboard")
         self.assertIsNone(result)

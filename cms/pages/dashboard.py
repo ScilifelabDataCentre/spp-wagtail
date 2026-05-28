@@ -91,7 +91,7 @@ class DashboardPage(Page):
         from cms.snippets.dashboard_data import DashboardData
 
         context = super().get_context(request)
-        dashboard_data = DashboardData.get_current(self.slug)
+        dashboard_data = DashboardData.get_data(self.slug)
         context["dashboard_data"] = dashboard_data
         context["figures"] = dashboard_data.data if dashboard_data else {}
         context["data_updated_at"] = dashboard_data.data_updated_at if dashboard_data else None
