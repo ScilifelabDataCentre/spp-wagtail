@@ -1,32 +1,9 @@
-"""URL configuration for the portal data page."""
+"""URL configuration for the portal_data app.
 
-from django.urls import path
-
-from .views import (
-    DataTypeList,
-    DownloadStudyFile,
-    StudyFiles,
-)
+All URL routing has moved to ``portal_data.models.PortalDataPage`` via
+Wagtail's ``RoutablePageMixin``.  This file can be deleted once you are
+satisfied no external code imports from it.
+"""
 
 app_name = "portal_data"
-
-DEFAULT = {"datatype": "metabolomics"}
-
-urlpatterns = [
-    # Root listing page: /portal-data/
-    path("", DataTypeList.as_view(), DEFAULT, name="index"),
-    # Per-study file browser (lists files under the study)
-    path(
-        "<slug:accession>/files/",
-        StudyFiles.as_view(),
-        DEFAULT,
-        name="data_files",
-    ),
-    # Download an individual file from a study (relpath may contain slashes)
-    path(
-        "<slug:accession>/files/<path:relpath>/",
-        DownloadStudyFile.as_view(),
-        DEFAULT,
-        name="data_file",
-    ),
-]
+urlpatterns: list = []
