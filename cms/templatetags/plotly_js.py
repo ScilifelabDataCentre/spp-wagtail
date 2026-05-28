@@ -30,4 +30,4 @@ def plotlyjs_once(context: template.Context) -> str:
     if context.get("plotlyjs_loaded"):
         return ""
     context["plotlyjs_loaded"] = True
-    return render_to_string("cms/partials/plotly_js.html")
+    return render_to_string("cms/components/plotly_js.html")
