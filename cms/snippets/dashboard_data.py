@@ -90,7 +90,6 @@ class DashboardData(RevisionMixin, models.Model):
         data: Pre-computed Plotly figure JSON keyed by figure_id.
         data_updated_at: Public-facing date for when the underlying data was last updated.
             Set automatically to today when ``source_file`` changes; editors can override.
-        uploaded_at: Automatic timestamp when this row was first saved in Wagtail (audit only).
         uploaded_by: Username of the editor who uploaded.
     """
 
@@ -115,10 +114,6 @@ class DashboardData(RevisionMixin, models.Model):
             "Updates automatically to today when the source file is replaced; you can override "
             "manually (e.g. historic migration date)."
         ),
-    )
-    uploaded_at = models.DateTimeField(
-        auto_now_add=True,
-        help_text="When this row was first saved in Wagtail (audit only; not public freshness).",
     )
     uploaded_by = models.CharField(max_length=255, blank=True)
     revisions = GenericRelation("wagtailcore.Revision", related_query_name="dashboarddata")
@@ -393,7 +388,6 @@ class DashboardDataViewSet(SnippetViewSet):
         "dashboard_title",
         "dashboard_slug",
         "data_updated_at",
-        "uploaded_at",
         "uploaded_by",
     ]
     list_filter = ["dashboard_slug"]

@@ -58,7 +58,7 @@ class TestDashboardDataModel(TestCase):
         )
 
     def test_data_updated_at_optional(self) -> None:
-        """Test that data_updated_at can be set independently of uploaded_at."""
+        """Test that data_updated_at can be set and saved independently."""
         from datetime import date
 
         self.dashboard_data.data_updated_at = date(2024, 6, 15)
