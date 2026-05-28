@@ -16,25 +16,24 @@ In addition, the application requires rotating log files with weekly rotation an
 
 ## Decision
 
-We will use django-structlog together with Django’s built-in Python logging framework as the primary logging solution for the Django application.
+We will use `django-structlog` and `structlog` for structured and contextual logging, together with Django/Python's standard logging framework for handlers, output destinations, and log rotation. 
+
+The logging configuration will:
+
+- Use structlog processors to enrich logs with consistent and structured metadata such as timestamps, log levels, logger names, and exception details.
+- Use Django/Python logging handlers to output logs to both the console and rotating log files.
+- Produce structured JSON logs for file output, while using a human-readable console renderer for console output.
+- Use weekly log rotation with retention of historical backups (in production using PVC).
 
 ### Rationale
 
 The solution combines `django-structlog` and `structlog` for structured and contextual log generation, while Python’s standard `logging` framework handles log routing, handlers, output streams, formatting integration, and rotating file management, providing logging capabilities that align well with the project's operational and observability requirements.
 
-The logging configuration will:
-
-- Use structlog processors to enrich logs with consistent and structured metadata such as timestamps, log levels, logger names, and exception details.
-- Use Django/Python logging handlers for console output and rotating log file management.
-- Produce structured JSON logs suitable for machine processing and observability tooling.
-- Output logs to both the console and rotating log files.
-- Use weekly log rotation with retention of historical backups (in production using PVC).
-
 The main reasons for this decision are:
 
 - Native support for JSON-formatted logs, making integration with log aggregation, monitoring, and analytics platforms straightforward.
 - Consistent structured log entries across the application, improving searchability and traceability.
-- Better support for contextual logging, including request IDs, user information, and correlation metadata.
+- Better support for contextual logging, including request IDs, user identifiers (where appropriate), and correlation metadata.
 - Improved compatibility with centralised logging systems and future observability tooling.
 
 ## Consequences
