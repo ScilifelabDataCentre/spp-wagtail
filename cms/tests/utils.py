@@ -6,6 +6,10 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from PIL import Image as PILImage
 from wagtail.images import get_image_model
 
+from dashboard_visualisation.utils.uploads import CsvValidationResult, validate_csv
+
+__all__ = ["CsvValidationResult", "create_test_image", "validate_csv"]
+
 
 def create_test_image(*, title: str = "Test image", file_name: str = "test.jpg"):
     """Create and save a minimal test image for use in tests.
