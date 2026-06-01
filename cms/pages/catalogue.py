@@ -4,9 +4,7 @@ from typing import Any
 
 from django.db import models
 from django.http import HttpRequest, HttpResponse
-from django.shortcuts import render
 from django.utils.functional import cached_property
-from django.utils.http import urlencode
 from django.utils.text import slugify
 from wagtail import blocks
 from wagtail.admin.panels import FieldPanel
@@ -14,7 +12,8 @@ from wagtail.fields import StreamField
 from wagtail.models import Page
 
 from cms.blocks import AlertBlock, CatalogueCardGridBlock
-from cms.services.catalogue import validate_filters
+from cms.services.decorators import htmx_request_with_url_update
+from cms.services.validators import validate_filters
 
 
 class CataloguePage(Page):
@@ -28,6 +27,7 @@ class CataloguePage(Page):
     """
 
     template = "cms/pages/catalogue.html"
+    htmx_template = "cms/components/catalogue_list.html#catalogue_grid"
     parent_page_types = ["cms.HomePage"]
     subpage_types = []
 
@@ -107,6 +107,7 @@ class CataloguePage(Page):
         validated_filters = validate_filters(
             request.GET,
             valid_types=context["catalogue_types"],
+            expected_keys={"search", "type"},
         )
 
         search_filter = validated_filters.get("search")
@@ -130,22 +131,7 @@ class CataloguePage(Page):
 
         return context
 
+    @htmx_request_with_url_update()
     def serve(self, request: HttpRequest) -> HttpResponse:
         """Override serve method to handle HTMX requests for filtering."""
-        if request.htmx:
-            # Clean the URL by removing the search parameter for HTMX requests
-            # to prevent it from being added to the browser URL.
-            query = request.GET.copy()
-            query.pop("search", None)
-            clean_url = f"{request.path}?{urlencode(query, doseq=True)}" if query else request.path
-
-            # For HTMX requests, we only want to return the articles list part of the page
-            response = render(
-                request,
-                "cms/components/catalogue_list.html#catalogue_grid",
-                self.get_context(request),
-            )
-            response["HX-Replace-Url"] = clean_url
-            return response
-        else:
-            return super().serve(request)
+        return super().serve(request)
