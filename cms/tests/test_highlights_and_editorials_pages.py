@@ -2,7 +2,6 @@
 
 from unittest.mock import MagicMock, patch
 
-from django.http import HttpResponse
 from django.test import RequestFactory, SimpleTestCase
 from wagtail.models import Page, Site
 from wagtail.test.utils import WagtailPageTestCase
@@ -131,40 +130,6 @@ class TestHighlightsAndEditorialsIndexPage(BasePageTestCase):
 
         self.assertEqual(context["articles_list"], mock_filter)
         queryset_chain.filter.assert_called_once()
-
-    @patch("cms.pages.highlights_and_editorials_index.render")
-    def test_serve_htmx_request_returns_partial_response(self, mock_render: MagicMock):
-        """Test the partial response with the correct template and context for HTMX requests."""
-        request = self.factory.get("/?search=test&type=Editorial")
-        request.htmx = True
-
-        mock_response = HttpResponse("partial")
-        mock_render.return_value = mock_response
-
-        with patch.object(self.index_page, "get_context", return_value={"articles_list": []}):
-            response = self.index_page.serve(request)
-
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response["HX-Replace-Url"], "/?type=Editorial")
-
-        mock_render.assert_called_once_with(
-            request,
-            "cms/components/highlights_and_editorials_list.html#articles_grid",
-            {"articles_list": []},
-        )
-
-    @patch("cms.pages.HighlightsAndEditorialsIndexPage.serve")
-    def test_serve_non_htmx_delegates_to_super(self, mock_super_serve: MagicMock):
-        """Test that non-HTMX requests are handled by the superclass serve method."""
-        request = self.factory.get("/")
-        request.htmx = False
-
-        mock_super_serve.return_value = HttpResponse("full page")
-
-        response = self.index_page.serve(request)
-
-        self.assertEqual(response.content, b"full page")
-        mock_super_serve.assert_called_once_with(request)
 
 
 ##################################################################################

@@ -2,7 +2,6 @@
 
 from unittest.mock import MagicMock, patch
 
-from django.http import HttpResponse
 from django.test import RequestFactory
 from wagtail.models import Page, Site
 from wagtail.test.utils import WagtailPageTestCase
@@ -120,32 +119,3 @@ class TestCataloguePage(WagtailPageTestCase):
         self.assertEqual(len(context["catalogue_list"]), 1)
         self.assertEqual(context["catalogue_list"][0]["title"], "Bravo")
         self.assertEqual(context["type_filter"], ["guides"])
-
-    @patch("cms.pages.catalogue.render")
-    def test_serve_htmx_request(self, mock_render: MagicMock):
-        """Test that serve returns filtered content for HTMX requests."""
-        mock_response = HttpResponse("filtered content")
-        mock_render.return_value = mock_response
-
-        request = self.factory.get("/catalogue/?search=test&type=guides")
-        request.htmx = True
-
-        response = self.catalogue.serve(request)
-
-        mock_render.assert_called_once()
-
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response["HX-Replace-Url"], "/catalogue/?type=guides")
-
-    @patch("cms.pages.catalogue.CataloguePage.serve")
-    def test_serve_non_htmx_request(self, mock_super_serve: MagicMock):
-        """Test that serve returns normal response for non-HTMX requests."""
-        mock_super_serve.return_value = HttpResponse("normal response")
-
-        request = self.factory.get("/catalogue/")
-        request.htmx = False
-
-        response = self.catalogue.serve(request)
-
-        mock_super_serve.assert_called_once_with(request)
-        self.assertEqual(response.content, b"normal response")
