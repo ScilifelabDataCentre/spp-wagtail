@@ -4,15 +4,14 @@ from typing import Any
 
 from django.db import models
 from django.http import HttpRequest, HttpResponse
-from django.shortcuts import render
-from django.utils.http import urlencode
 from wagtail.admin.panels import FieldPanel
 from wagtail.blocks import RichTextBlock
 from wagtail.fields import StreamField
 from wagtail.models import Page
 
 from cms.blocks import AlertBlock
-from cms.services.highlights_and_editorials import validate_filters
+from cms.services.decorators import htmx_request_with_url_update
+from cms.services.validators import validate_filters
 
 
 class HighlightsAndEditorialsIndexPage(Page):
@@ -27,6 +26,7 @@ class HighlightsAndEditorialsIndexPage(Page):
 
     max_count = 1
     template = "cms/pages/highlights_and_editorials_index.html"
+    htmx_template = "cms/components/highlights_and_editorials_list.html#articles_grid"
     parent_page_types = ["cms.HomePage"]
     subpage_types = ["cms.HighlightsAndEditorialsPage"]
 
@@ -106,22 +106,7 @@ class HighlightsAndEditorialsIndexPage(Page):
 
         return context
 
+    @htmx_request_with_url_update()
     def serve(self, request: HttpRequest) -> HttpResponse:
         """Override serve method to handle HTMX requests for filtering."""
-        if request.htmx:
-            # Clean the URL by removing the search parameter for HTMX requests
-            # to prevent it from being added to the browser URL.
-            query = request.GET.copy()
-            query.pop("search", None)
-            clean_url = f"{request.path}?{urlencode(query, doseq=True)}" if query else request.path
-
-            # For HTMX requests, we only want to return the articles list part of the page
-            response = render(
-                request,
-                "cms/components/highlights_and_editorials_list.html#articles_grid",
-                self.get_context(request),
-            )
-            response["HX-Replace-Url"] = clean_url
-            return response
-        else:
-            return super().serve(request)
+        return super().serve(request)
