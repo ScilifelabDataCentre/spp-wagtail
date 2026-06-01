@@ -1,4 +1,4 @@
-{% load static %}
+{% load breadcrumbs static %}
 
 <!DOCTYPE html>
 <html lang="en">
@@ -13,14 +13,31 @@
             Skip to main content
         </a>
 
+        <!-- site announcements -->
         {% include "cms/components/site_announcements.html" %}
 
-        <!-- page header -->
+        <!-- page header menu -->
         {% include "cms/header.html" %}
 
-        <!-- main content -->
         <main id="main-content">
+
+            {% comment %}
+                Optional full-width content block, for example if an individual page needs to insert a hero section.
+                TYpically when this is used the page_heading block would be overridden to hide the banner title, and
+                the hero section would include its own title.
+                
+                Example:
+
+                {% block full_width_content %}
+                    .....
+                    .....
+                {% endblock %}
+
+                {% block page_heading %}{% endblock %}
+            {% endcomment %}
             {% block full_width_content %}{% endblock %}
+
+            <!-- banner title-->
             {% comment %}
                 Main page heading (H1). Uses page_heading if set, else title. Override this block to hide or customise (e.g. home page).
             {% endcomment %}
@@ -33,7 +50,12 @@
                 </div>
                 {% endif %}
             {% endblock %}
-            <div class="container py-5">
+
+            <!-- breadcrumbs -->
+            {% breadcrumbs_display %}
+
+            <!-- main content -->
+            <div class="container">
                 {% block content %}{% endblock %}
             </div>
         </main>
