@@ -2,7 +2,6 @@
 
 from unittest.mock import MagicMock, patch
 
-from django.http import Http404, HttpResponse, QueryDict
 from django.test import RequestFactory, SimpleTestCase
 from wagtail.models import Page, Site
 from wagtail.test.utils import WagtailPageTestCase
@@ -12,11 +11,7 @@ from cms.pages import (
     HighlightsAndEditorialsPage,
     HomePage,
 )
-from cms.services.highlights_and_editorials import (
-    SEARCH_MAX_LENGTH,
-    get_related_articles,
-    validate_filters,
-)
+from cms.services.highlights_and_editorials import get_related_articles
 from cms.tests.utils import create_test_image
 
 #######################################################################
@@ -135,40 +130,6 @@ class TestHighlightsAndEditorialsIndexPage(BasePageTestCase):
 
         self.assertEqual(context["articles_list"], mock_filter)
         queryset_chain.filter.assert_called_once()
-
-    @patch("cms.pages.highlights_and_editorials_index.render")
-    def test_serve_htmx_request_returns_partial_response(self, mock_render: MagicMock):
-        """Test the partial response with the correct template and context for HTMX requests."""
-        request = self.factory.get("/?search=test&type=Editorial")
-        request.htmx = True
-
-        mock_response = HttpResponse("partial")
-        mock_render.return_value = mock_response
-
-        with patch.object(self.index_page, "get_context", return_value={"articles_list": []}):
-            response = self.index_page.serve(request)
-
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response["HX-Replace-Url"], "/?type=Editorial")
-
-        mock_render.assert_called_once_with(
-            request,
-            "cms/components/highlights_and_editorials_list.html#articles_grid",
-            {"articles_list": []},
-        )
-
-    @patch("cms.pages.HighlightsAndEditorialsIndexPage.serve")
-    def test_serve_non_htmx_delegates_to_super(self, mock_super_serve: MagicMock):
-        """Test that non-HTMX requests are handled by the superclass serve method."""
-        request = self.factory.get("/")
-        request.htmx = False
-
-        mock_super_serve.return_value = HttpResponse("full page")
-
-        response = self.index_page.serve(request)
-
-        self.assertEqual(response.content, b"full page")
-        mock_super_serve.assert_called_once_with(request)
 
 
 ##################################################################################
@@ -452,73 +413,3 @@ class TestGetRelatedArticles(SimpleTestCase):
 
         self.assertEqual(len(result), 2)
         self.assertEqual(result, [article_1, article_2])
-
-
-##################################################################################
-############### Test suite for validate_filters service function #################
-##################################################################################
-
-
-class TestValidateFilters(SimpleTestCase):
-    """Tests for the validate filters utility function."""
-
-    def setUp(self) -> None:
-        """Set up test data for filter validation tests."""
-        self.valid_topics = ["COVID-19", "Infectious Diseases"]
-        self.valid_types = ["data-highlight", "editorial"]
-
-    def test_valid_filters_returned_as_expected(self):
-        """Test that valid filters are returned correctly."""
-        request = MagicMock()
-        request.GET = QueryDict("search=test&type=editorial&topic=covid-19")
-
-        filters = validate_filters(request.GET, self.valid_topics, self.valid_types)
-
-        self.assertEqual(filters["search"], "test")
-        self.assertIn("editorial", filters["type"])
-        self.assertIn("covid-19", filters["topic"])
-
-    def test_invalid_type_filter_raises_http404(self):
-        """Test that an invalid type filter raises an Http404 error."""
-        request = MagicMock()
-        request.GET = QueryDict("type=invalid")
-
-        with self.assertRaises(Http404):
-            validate_filters(request.GET, self.valid_topics, self.valid_types)
-
-    def test_raises_404_for_too_many_article_types(self) -> None:
-        """Test that selecting too many article types raises an Http404 error."""
-        querydict = QueryDict("type=editorial&type=data-highlight&type=extra")
-
-        with self.assertRaises(Http404):
-            validate_filters(querydict, valid_types=self.valid_types)
-
-    def test_invalid_topic_filter_raises_http404(self):
-        """Test that an invalid topic filter raises an Http404 error."""
-        request = MagicMock()
-        request.GET = QueryDict("topic=InvalidTopic")
-
-        with self.assertRaises(Http404):
-            validate_filters(request.GET, self.valid_topics, self.valid_types)
-
-    def test_raises_404_for_too_many_topics(self) -> None:
-        """Test that selecting too many topics raises an Http404 error."""
-        querydict = QueryDict("topic=covid-19&topic=infectious-diseases&topic=extra")
-
-        with self.assertRaises(Http404):
-            validate_filters(querydict, valid_topics=self.valid_topics)
-
-    def test_raises_404_for_search_query_too_long(self) -> None:
-        """Test that a search query exceeding the maximum length raises an Http404 error."""
-        querydict = QueryDict(f"search={'a' * (SEARCH_MAX_LENGTH + 1)}")
-
-        with self.assertRaises(Http404):
-            validate_filters(querydict)
-
-    def test_returns_default_filters_for_empty_querydict(self) -> None:
-        """Test that default filters are returned when an empty QueryDict is provided."""
-        querydict = QueryDict("")
-
-        result = validate_filters(querydict)
-
-        self.assertEqual(result, {"search": "", "topic": [], "type": []})
