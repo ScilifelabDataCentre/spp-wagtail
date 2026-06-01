@@ -1,18 +1,24 @@
-{% if breadcrumbs_list %}
+{% if ancestors_list %}
 <div class="container">
     <nav class="breadcrumbs p-0" aria-label="Breadcrumb">
         <ul class="ps-0 mb-0 items-start">
-            {% for crumb in breadcrumbs_list %}
+            {% for ancestor in ancestors_list %}
             <li>
-                {% if forloop.last %}
-                    <span class="no-underline cursor-text text-pp-dark-grey/80">
-                        {{ crumb.title|truncatechars:50 }}
-                    </span>
+                {% if ancestor.url %}
+                <a class="text-pp-dark-blue" href="{{ ancestor.url }}">{{ ancestor.title }}</a>
                 {% else %}
-                    <a class="text-pp-dark-blue" href="{{ crumb.url }}">{{ crumb.title }}</a>
+                {% comment %}This should mostly not happen for live pages,
+                but kept for drafts and preview{% endcomment %}
+                <span class="no-underline cursor-text text-pp-dark-grey/80">{{ ancestor.title }}</span>
                 {% endif %}
             </li>
             {% endfor %}
+            <li>
+                <span aria-current="page" title="{{ current_page.title }}"
+                    class="no-underline cursor-text text-pp-dark-grey/80">
+                        {{ current_page.title|truncatechars:50 }}
+                </span>
+            </li>
         </ul>
     </nav>
 </div>

@@ -9,30 +9,32 @@ register = template.Library()
 LOGGER = structlog.get_logger(__name__)
 
 
-def get_breadcrumbs(page: Page) -> list[dict[str, str]]:
-    """Generate a list of breadcrumbs for the given page."""
+def get_ancestors(page: Page) -> list[dict[str, str | None]]:
+    """Generate a list of ancestors (excluding root) for the given page."""
 
     try:
         # ancestors includes root usually, so we filter out those with depth <= 1
-        ancestors = page.get_ancestors(inclusive=True).filter(depth__gt=1).live().public()
+        # `.live()` and `.public()` are not needed here since we want to show the
+        # breadcrumbs even for non-live and non-public pages for preview purposes.
+        ancestors = page.get_ancestors().filter(depth__gt=1)
 
         crumbs = []
         for ancestor in ancestors:
-            crumbs.append({"title": ancestor.title, "url": ancestor.url})
+            # Only include URLs for live pages; non-live pages should not have
+            # clickable links in the breadcrumbs as it would lead to a 404 page.
+            crumbs.append({"title": ancestor.title, "url": ancestor.url if ancestor.live else None})
 
         return crumbs
-    except Page.DoesNotExist:
-        LOGGER.warning("Page does not exist for breadcrumbs", page_id=page.id)
     except AttributeError:
         LOGGER.warning("Page object missing attributes for breadcrumbs", page_id=page.id)
     except Exception as e:
-        LOGGER.error("Error generating breadcrumbs", error=str(e), page_id=page.id)
+        LOGGER.exception("Error generating breadcrumbs", error=str(e), page_id=page.id)
 
     return []
 
 
 @register.inclusion_tag("cms/components/breadcrumbs.html", takes_context=True)
-def breadcrumbs_display(context: template.Context) -> dict[str, list[dict[str, str]]]:
+def breadcrumbs_display(context: template.Context) -> dict[str, list[dict[str, str | None]]]:
     """Render the breadcrumbs HTML for the current page."""
     page = context.get("page")
 
@@ -40,4 +42,4 @@ def breadcrumbs_display(context: template.Context) -> dict[str, list[dict[str, s
     if page is None or page.depth <= 2:
         return {}
 
-    return {"breadcrumbs_list": get_breadcrumbs(page)}
+    return {"ancestors_list": get_ancestors(page), "current_page": page}
