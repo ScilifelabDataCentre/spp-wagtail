@@ -5,6 +5,12 @@
 
 {% block content %}
 <section>
+    {% if page.content %}
+        <div class="mb-6 lg:mb-8">
+            {% include_block page.content %}
+        </div>
+    {% endif %}
+
     <form
         id="searchForm"
         method="get"
