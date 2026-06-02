@@ -2,6 +2,7 @@
 
 from typing import Any
 
+from django.apps import apps
 from django.db import models
 from django.http import HttpRequest
 from wagtail.admin.panels import FieldPanel, MultiFieldPanel
