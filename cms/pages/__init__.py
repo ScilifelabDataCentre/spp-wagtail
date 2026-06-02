@@ -16,6 +16,7 @@ from .outbreaks_index import OutbreaksIndexPage
 from .plp_index import PlpIndexPage
 from .plp_project import PlpProjectPage
 from .portal_data import PortalDataPage
+from .outbreaks import OutbreakPage, OutbreaksIndexPage
 from .section_index import SectionIndexPage
 from .standard_page import StandardPage
 from .topics import TopicPage
