@@ -16,7 +16,7 @@
                             <ul class="mt-1 list-none space-y-1 pl-0">
                                 {% for b in facet.buckets|slice:":4" %}
                                     <li>
-                                        <label class="label cursor-pointer justify-start gap-2 pl-0">
+                                        <label class="flex cursor-pointer items-center gap-2 py-0.5">
                                             <input
                                                 type="checkbox"
                                                 name="{{ facet.field }}"
@@ -24,7 +24,7 @@
                                                 {% if b.checked %}checked{% endif %}
                                                 class="checkbox checkbox-accent checkbox-sm"
                                             >
-                                            <span class="label-text">{{ b.value }}</span>
+                                            <span class="text-sm">{{ b.value }}</span>
                                             <span class="badge badge-ghost badge-sm ml-auto">{{ b.count }}</span>
                                         </label>
                                     </li>
@@ -35,7 +35,7 @@
                                 <ul id="facet-more-{{ facet_id }}" class="mt-1 hidden list-none space-y-1 pl-0">
                                     {% for b in facet.buckets|slice:"4:" %}
                                         <li>
-                                            <label class="label cursor-pointer justify-start gap-2 pl-0">
+                                            <label class="flex cursor-pointer items-center gap-2 py-0.5">
                                                 <input
                                                     type="checkbox"
                                                     name="{{ facet.field }}"
@@ -43,7 +43,7 @@
                                                     {% if b.checked %}checked{% endif %}
                                                     class="checkbox checkbox-accent checkbox-sm"
                                                 >
-                                                <span class="label-text">{{ b.value }}</span>
+                                                <span class="text-sm">{{ b.value }}</span>
                                                 <span class="badge badge-ghost badge-sm ml-auto">{{ b.count }}</span>
                                             </label>
                                         </li>
