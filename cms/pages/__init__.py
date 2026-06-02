@@ -9,6 +9,7 @@ from .highlights_and_editorials import (
 )
 from .highlights_and_editorials_index import HighlightsAndEditorialsIndexPage
 from .home import HomePage
+<<<<<<< HEAD
 from .news import NewsPage
 from .news_index import NewsIndexPage
 from .outbreaks import OutbreakPage
@@ -16,7 +17,6 @@ from .outbreaks_index import OutbreaksIndexPage
 from .plp_index import PlpIndexPage
 from .plp_project import PlpProjectPage
 from .portal_data import PortalDataPage
-from .outbreaks import OutbreakPage, OutbreaksIndexPage
 from .section_index import SectionIndexPage
 from .standard_page import StandardPage
 from .topics import TopicPage
