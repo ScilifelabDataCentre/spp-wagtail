@@ -35,6 +35,7 @@ __all__ = [
     "OutbreaksIndexPage",
     "PlpIndexPage",
     "PlpProjectPage",
+    "OutbreaksIndexPage",
     "PortalDataPage",
     "SectionIndexPage",
     "StandardPage",
