@@ -17,7 +17,7 @@ def positive_int(value: str | None, default: int) -> int:
     """Parse a positive integer from a query parameter."""
     try:
         parsed = int(value or default)
-    except TypeError, ValueError:
+    except (TypeError, ValueError):
         return default
 
     return max(parsed, 1)
@@ -26,6 +26,27 @@ def positive_int(value: str | None, default: int) -> int:
 def normalize_datatype(value: object) -> str:
     """Normalise datatype values coming from URLs, Wagtail fields, or tests."""
     return str(value or "").strip().lower()
+
+
+def _facet_label(field: str) -> str:
+    """Convert a field name like 'design_types' to a readable label 'Design Types'."""
+    return field.replace("_", " ").title()
+
+
+def _build_facet_list(
+    raw_facets: dict[str, list[dict[str, Any]]],
+) -> list[dict[str, Any]]:
+    """Convert the raw {field: buckets} dict to a list of dicts for the template.
+
+    Each item exposes:
+      - field:   the raw field name used as the checkbox <input name>
+      - label:   a human-readable display label
+      - buckets: the list of value/count/checked dicts
+    """
+    return [
+        {"field": field, "label": _facet_label(field), "buckets": buckets}
+        for field, buckets in raw_facets.items()
+    ]
 
 
 def build_portal_data_context(
@@ -51,7 +72,7 @@ def build_portal_data_context(
             "query": "",
             "filters": {},
             "facet_names": [],
-            "facets": {},
+            "facets": [],
             "has_facets": False,
             "items": [],
             "total": 0,
@@ -70,7 +91,7 @@ def build_portal_data_context(
     raw_size = request.GET.get("size", default_size)
     try:
         size = int(raw_size)
-    except TypeError, ValueError:
+    except (TypeError, ValueError):
         size = default_size
 
     if size not in size_options:
@@ -87,7 +108,9 @@ def build_portal_data_context(
     facet_names = list(config.default_facets)
 
     filters = {
-        field: request.GET.getlist(field) for field in facet_names if request.GET.getlist(field)
+        field: request.GET.getlist(field)
+        for field in facet_names
+        if request.GET.getlist(field)
     }
 
     listing = get_dataset_listing(
@@ -96,6 +119,11 @@ def build_portal_data_context(
         filters=filters,
         facet_names=facet_names,
     )
+
+    # Transform the raw {field: buckets} dict into a template-friendly list of dicts
+    # so the template can access both the field name (for checkbox names) and a
+    # formatted display label without needing a custom template tag.
+    facets = _build_facet_list(listing["facets"])
 
     paginator = Paginator(listing["items"], size)
     page_obj = paginator.get_page(page_number)
@@ -121,7 +149,7 @@ def build_portal_data_context(
         "query": query,
         "filters": filters,
         "facet_names": facet_names,
-        "facets": listing["facets"],
+        "facets": facets,
         "has_facets": listing["has_facets"],
         "items": page_obj.object_list,
         "total": paginator.count,

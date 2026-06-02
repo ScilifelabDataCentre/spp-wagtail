@@ -74,5 +74,39 @@
             {% include "portal_data/partials/listing.html" %}
         </div>
     </form>
+
+    <script>
+        // Event delegation for both toggle buttons.
+        // Attached to document once so it survives HTMX partial swaps of #portal-data-listing.
+        document.addEventListener('click', function (e) {
+
+            // ── Facet "Show more / Show less" ──────────────────────────────
+            const facetBtn = e.target.closest('.facet-toggle');
+            if (facetBtn) {
+                const target = document.getElementById(facetBtn.dataset.target);
+                if (!target) return;
+                const isExpanded = facetBtn.getAttribute('aria-expanded') === 'true';
+                target.classList.toggle('hidden', isExpanded);
+                facetBtn.setAttribute('aria-expanded', String(!isExpanded));
+                facetBtn.textContent = isExpanded
+                    ? (facetBtn.dataset.collapsedText || 'Show more')
+                    : (facetBtn.dataset.expandedText  || 'Show less');
+                return;
+            }
+
+            // ── Dataset description "Show more / Show less" ────────────────
+            const descBtn = e.target.closest('.toggle-description');
+            if (descBtn) {
+                const id    = descBtn.dataset.id;
+                const short = document.getElementById('desc-short-' + id);
+                const full  = document.getElementById('desc-full-'  + id);
+                if (!short || !full) return;
+                const isExpanded = short.classList.contains('hidden');
+                short.classList.toggle('hidden', !isExpanded);
+                full.classList.toggle('hidden',   isExpanded);
+                descBtn.textContent = isExpanded ? 'Show more' : 'Show less';
+            }
+        });
+    </script>
 </section>
 {% endblock %}
