@@ -1,4 +1,5 @@
 """CMS page for accessing the Portal Data app."""
+
 from __future__ import annotations
 
 import logging
@@ -104,9 +105,7 @@ class PortalDataPage(RoutablePageMixin, Page):
 
         data_root = get_data_root()
         if not data_root.is_dir():
-            logger.error(
-                "DATASETS_ROOT does not exist or is not a directory: %s", data_root
-            )
+            logger.error("DATASETS_ROOT does not exist or is not a directory: %s", data_root)
             raise Http404("Study storage not available")
 
         study_dir = data_root / accession
@@ -117,9 +116,7 @@ class PortalDataPage(RoutablePageMixin, Page):
         try:
             files = list_study_files(study_dir)
         except Exception as err:
-            logger.exception(
-                "Unexpected error listing files for %s/%s", self.datatype, accession
-            )
+            logger.exception("Unexpected error listing files for %s/%s", self.datatype, accession)
             raise Http404("Could not list files") from err
 
         context = self.get_context(request)
@@ -134,9 +131,7 @@ class PortalDataPage(RoutablePageMixin, Page):
         return render(request, "portal_data/study_files.html", context)
 
     @path("<slug:accession>/files/<path:relpath>/")
-    def download_file(
-        self, request: HttpRequest, accession: str, relpath: str
-    ) -> HttpResponse:
+    def download_file(self, request: HttpRequest, accession: str, relpath: str) -> HttpResponse:
         """Stream a single file from a study directory.
 
         Protects against path traversal by resolving the requested path and
@@ -157,9 +152,7 @@ class PortalDataPage(RoutablePageMixin, Page):
 
         data_root = get_data_root()
         if not data_root.is_dir():
-            logger.error(
-                "DATASETS_ROOT does not exist or is not a directory: %s", data_root
-            )
+            logger.error("DATASETS_ROOT does not exist or is not a directory: %s", data_root)
             raise Http404("Study storage not available")
 
         study_dir = data_root / accession

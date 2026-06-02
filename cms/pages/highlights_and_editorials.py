@@ -200,4 +200,3 @@ class HighlightsAndEditorialsPage(Page):
         context["page_heading"] = parent.title if parent else ""
         context["related_articles"] = get_related_articles(self)
         return context
-

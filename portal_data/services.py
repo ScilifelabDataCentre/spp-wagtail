@@ -20,12 +20,14 @@ from django.utils import timezone
 
 logger = logging.getLogger(__name__)
 
+
 @dataclass(frozen=True)
 class DataTypeConfig:
     """Configuration for a supported portal data type."""
 
     label: str
     default_facets: tuple[str, ...]
+
 
 SUPPORTED_TYPES: dict[str, DataTypeConfig] = {
     "metabolomics": DataTypeConfig(
@@ -42,6 +44,7 @@ SUPPORTED_TYPES: dict[str, DataTypeConfig] = {
 }
 
 ACCESSION_RE = re.compile(r"^MTBLS\d+$")
+
 
 def get_datatype_config(datatype: str) -> DataTypeConfig | None:
     """Return configuration for a supported data type, if available."""
@@ -82,6 +85,7 @@ def get_data_root() -> Path:
     Calculated at call time so tests and environment overrides work correctly.
     """
     return Path(settings.DATASETS_ROOT).expanduser().resolve()
+
 
 # Fields we include in exports:
 # - key in the item dict
@@ -270,8 +274,6 @@ def load_all_items(datatype: str) -> list[dict]:
     return items
 
 
-
-
 def apply_search_and_filters(
     items: list[dict],
     query: str,
@@ -329,6 +331,7 @@ def apply_search_and_filters(
         items = [it for it in items if matches_filter(it)]
 
     return items
+
 
 def build_facets(
     items: list[dict[str, Any]],
@@ -412,6 +415,7 @@ def build_facets(
         cache.set(cache_key, facets, timeout=3600)
     return facets
 
+
 def find_investigation_file(study_dir: Path) -> Path | None:
     """Prefer the latest investigation file under METADATA_REVISIONS, falling back to top-level."""
     rev_root = study_dir / "METADATA_REVISIONS"
@@ -483,7 +487,6 @@ def parse_investigation_file(path: Path) -> dict[str, object]:
     return meta
 
 
-
 def list_study_files(study_dir: Path) -> list[dict[str, Any]]:
     """Return metadata for files contained in a study directory."""
     files: list[dict[str, Any]] = []
@@ -495,7 +498,7 @@ def list_study_files(study_dir: Path) -> list[dict[str, Any]]:
             try:
                 relpath = str(full.relative_to(study_dir)).replace(os.sep, "/")
                 stat = full.stat()
-            except (OSError, ValueError):
+            except OSError, ValueError:
                 logger.debug("Skipping file during listing: %s", full, exc_info=True)
                 continue
 
@@ -513,6 +516,7 @@ def list_study_files(study_dir: Path) -> list[dict[str, Any]]:
 
     files.sort(key=lambda file: file["relpath"])
     return files
+
 
 def apply_text_search(items: list[dict], query: str) -> list[dict]:
     """Apply text search to dataset listing items."""
@@ -571,11 +575,7 @@ def apply_facet_filters(
                 return False
 
             if isinstance(field_value, list):
-                return any(
-                    str(v) in _values_set
-                    for v in field_value
-                    if v is not None and v != ""
-                )
+                return any(str(v) in _values_set for v in field_value if v is not None and v != "")
 
             return str(field_value) in _values_set
 

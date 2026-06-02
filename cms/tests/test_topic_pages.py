@@ -191,4 +191,3 @@ class TestTopicPage(BasePageTestCase):
         self.assertEqual(context["page_heading"], "Topics")
         self.assertEqual(context["related_highlights_and_editorials"], related_articles)
         self.assertEqual(context["articles_index_url"], "/highlights-and-editorials/")
-
