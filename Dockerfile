@@ -117,19 +117,28 @@ RUN --mount=type=cache,target=/root/.cache \
         --no-install-project \
         --group prod
 
-# Mount the source code to generate the final CSS using Tailwind CSS.
-# 'daisyui.mjs' and 'daisyui-theme.mjs' must reside next to 'base.css',
-# so mount 'base.css' at '/' and also copy the 'daisyui' file there
-# and then run Tailwind to produce 'portal.css'.
+# Copy application source. .dockerignore filters out .venv/, logs/, media/,
+# the generated portal.css, and any host-side daisyui*.mjs files.
+COPY ./ /app/
+
+# Build the CSS bundle. Two preparation steps before invoking Tailwind:
 #
-# NOTE: 'daisyui' files are not copied directly to '/app/cms/static/cms/css'
-# is to avoid copying them to host machine during build time.
-RUN --mount=type=bind,source=./,target=/app \
-    --mount=type=bind,source=./cms/static/cms/css/base.css,target=/base.css \
-    cp /usr/local/lib/daisyui.mjs /daisyui.mjs \
-    && cp /usr/local/lib/daisyui-theme.mjs /daisyui-theme.mjs \
+#   1. Place the DaisyUI plugin files next to base.css. base.css references
+#      them via '@plugin "./daisyui.mjs"' and '@plugin "./daisyui-theme.mjs"',
+#      so they must resolve relative to that file. We copy from the
+#      image-build cache in /usr/local/lib/.
+#
+#   2. base.css uses 'source("../../..")' to scope Tailwind's content scan to
+#      /app/cms/, so the copied DaisyUI .mjs files now sit *inside* the scanned
+#      tree. The host .gitignore (which excludes them) is not in the image, so
+#      we need to prevent Tailwind from bloating portal.css if it treats the
+#      plugin implementations as content (that would emit every class-like token
+#      they contain). base.css guards against this with '@source not "./daisyui.mjs"'
+#      and '@source not "./daisyui-theme.mjs"'.
+RUN cp /usr/local/lib/daisyui.mjs /app/cms/static/cms/css/daisyui.mjs \
+    && cp /usr/local/lib/daisyui-theme.mjs /app/cms/static/cms/css/daisyui-theme.mjs \
     && tailwindcss \
-        --input /base.css \
+        --input /app/cms/static/cms/css/base.css \
         --output /portal.css \
         --no-cache \
         --minify

@@ -1,0 +1,30 @@
+{% load plotly_js wagtailcore_tags %}
+
+<figure class="my-8" role="img" aria-label="{{ value.alt_text }}">
+    {% if plot_html %}
+    {% plotlyjs_once %}
+    <div class="plotly-figure" style="height: {{ value.height }}px;">
+        {{ plot_html|safe }}
+    </div>
+    {% else %}
+    <p class="text-sm text-gray-500">Chart data is not available for this figure.</p>
+    {% endif %}
+
+    {% if value.caption %}
+    <figcaption class="text-sm italic text-gray-500 mt-2 text-center">
+        {{ value.caption }}
+    </figcaption>
+    {% endif %}
+
+    {% if value.script_github_url %}
+    <p class="text-sm mt-1">
+        The script used to produce this plot is available on <a href="{{ value.script_github_url }}" class="link" target="_blank" rel="noopener">GitHub</a>.
+    </p>
+    {% endif %}
+
+    {% if value.show_data_download and dashboard_data and dashboard_data.source_file %}
+    <p class="text-sm mt-1">
+        The data underlying this visualisation is available for <a href="{{ dashboard_data.source_file.url }}" class="link">download</a>.
+    </p>
+    {% endif %}
+</figure>

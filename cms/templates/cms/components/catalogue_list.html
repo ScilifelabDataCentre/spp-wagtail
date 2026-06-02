@@ -1,0 +1,27 @@
+{% comment %}
+    This template is used to render the list of catalogue items in a catalogue page type. It is included in the
+    catalogue page template and is responsible for displaying the cards based on the applied filters and search
+    query. The template uses HTMX to enable dynamic filtering and searching without a full page reload.
+{% endcomment %}
+
+{% load wagtailimages_tags %}
+
+{% partialdef catalogue_grid %}
+
+{% if catalogue_list %}
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 lg:gap-3">
+    {% for card in catalogue_list %}
+        <!-- Render each card -->
+        <div class="card">
+            {% image card.image format-webp as thumbnail %}
+            {% include "cms/components/content_card.html#content_card" with url=card.url image=thumbnail.url title=card.title description=card.description external_url=True only %}
+        </div>
+    {% endfor %}
+</div>
+{% elif request.htmx %}
+    <p class="text-center text-pp-dark-grey">
+        No catalogue items found for given search query and/or selected filters.
+    </p>
+{% endif %}
+
+{% endpartialdef %}

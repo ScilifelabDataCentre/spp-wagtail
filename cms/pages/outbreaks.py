@@ -19,52 +19,6 @@ OUTBREAKS_STATUS_CHOICES = [
 ]
 
 
-class OutbreaksIndexPage(Page):
-    """A page listing all outbreaks.
-
-    This page is intended to be used as a parent page for OutbreakPage instances.
-    Only one instance of this page can exist. Child outbreak pages will be listed
-    as cards on this page.
-
-    Attributes:
-        content (StreamField): A stream field for the page content, allowing rich text.
-    """
-
-    max_count = 1
-    template = "cms/pages/outbreaks_index.html"
-    parent_page_types = ["cms.HomePage"]
-    subpage_types = ["cms.OutbreakPage"]
-
-    content = StreamField(
-        [
-            ("text", RichTextBlock()),
-            ("alert", AlertBlock()),
-        ],
-        blank=True,
-    )
-
-    content_panels = Page.content_panels + [
-        FieldPanel("content"),
-    ]
-
-    def get_context(self, request: HttpRequest) -> dict[str, Any]:
-        """Add child outbreaks to the context."""
-        context = super().get_context(request)
-        context["outbreaks"] = {}
-        for _type, _label in OUTBREAKS_STATUS_CHOICES:
-            fetched_outbreaks = (
-                self.get_children()
-                .type(OutbreakPage)
-                .live()
-                .filter(outbreakpage__status=_type)
-                .specific()
-                .order_by("title")
-            )
-            if fetched_outbreaks:
-                context["outbreaks"][_type] = fetched_outbreaks
-        return context
-
-
 class OutbreakPage(Page):
     """A page representing a single outbreak.
 
@@ -134,6 +88,11 @@ class OutbreakPage(Page):
 
     def get_context(self, request: HttpRequest) -> dict[str, Any]:
         """Add the parent page's title to the context for display on the outbreak page."""
+
+        # Importing here to avoid circular import issues
+        from cms.pages.outbreaks_index import OutbreaksIndexPage
+
         context = super().get_context(request)
-        context["page_heading"] = self.get_parent().specific.title
+        parent = self.get_ancestors().type(OutbreaksIndexPage).specific().first()
+        context["page_heading"] = parent.title if parent else ""
         return context

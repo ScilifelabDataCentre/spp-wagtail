@@ -1,0 +1,42 @@
+{% extends "cms/base.html" %}
+
+{% load wagtailcore_tags wagtailimages_tags %}
+
+{% block content %}
+
+    {% include_block page.content %}
+
+    {% if dashboards.active %}
+        <h4>Active dashboards</h4>
+        <p>Dashboards created by the Swedish Pathogens Portal containing data that is actively updated by associated research efforts.</p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
+            {% for dashboard in dashboards.active %}
+                {% image dashboard.image format-webp as thumbnail %}
+                {% include "cms/components/content_card.html#content_card" with url=dashboard.url image=thumbnail.url title=dashboard.title description=dashboard.description only %}
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    {% if dashboards.historic %}
+        <h4>Historic dashboards</h4>
+        <p>Dashboards created by the Swedish Pathogens Portal that are no longer updated by associated research efforts.</p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
+            {% for dashboard in dashboards.historic %}
+                {% image dashboard.image format-webp as thumbnail %}
+                {% include "cms/components/content_card.html#content_card" with url=dashboard.url image=thumbnail.url title=dashboard.title description=dashboard.description only %}
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    {% if not dashboards.active and not dashboards.historic %}
+        <div class="text-center py-16">
+            <div class="max-w-md mx-auto">
+                <h3 class="text-xl font-semibold text-pp-dark-grey mb-2">No Dashboards Available</h3>
+                <p class="text-pp-dark-grey">
+                    There are currently no dashboards available. Please check back later.
+                </p>
+            </div>
+        </div>
+    {% endif %}
+
+{% endblock %}

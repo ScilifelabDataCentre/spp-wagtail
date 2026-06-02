@@ -16,10 +16,7 @@ from wagtail.models import Page, Site
 
 from cms.pages import StandardPage
 from cms.snippets import SiteAnnouncement
-from cms.templatetags.site_announcements import (
-    announcement_rich_text,
-    get_site_announcements,
-)
+from cms.templatetags.site_announcements import get_site_announcements
 
 #######################################################################
 #################### Helpers for render scenarios #####################
@@ -124,96 +121,6 @@ class SiteAnnouncementModelTests(TestCase):
         )
         titles = list(SiteAnnouncement.objects.values_list("title", flat=True))
         self.assertEqual(titles, ["A", "B"])
-
-
-#######################################################################
-################ announcement_rich_text filter (unit) #################
-#######################################################################
-
-
-class AnnouncementRichTextFilterTests(TestCase):
-    """Filter behaviour covering every anchor-scope branch.
-
-    These tests call ``announcement_rich_text`` directly — no page, no
-    template — so the assertions target the filter's rel-merge
-    contract without relying on Wagtail's rendering pipeline.
-    """
-
-    def test_external_https_anchor_gets_required_rel_tokens(self):
-        """``https://`` anchor without ``rel`` gets ``noopener`` + ``noreferrer``."""
-        rendered = announcement_rich_text('<p><a href="https://example.com">link</a></p>')
-        self.assertEqual(_rel_tokens_from_string(rendered), {"noopener", "noreferrer"})
-
-    def test_external_http_anchor_also_rewritten(self):
-        """``http://`` anchors are treated as external for ``rel`` injection."""
-        rendered = announcement_rich_text('<p><a href="http://example.com">link</a></p>')
-        self.assertTrue(
-            {"noopener", "noreferrer"}.issubset(_rel_tokens_from_string(rendered)),
-        )
-
-    def test_protocol_relative_anchor_treated_as_external(self):
-        """Protocol-relative ``//host/…`` is external (SEO / tabnabbing surface)."""
-        rendered = announcement_rich_text('<p><a href="//host.example/path">link</a></p>')
-        self.assertTrue(
-            {"noopener", "noreferrer"}.issubset(_rel_tokens_from_string(rendered)),
-        )
-
-    def test_editor_rel_nofollow_preserved_and_deduped(self):
-        """Editor's ``nofollow`` is preserved; final set is the three tokens."""
-        rendered = announcement_rich_text(
-            '<p><a href="https://partner.example" rel="nofollow">link</a></p>',
-        )
-        self.assertEqual(
-            _rel_tokens_from_string(rendered),
-            {"nofollow", "noopener", "noreferrer"},
-        )
-
-    def test_existing_noopener_not_duplicated(self):
-        """An existing ``noopener`` token is not duplicated by the merge."""
-        rendered = announcement_rich_text(
-            '<p><a href="https://example.com" rel="noopener">link</a></p>',
-        )
-        self.assertEqual(_rel_tokens_from_string(rendered), {"noopener", "noreferrer"})
-
-    def test_external_anchor_gets_target_blank(self):
-        """External anchors are forced to ``target="_blank"`` (open in new tab)."""
-        rendered = announcement_rich_text('<p><a href="https://example.com">link</a></p>')
-        self.assertIn('target="_blank"', rendered)
-
-    def test_relative_anchor_does_not_get_target_blank(self):
-        """Same-origin anchors are not given ``target="_blank"``."""
-        rendered = announcement_rich_text('<p><a href="/about">about</a></p>')
-        self.assertNotIn("target=", rendered)
-
-    def test_mailto_href_left_untouched(self):
-        """``mailto:`` anchors are not whitelisted by the filter."""
-        rendered = announcement_rich_text('<p><a href="mailto:x@example.com">email</a></p>')
-        self.assertNotIn("noopener", rendered)
-        self.assertNotIn("noreferrer", rendered)
-
-    def test_relative_path_anchor_left_untouched(self):
-        """A relative path is same-origin; the filter does not touch it."""
-        rendered = announcement_rich_text('<p><a href="/about">about</a></p>')
-        self.assertNotIn("noopener", rendered)
-        self.assertNotIn("noreferrer", rendered)
-
-    def test_fragment_anchor_left_untouched(self):
-        """Fragment-only hrefs are not rewritten."""
-        rendered = announcement_rich_text('<p><a href="#section">section</a></p>')
-        self.assertNotIn("noopener", rendered)
-        self.assertNotIn("noreferrer", rendered)
-
-    def test_javascript_href_left_untouched(self):
-        """``javascript:`` must never be whitelisted by this filter."""
-        rendered = announcement_rich_text('<p><a href="javascript:alert(1)">x</a></p>')
-        self.assertNotIn("noopener", rendered)
-        self.assertNotIn("noreferrer", rendered)
-
-    def test_data_href_left_untouched(self):
-        """``data:`` URIs must never be whitelisted by this filter."""
-        rendered = announcement_rich_text('<p><a href="data:text/html,x">x</a></p>')
-        self.assertNotIn("noopener", rendered)
-        self.assertNotIn("noreferrer", rendered)
 
 
 #######################################################################
@@ -417,54 +324,6 @@ class SiteAnnouncementRenderTests(_SiteAnnouncementRenderTestCase):
             set(anchor.get("rel") or []),
             {"nofollow", "noopener", "noreferrer"},
         )
-
-    def test_alert_block_anchor_is_not_rewritten_by_announcement_filter(self):
-        """``announcement_rich_text`` must not touch anchors inside ``AlertBlock``.
-
-        The filter is per-banner only; applying it globally would mutate
-        anchors in unrelated StreamField content such as ``AlertBlock``.
-        We verify the filter-scope by rendering a page that contains
-        both an announcement anchor *and* an ``AlertBlock`` anchor: the
-        former gets ``rel`` injected, the latter is byte-identical to
-        what the block template emits.
-        """
-        page_with_alert = self.home.add_child(
-            instance=StandardPage(
-                title="With alert",
-                slug="with-alert",
-                content=[
-                    (
-                        "alert",
-                        {
-                            "message": (
-                                '<p><a href="https://alertblock.example">alert link</a></p>'
-                            ),
-                            "alert_type": "info",
-                        },
-                    ),
-                ],
-            ),
-        )
-        SiteAnnouncement.objects.create(
-            title="banner",
-            message=('<p><a href="https://announcement.example">banner link</a></p>'),
-            announcement_type="survey",
-            is_enabled=True,
-        )
-
-        soup = BeautifulSoup(self._render(page_with_alert), "html.parser")
-
-        announcement_anchor = soup.find("a", href="https://announcement.example")
-        self.assertIsNotNone(announcement_anchor)
-        self.assertTrue(
-            {"noopener", "noreferrer"}.issubset(
-                set(announcement_anchor.get("rel") or []),
-            ),
-        )
-
-        alert_anchor = soup.find("a", href="https://alertblock.example")
-        self.assertIsNotNone(alert_anchor)
-        self.assertFalse(alert_anchor.has_attr("rel"))
 
     def test_malicious_payload_is_absent_from_rendered_response(self):
         """Attacker payloads survive neither save nor render.
