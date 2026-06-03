@@ -17,7 +17,7 @@ def positive_int(value: str | None, default: int) -> int:
     """Parse a positive integer from a query parameter."""
     try:
         parsed = int(value or default)
-    except TypeError, ValueError:
+    except (TypeError, ValueError):
         return default
 
     return max(parsed, 1)
@@ -91,7 +91,7 @@ def build_portal_data_context(
     raw_size = request.GET.get("size", default_size)
     try:
         size = int(raw_size)
-    except TypeError, ValueError:
+    except (TypeError, ValueError):
         size = default_size
 
     if size not in size_options:

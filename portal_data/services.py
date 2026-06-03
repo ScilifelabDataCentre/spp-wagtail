@@ -15,7 +15,6 @@ from pathlib import Path
 from typing import Any
 
 from django.conf import settings
-from django.core.cache import cache
 from django.utils import timezone
 
 logger = logging.getLogger(__name__)
@@ -69,7 +68,6 @@ def get_dataset_listing(
         facet_names=facet_names,
         filters=filters,
         datatype=datatype,
-        use_cache=(not query and not filters),
     )
 
     return {
@@ -338,8 +336,6 @@ def build_facets(
     facet_names: list[str],
     filters: dict[str, list[str]] | None,
     datatype: str,
-    *,
-    use_cache: bool = True,
 ) -> dict[str, list[dict[str, Any]]]:
     """Build facet buckets for a given datatype.
 
@@ -355,18 +351,6 @@ def build_facets(
     # Normalise inputs
     items = list(items)
     filters = filters or {}
-
-    # Include datatype and facet_names in the cache key
-    cache_key = f"facets_{datatype}_{hash(str(sorted(facet_names)))}"
-    if use_cache:
-        cached: dict[str, list[dict[str, Any]]] | None = cache.get(cache_key)
-        if cached is not None:
-            # Update "checked" flags based on current filters before returning
-            for facet, buckets in cached.items():
-                active_values = set(filters.get(facet, []))
-                for bucket in buckets:
-                    bucket["checked"] = str(bucket["value"]) in active_values
-            return cached
 
     facets: dict[str, list[dict[str, Any]]] = {}
 
@@ -411,8 +395,6 @@ def build_facets(
             for value, count in buckets
         ]
 
-    if use_cache:
-        cache.set(cache_key, facets, timeout=3600)
     return facets
 
 
@@ -498,7 +480,7 @@ def list_study_files(study_dir: Path) -> list[dict[str, Any]]:
             try:
                 relpath = str(full.relative_to(study_dir)).replace(os.sep, "/")
                 stat = full.stat()
-            except OSError, ValueError:
+            except (OSError, ValueError):
                 logger.debug("Skipping file during listing: %s", full, exc_info=True)
                 continue
 
