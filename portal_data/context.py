@@ -1,7 +1,7 @@
 """Shared template context builders for the portal_data app."""
-
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 from django.core.paginator import Paginator
@@ -12,12 +12,14 @@ from .services import get_dataset_listing, get_datatype_config
 DEFAULT_SIZE = 25
 DEFAULT_SIZE_OPTIONS: tuple[int, ...] = (25, 50, 100)
 
+logger = logging.getLogger(__name__)
 
 def positive_int(value: str | None, default: int) -> int:
     """Parse a positive integer from a query parameter."""
     try:
         parsed = int(value or default)
     except (TypeError, ValueError) as err:
+        logger.debug(f"r  {err}", exc_info=True)
         return default
 
     return max(parsed, 1)
@@ -92,6 +94,7 @@ def build_portal_data_context(
     try:
         size = int(raw_size)
     except (TypeError, ValueError) as err:
+        logger.debug(f"r {raw_size} is not a valid size, see {err}", exc_info=True)
         size = default_size
 
     if size not in size_options:
