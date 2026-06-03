@@ -1,0 +1,7 @@
+services:
+  web:  # <-- your Django service name in docker-compose.yml
+    volumes:
+      - ${DATASETS_ROOT}:/datasets:ro
+    environment:
+      DATASETS_ROOT: /datasets
+
