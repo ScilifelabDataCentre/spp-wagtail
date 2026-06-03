@@ -1,5 +1,6 @@
 """Standard content page model with a StreamField body."""
 
+from django.db import models
 from wagtail import blocks
 from wagtail.admin.panels import FieldPanel
 from wagtail.fields import StreamField
@@ -14,6 +15,7 @@ class StandardPage(Page):
     Cannot have child pages. Allowed parents: home or section index pages.
 
     Attributes:
+        show_toc: Whether to generate and display a table of contents sidebar.
         content (StreamField): StreamField with multiple content block types:
             - RichTextBlock: formatted text (headings, bold, italic, links, lists)
             - DataTableBlock: interactive table with search and pagination
@@ -22,6 +24,8 @@ class StandardPage(Page):
     template = "cms/pages/standard_page.html"
     parent_page_types = ["cms.HomePage", "cms.SectionIndexPage"]
     subpage_types = []  # No child pages allowed.
+
+    show_toc = models.BooleanField(default=False, blank=True, verbose_name="Show TOC")
 
     content = StreamField(
         [
@@ -45,5 +49,15 @@ class StandardPage(Page):
         FieldPanel(
             "content",
             help_text="Drag blocks to reorder. Each block type has its own fields and help text.",
+        ),
+    ]
+
+    promote_panels = Page.promote_panels + [
+        FieldPanel(
+            "show_toc",
+            help_text=(
+                "If checked, a table of contents will be generated from "
+                "headings in the content and displayed in a sidebar xx."
+            ),
         ),
     ]
