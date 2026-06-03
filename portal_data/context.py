@@ -1,4 +1,5 @@
 """Shared template context builders for the portal_data app."""
+
 from __future__ import annotations
 
 import logging
@@ -13,6 +14,7 @@ DEFAULT_SIZE = 25
 DEFAULT_SIZE_OPTIONS: tuple[int, ...] = (25, 50, 100)
 
 logger = logging.getLogger(__name__)
+
 
 def positive_int(value: str | None, default: int) -> int:
     """Parse a positive integer from a query parameter."""

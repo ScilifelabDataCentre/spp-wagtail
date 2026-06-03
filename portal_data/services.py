@@ -481,8 +481,9 @@ def list_study_files(study_dir: Path) -> list[dict[str, Any]]:
                 relpath = str(full.relative_to(study_dir)).replace(os.sep, "/")
                 stat = full.stat()
             except (OSError, ValueError) as err:
-                logger.debug(f"Skipping file during listing: '{full}' due to Error: {err}",
-                              exc_info=True)
+                logger.debug(
+                    f"Skipping file during listing: '{full}' due to Error: {err}", exc_info=True
+                )
                 continue
 
             files.append(
