@@ -480,7 +480,7 @@ def list_study_files(study_dir: Path) -> list[dict[str, Any]]:
             try:
                 relpath = str(full.relative_to(study_dir)).replace(os.sep, "/")
                 stat = full.stat()
-            except (OSError, ValueError):
+            except OSError, ValueError:
                 logger.debug("Skipping file during listing: %s", full, exc_info=True)
                 continue
 
