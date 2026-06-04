@@ -6,7 +6,7 @@ from django.http import HttpRequest
 from wagtail.admin.panels import FieldPanel
 from wagtail.blocks import RichTextBlock
 from wagtail.fields import StreamField
-from wagtail.models import Page
+from wagtail.models import Page, PageQuerySet
 
 from cms.blocks import AlertBlock
 
@@ -46,7 +46,8 @@ class OutbreaksIndexPage(Page):
         from cms.pages.outbreaks import OUTBREAKS_STATUS_CHOICES, OutbreakPage
 
         context = super().get_context(request)
-        context["outbreaks"] = {}
+
+        all_outbreaks: dict[str, PageQuerySet] = {}
         for _type, _label in OUTBREAKS_STATUS_CHOICES:
             fetched_outbreaks = (
                 self.get_children()
@@ -58,5 +59,7 @@ class OutbreaksIndexPage(Page):
                 .order_by("title")
             )
             if fetched_outbreaks:
-                context["outbreaks"][_type] = fetched_outbreaks
+                all_outbreaks[_type] = fetched_outbreaks
+        context["outbreaks"] = all_outbreaks
+
         return context

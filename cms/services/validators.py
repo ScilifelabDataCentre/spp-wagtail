@@ -1,7 +1,5 @@
 """Validator utilities that can be used across the CMS."""
 
-from typing import Any
-
 from django.http import Http404
 from django.http.request import QueryDict
 from django.utils.text import slugify
@@ -15,7 +13,7 @@ def validate_filters(
     valid_types: list[str] | None = None,
     expected_keys: set[str] | None = None,
     search_max_length: int = SEARCH_MAX_LENGTH,
-) -> dict[str, Any]:
+) -> dict[str, str | list[str]]:
     """Validate request filter query parameters.
 
     Ensures that:
@@ -52,7 +50,7 @@ def validate_filters(
             f"Unsupported expected_keys: {invalid_expected_keys}. Allowed keys are: {allowed_keys}"
         )
 
-    validated_filters = {}
+    validated_filters: dict[str, str | list[str]] = {}
 
     if not querydict:
         return validated_filters
