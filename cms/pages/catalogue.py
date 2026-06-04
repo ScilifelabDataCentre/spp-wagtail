@@ -72,7 +72,8 @@ class CataloguePage(Page):
     @cached_property
     def cards(self) -> list[dict[str, Any]]:
         """Extract card data from the content StreamField for use in templates."""
-        cards = []
+
+        cards: list[dict[str, Any]] = []
 
         for block in self.content:
             if block.block_type != "card_grid":
