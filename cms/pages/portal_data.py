@@ -53,16 +53,9 @@ class PortalDataPage(RoutablePageMixin, Page):
     )
 
     content_panels = Page.content_panels + [
-        FieldPanel(
-            "datatype",
-            help_text=("Type of datapage to be created, right now only Metabolomics is available"),
-        ),
-        FieldPanel(
-            "default_page_size", help_text=("Number of items to display per page, default=25")
-        ),
-        FieldPanel(
-            "content", help_text=("Additional content for the Portal data page. Will be displayed ")
-        ),
+        FieldPanel("datatype"),
+        FieldPanel("default_page_size"),
+        FieldPanel("content"),
     ]
 
     class Meta:
@@ -85,7 +78,7 @@ class PortalDataPage(RoutablePageMixin, Page):
         return context
 
     # ------------------------------------------------------------------ #
-    # Routes                                                             #
+    # Routes                                                               #
     # ------------------------------------------------------------------ #
 
     @path("")
@@ -94,9 +87,9 @@ class PortalDataPage(RoutablePageMixin, Page):
         context = self.get_context(request)
 
         if getattr(request, "htmx", False):
-            return render(request, "portal_data/partials/listing.html", context)
+            return render(request, "cms/pages/portal_data/partials/listing.html", context)
 
-        return render(request, "portal_data/index.html", context)
+        return render(request, "cms/pages/portal_data/index.html", context)
 
     @path("<slug:accession>/files/")
     def study_files(self, request: HttpRequest, accession: str) -> HttpResponse:
@@ -129,7 +122,7 @@ class PortalDataPage(RoutablePageMixin, Page):
             "page": self,
             "portal_data_index_url": self.url,
         }
-        return render(request, "portal_data/study_files.html", context)
+        return render(request, "cms/pages/portal_data/study_files.html", context)
 
     @path("<slug:accession>/files/<path:relpath>/")
     def download_file(self, request: HttpRequest, accession: str, relpath: str) -> HttpResponse:
