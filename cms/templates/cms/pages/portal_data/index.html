@@ -1,0 +1,112 @@
+{% extends "cms/base.html" %}
+{% load wagtailcore_tags %}
+
+{% block title %}{{ datatype_label }} data{% endblock %}
+
+{% block content %}
+<section>
+    {% if page.content %}
+        <div class="mb-6 lg:mb-8">
+            {% include_block page.content %}
+        </div>
+    {% endif %}
+
+    <form
+        id="searchForm"
+        method="get"
+        action="{{ form_action|default:'' }}"
+        role="search"
+        hx-get="{{ form_action|default:request.path }}"
+        hx-target="#portal-data-listing"
+        hx-swap="innerHTML"
+        hx-push-url="true"
+        hx-trigger="
+        input changed delay:400ms from:#searchForm input[name='q'],
+        change from:#portal-data-listing input[type='checkbox'],
+        submit
+        "
+    >
+        <header class="mb-6 lg:mb-8">
+            <h1>{{ datatype_label }} data</h1>
+
+            {% if page.intro %}
+                <div class="prose mt-3 max-w-none">
+                    {{ page.intro|richtext }}
+                </div>
+            {% endif %}
+
+            {% if page.help_text %}
+                <div class="prose prose-sm mt-3 max-w-none text-pp-dark-grey">
+                    {{ page.help_text|richtext }}
+                </div>
+            {% endif %}
+
+            <div class="mt-4 flex w-full flex-col gap-3 sm:flex-row sm:items-center">
+                <input
+                    type="search"
+                    name="q"
+                    value="{{ query }}"
+                    placeholder="Search studies, accessions, pathogens..."
+                    aria-label="Search"
+                    class="input input-bordered input-accent w-full"
+                >
+
+                <div class="flex shrink-0 items-center gap-2">
+                    <button type="submit" class="btn btn-primary btn-sm">
+                        Search
+                    </button>
+
+                    <a
+                        href="{{ reset_url }}"
+                        class="btn btn-outline btn-sm"
+                        hx-get="{{ reset_url }}"
+                        hx-target="#portal-data-listing"
+                        hx-swap="innerHTML"
+                        hx-push-url="true"
+                    >
+                        Reset
+                    </a>
+                </div>
+            </div>
+        </header>
+
+        <div id="portal-data-listing">
+            {% include "cms/pages/portal_data/partials/listing.html" %}
+        </div>
+    </form>
+
+    <script>
+        // Event delegation for both toggle buttons.
+        // Attached to document once so it survives HTMX partial swaps of #portal-data-listing.
+        document.addEventListener('click', function (e) {
+
+            // ── Facet "Show more / Show less" ──────────────────────────────
+            const facetBtn = e.target.closest('.facet-toggle');
+            if (facetBtn) {
+                const target = document.getElementById(facetBtn.dataset.target);
+                if (!target) return;
+                const isExpanded = facetBtn.getAttribute('aria-expanded') === 'true';
+                target.classList.toggle('hidden', isExpanded);
+                facetBtn.setAttribute('aria-expanded', String(!isExpanded));
+                facetBtn.textContent = isExpanded
+                    ? (facetBtn.dataset.collapsedText || 'Show more')
+                    : (facetBtn.dataset.expandedText  || 'Show less');
+                return;
+            }
+
+            // ── Dataset description "Show more / Show less" ────────────────
+            const descBtn = e.target.closest('.toggle-description');
+            if (descBtn) {
+                const id    = descBtn.dataset.id;
+                const short = document.getElementById('desc-short-' + id);
+                const full  = document.getElementById('desc-full-'  + id);
+                if (!short || !full) return;
+                const isExpanded = short.classList.contains('hidden');
+                short.classList.toggle('hidden', !isExpanded);
+                full.classList.toggle('hidden',   isExpanded);
+                descBtn.textContent = isExpanded ? 'Show more' : 'Show less';
+            }
+        });
+    </script>
+</section>
+{% endblock %}

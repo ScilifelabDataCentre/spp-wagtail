@@ -53,6 +53,7 @@ DJANGO_APPS = [
 WAGTAIL_APPS = [
     "wagtail.contrib.forms",
     "wagtail.contrib.redirects",
+    "wagtail.contrib.routable_page",
     "wagtail.contrib.typed_table_block",
     "wagtail.embeds",
     "wagtail.sites",
@@ -72,9 +73,7 @@ THIRD_PARTY_APPS = [
     "django_structlog",
 ]
 
-LOCAL_APPS = [
-    "cms",
-]
+LOCAL_APPS = ["cms"]
 
 INSTALLED_APPS = DJANGO_APPS + WAGTAIL_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 

@@ -32,7 +32,6 @@ urlpatterns = [
     path(settings.ADMIN_URL, admin.site.urls, name="admin"),
     path("healthz/", healthz, name="healthz"),
 ]
-
 # Auto browser reload addition for local development
 if settings.DEBUG:
     urlpatterns += [
@@ -44,5 +43,7 @@ if settings.DEBUG:
 urlpatterns += [
     path(settings.WAGTAILADMIN_URL, include(wagtailadmin_urls)),
     path("cms/", include("cms.urls")),
+    # Any URL that was not matched by an explicit URL above are tried and handled by Wagtail.
+    # Wagtail raises 404, if it couldn't find a Page or Route handler for the URL
     path("", include(wagtail_urls)),
 ]
