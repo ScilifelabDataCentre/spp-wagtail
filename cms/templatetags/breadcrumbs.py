@@ -18,7 +18,7 @@ def get_ancestors(page: Page) -> list[dict[str, str | None]]:
         # breadcrumbs even for non-live and non-public pages for preview purposes.
         ancestors = page.get_ancestors().filter(depth__gt=1)
 
-        crumbs = []
+        crumbs: list[dict[str, str | None]] = []
         for ancestor in ancestors:
             # Only include URLs for live pages; non-live pages should not have
             # clickable links in the breadcrumbs as it would lead to a 404 page.
