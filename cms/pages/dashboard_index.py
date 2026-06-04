@@ -6,7 +6,7 @@ from django.http import HttpRequest
 from wagtail.admin.panels import FieldPanel
 from wagtail.blocks import RichTextBlock
 from wagtail.fields import StreamField
-from wagtail.models import Page
+from wagtail.models import Page, PageQuerySet
 
 from cms.blocks import AlertBlock
 
@@ -45,7 +45,8 @@ class DashboardIndexPage(Page):
         from cms.pages.dashboard import DATA_STATUS_CHOICES
 
         context = super().get_context(request)
-        context["dashboards"] = {}
+
+        all_dashboards: dict[str, list[PageQuerySet]] = {}
         for status_key, _label in DATA_STATUS_CHOICES:
             dashboards = (
                 self.get_children()
@@ -56,5 +57,7 @@ class DashboardIndexPage(Page):
                 .order_by("title")
             )
             if dashboards:
-                context["dashboards"][status_key] = dashboards
+                all_dashboards[status_key] = dashboards
+        context["dashboards"] = all_dashboards
+
         return context

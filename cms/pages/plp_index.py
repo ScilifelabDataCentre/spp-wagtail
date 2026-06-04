@@ -71,13 +71,13 @@ class PlpIndexPage(Page):
         context = super().get_context(request)
 
         children = self.get_children().type(PlpProjectPage).live().public().specific()
-        projects_by_category = {}
+        projects_by_category: dict[str, list[PlpProjectPage]] = {}
         for project in children:
             if project.category_id is None:
                 continue
             projects_by_category.setdefault(project.category_id, []).append(project)
 
-        category_groups = []
+        category_groups: list[dict[str, str | list[PlpProjectPage]]] = []
         for category in PlpCategory.objects.all():
             projects = projects_by_category.get(category.pk)
             if not projects:

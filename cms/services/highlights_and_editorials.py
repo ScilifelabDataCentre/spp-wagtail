@@ -1,5 +1,7 @@
 """Highlights and Editorials page service functions."""
 
+from wagtail.models import Page
+
 
 def get_related_articles(article, limit: int = 3, threshold: float = 0.1) -> list:  # noqa: ANN001
     """Get related articles based on keyword similarity.
@@ -46,7 +48,7 @@ def get_related_articles(article, limit: int = 3, threshold: float = 0.1) -> lis
         return article_model.objects.none()
 
     # Calculate similarity scores efficiently
-    related_articles = []
+    related_articles: list[tuple[Page, float]] = []
     current_keywords = set(article.keyword_list)
 
     # Process articles in batches to avoid memory issues
