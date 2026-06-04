@@ -53,18 +53,16 @@ class PortalDataPage(RoutablePageMixin, Page):
     )
 
     content_panels = Page.content_panels + [
-        FieldPanel("datatype",
-                   help_text=(
-                       "Type of datapage to be created, right now only Metabolomics is available"
-                   )),
-        FieldPanel("default_page_size",
-                   help_text=(
-                       "Number of items to display per page, default=25"
-                   )),
-        FieldPanel("content",
-                   help_text=(
-                       "Additional content for the Portal data page. Will be displayed "
-                   )),
+        FieldPanel(
+            "datatype",
+            help_text=("Type of datapage to be created, right now only Metabolomics is available"),
+        ),
+        FieldPanel(
+            "default_page_size", help_text=("Number of items to display per page, default=25")
+        ),
+        FieldPanel(
+            "content", help_text=("Additional content for the Portal data page. Will be displayed ")
+        ),
     ]
 
     class Meta:
