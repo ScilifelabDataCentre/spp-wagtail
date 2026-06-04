@@ -53,9 +53,14 @@ class PortalDataPage(RoutablePageMixin, Page):
     )
 
     content_panels = Page.content_panels + [
-        FieldPanel("datatype"),
-        FieldPanel("default_page_size"),
-        FieldPanel("content"),
+        FieldPanel(
+            "datatype",
+            help_text=("Type of datapage to be created, right now only Metabolights is available"),
+        ),
+        FieldPanel(
+            "default_page_size", help_text=("Number of items to display per page, default=25")
+        ),
+        FieldPanel("content", help_text=("The main content for the Portal data page.")),
     ]
 
     class Meta:
@@ -63,7 +68,7 @@ class PortalDataPage(RoutablePageMixin, Page):
 
         verbose_name = "Portal data page"
 
-    def get_context(self, request):  # noqa: ANN201, ANN002, ANN003, ANN001
+    def get_context(self, request: HttpRequest) -> dict[str, any]:
         """Build the template context for the portal data page."""
         context = super().get_context(request)
 
@@ -78,7 +83,7 @@ class PortalDataPage(RoutablePageMixin, Page):
         return context
 
     # ------------------------------------------------------------------ #
-    # Routes                                                               #
+    # Routes                                                             #
     # ------------------------------------------------------------------ #
 
     @path("")

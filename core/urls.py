@@ -37,8 +37,9 @@ if settings.DEBUG:
     urlpatterns += [
         path("__reload__/", include("django_browser_reload.urls")),
     ]
+    # Serve media files in development
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-# Serve media files in development
+
 urlpatterns += [
     path(settings.WAGTAILADMIN_URL, include(wagtailadmin_urls)),
     path("cms/", include("cms.urls")),
