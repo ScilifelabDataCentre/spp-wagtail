@@ -14,6 +14,7 @@
    `--watch` subscription off `logs/` and `.venv/`. When adding a new
    top-level app with templates, register it here with another @source line. */
 @source "../../../../cms";
+@source "../../../../core";
 
 /* The DaisyUI plugin modules live next to base.css so '@plugin' can resolve
    them, but they sit inside the scoped source root. Without these excludes,
