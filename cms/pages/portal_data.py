@@ -32,8 +32,7 @@ class PortalDataPage(RoutablePageMixin, Page):
     portal_data.wagtail_urls, and their corresponding root urlconf includes.
     """
 
-    intro = RichTextField(blank=True)
-    help_text = RichTextField(blank=True)
+    subpage_types: list[str] = []
 
     datatype = models.CharField(
         max_length=64,
@@ -54,26 +53,28 @@ class PortalDataPage(RoutablePageMixin, Page):
     )
 
     content_panels = Page.content_panels + [
-        FieldPanel(
-            "datatype",
-            help_text=("Type of datapage to be created, right now only Metabolights is available"),
-        ),
-        FieldPanel(
-            "default_page_size", help_text=("Number of items to display per page, default=25")
-        ),
-        FieldPanel("content", help_text=("The main content for the Portal data page.")),
+        FieldPanel("datatype",
+                   help_text=(
+                       "Type of datapage to be created, right now only Metabolomics is available"
+                   )),
+        FieldPanel("default_page_size",
+                   help_text=(
+                       "Number of items to display per page, default=25"
+                   )),
+        FieldPanel("content",
+                   help_text=(
+                       "Additional content for the Portal data page. Will be displayed "
+                   )),
     ]
-
-    subpage_types: list[str] = []
 
     class Meta:
         """Metadata options for the portal data page."""
 
         verbose_name = "Portal data page"
 
-    def get_context(self, request, *args, **kwargs):  # noqa: ANN201, ANN002, ANN003, ANN001
+    def get_context(self, request):  # noqa: ANN201, ANN002, ANN003, ANN001
         """Build the template context for the portal data page."""
-        context = super().get_context(request, *args, **kwargs)
+        context = super().get_context(request)
 
         context.update(
             build_portal_data_context(
@@ -86,7 +87,7 @@ class PortalDataPage(RoutablePageMixin, Page):
         return context
 
     # ------------------------------------------------------------------ #
-    # Routes                                                               #
+    # Routes                                                             #
     # ------------------------------------------------------------------ #
 
     @path("")
