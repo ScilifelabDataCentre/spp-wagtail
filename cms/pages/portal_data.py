@@ -6,6 +6,7 @@ import logging
 import mimetypes
 from contextlib import ExitStack
 from pathlib import Path
+from typing import Any
 from urllib.parse import unquote
 
 from django.db import models
@@ -68,7 +69,7 @@ class PortalDataPage(RoutablePageMixin, Page):
 
         verbose_name = "Portal data page"
 
-    def get_context(self, request: HttpRequest) -> dict[str, any]:
+    def get_context(self, request: HttpRequest) -> dict[str, Any]:
         """Build the template context for the portal data page."""
         context = super().get_context(request)
 
