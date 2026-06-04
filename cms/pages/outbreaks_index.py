@@ -47,7 +47,7 @@ class OutbreaksIndexPage(Page):
 
         context = super().get_context(request)
 
-        all_outbreaks: dict[str, list[PageQuerySet]] = {}
+        all_outbreaks: dict[str, PageQuerySet] = {}
         for _type, _label in OUTBREAKS_STATUS_CHOICES:
             fetched_outbreaks = (
                 self.get_children()

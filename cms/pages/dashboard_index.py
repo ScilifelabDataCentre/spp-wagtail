@@ -46,7 +46,7 @@ class DashboardIndexPage(Page):
 
         context = super().get_context(request)
 
-        all_dashboards: dict[str, list[PageQuerySet]] = {}
+        all_dashboards: dict[str, PageQuerySet] = {}
         for status_key, _label in DATA_STATUS_CHOICES:
             dashboards = (
                 self.get_children()
