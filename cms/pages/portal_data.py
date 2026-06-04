@@ -126,14 +126,12 @@ class PortalDataPage(RoutablePageMixin, Page):
             raise Http404("Could not list files") from err
 
         context = self.get_context(request)
-        context.update(
-            {
-                "accession": accession,
-                "files": files,
-                # self.url is the canonical Wagtail URL for this page instance.
-                "portal_data_index_url": self.url,
-            }
-        )
+        context = {
+            "accession": accession,
+            "files": files,
+            "page": self,
+            "portal_data_index_url": self.url,
+        }
         return render(request, "portal_data/study_files.html", context)
 
     @path("<slug:accession>/files/<path:relpath>/")
