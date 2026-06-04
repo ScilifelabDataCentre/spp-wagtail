@@ -123,7 +123,6 @@ class PortalDataPage(RoutablePageMixin, Page):
             logger.exception("Unexpected error listing files for %s/%s", self.datatype, accession)
             raise Http404("Could not list files") from err
 
-        context = self.get_context(request)
         context = {
             "accession": accession,
             "files": files,
