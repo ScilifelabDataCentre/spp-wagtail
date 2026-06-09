@@ -96,7 +96,8 @@ class PortalDataPage(RoutablePageMixin, Page):
     @path("<slug:accession>/files/")
     def study_files(self, request: HttpRequest, accession: str) -> HttpResponse:
         """List files available for a given study accession."""
-        return serve_study_files(request, self, accession)
+        template = "cms/pages/portal_data/study_files.html"
+        return serve_study_files(request, self, accession, template)
 
     @path("<slug:accession>/files/<path:relpath>/")
     def download_file(self, request: HttpRequest, accession: str, relpath: str) -> HttpResponse:

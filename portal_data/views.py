@@ -1,4 +1,4 @@
-"""View functions for the portal_data app."""
+"""View functions for the PortalDataPage."""
 
 from __future__ import annotations
 
@@ -15,10 +15,10 @@ from portal_data.services import ACCESSION_RE, get_data_root, get_datatype_confi
 
 logger = logging.getLogger(__name__)
 
-STUDY_FILES_TEMPLATE = "cms/pages/portal_data/study_files.html"
 
-
-def serve_study_files(request: HttpRequest, page: object, accession: str) -> HttpResponse:
+def serve_study_files(
+    request: HttpRequest, page: object, accession: str, template: str
+) -> HttpResponse:
     """List files available for a given study accession."""
     if get_datatype_config(page.datatype) is None:
         raise Http404("Unknown data type")
@@ -48,7 +48,7 @@ def serve_study_files(request: HttpRequest, page: object, accession: str) -> Htt
         "page": page,
         "portal_data_index_url": page.url,
     }
-    return render(request, STUDY_FILES_TEMPLATE, context)
+    return render(request, template, context)
 
 
 def serve_download_file(
@@ -59,6 +59,7 @@ def serve_download_file(
     Protects against path traversal by resolving the requested path and
     confirming it stays inside the study directory.
     """
+
     if get_datatype_config(datatype) is None:
         raise Http404("Unknown data type")
 
