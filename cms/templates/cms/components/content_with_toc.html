@@ -1,0 +1,41 @@
+{% comment %}
+This template is used in `toc` template tag to render the content of a page with a table of contents.
+It is not intended to be used directly, so any page wanna use this should use the `toc` template tag.
+
+Example:
+
+    {% load toc %}
+
+    {% if page.show_toc %}
+        {% content_with_toc page.content %}
+    {% else %}
+        {% include_block page.content %}
+    {% endif %}
+
+{% endcomment %}
+
+<div class="md:grid md:grid-cols-4 md:gap-6 mt-8">
+    <div id="content" class="{% if toc %}md:col-span-3{% else %}md:col-span-4{% endif %}">{{ content }}</div>
+    {% if toc %}
+    <nav id="toc" class="max-md:hidden" aria-labelledby="toc-heading">
+        <div class="border border-secondary/50 p-6 rounded md:sticky md:top-16">
+            <h3 id="toc-heading" class="mt-0">Table of Contents</h3>
+            <ul class="list-none p-0 m-0">
+                {% for item in toc %}
+                    {% if item.level == "h2" %}
+                    <li>
+                        <span class="text-pp-dark-blue/60" aria-hidden="true">&#9656;</span>
+                        <a href="#{{ item.id }}" class="text-pp-dark-blue font-medium">{{ item.text }}</a>
+                    </li>
+                    {% else %}
+                    <li class="ps-4">
+                        <span class="text-sm text-pp-dark-blue/80 align-text-top" aria-hidden="true">&#9675;</span>
+                        <a href="#{{ item.id }}" class="text-pp-dark-blue">{{ item.text }}</a>
+                    </li>
+                    {% endif %}
+                {% endfor %}
+            </ul>
+        </div>
+    </nav>
+    {% endif %}
+</div>
