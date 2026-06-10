@@ -51,7 +51,7 @@ class DashboardIndexPage(Page):
 
         context = super().get_context(request)
 
-        # Collect all unique topics from the child articles for filtering options
+        # Collect all unique topics from the child dashboards for filtering options
         context["all_topics"] = sorted(
             DashboardTopic.objects.filter(page__live=True)
             .values_list("topic__title", flat=True)
@@ -69,7 +69,8 @@ class DashboardIndexPage(Page):
 
         filters = models.Q()
 
-        # If a search query is passed as a query parameter, filter the articles based on that query
+        # If a search query is passed as a query parameter,
+        # filter the dashboards based on that query
         search_filter = validated_filters.get("search")
         if search_filter:
             filters &= (
@@ -78,13 +79,15 @@ class DashboardIndexPage(Page):
                 | models.Q(keywords__icontains=search_filter)
             )
 
-        # If an status type is passed as a query parameter, filter the dashboards based on that type
+        # If a status type is passed as a query parameter,
+        # filter the dashboards based on that type
         type_filter = validated_filters.get("type")
         if type_filter:
             filters &= models.Q(data_status__in=type_filter)
             context["type_filter"] = type_filter
 
-        # If a topic is passed as a query parameter, filter the articles based on that topic
+        # If a topic is passed as a query parameter,
+        # filter the dashboards based on that topic
         topics_filter = validated_filters.get("topic")
         if topics_filter:
             filters &= models.Q(dashboard_topics__topic__slug__in=topics_filter)
