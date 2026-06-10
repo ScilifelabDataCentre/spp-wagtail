@@ -1,42 +1,122 @@
 {% extends "cms/base.html" %}
 
+{% load static %}
 {% load wagtailcore_tags wagtailimages_tags %}
 
 {% block content %}
 
-    {% include_block page.content %}
+<!-- Content from CMS -->
+{% include_block page.content %}
 
-    {% if dashboards.active %}
-        <h4>Active dashboards</h4>
-        <p>Dashboards created by the Swedish Pathogens Portal containing data that is actively updated by associated research efforts.</p>
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
-            {% for dashboard in dashboards.active %}
-                {% image dashboard.image format-webp as thumbnail %}
-                {% include "cms/components/content_card.html#content_card" with url=dashboard.url image=thumbnail.url title=dashboard.title description=dashboard.description only %}
-            {% endfor %}
-        </div>
-    {% endif %}
+{% if dashboards_list %}
 
-    {% if dashboards.historic %}
-        <h4>Historic dashboards</h4>
-        <p>Dashboards created by the Swedish Pathogens Portal that are no longer updated by associated research efforts.</p>
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
-            {% for dashboard in dashboards.historic %}
-                {% image dashboard.image format-webp as thumbnail %}
-                {% include "cms/components/content_card.html#content_card" with url=dashboard.url image=thumbnail.url title=dashboard.title description=dashboard.description only %}
-            {% endfor %}
-        </div>
-    {% endif %}
+<!-- Search Bar -->
+<div class="md:grid md:grid-cols-4 md:gap-6 mt-8">
+    <section id="dashboards-search-and-filters">
+        <div class="collapse max-md:collapse-arrow border border-secondary rounded md:sticky md:top-16 md:collapse-open">
 
-    {% if not dashboards.active and not dashboards.historic %}
-        <div class="text-center py-16">
-            <div class="max-w-md mx-auto">
-                <h3 class="text-xl font-semibold text-pp-dark-grey mb-2">No Dashboards Available</h3>
-                <p class="text-pp-dark-grey">
-                    There are currently no dashboards available. Please check back later.
-                </p>
+            <!-- Hidden toggle to make the filter section collapsible on mobile -->
+            <input type="checkbox" class="md:hidden" />
+
+            <!-- Filter title -->
+            <div class="collapse-title md:cursor-default">
+                <h4 class="my-0">Search & Filters</h4>
+            </div>
+
+            <!-- Filter content -->
+            <div class="collapse-content md:block">
+                <div id="dashboards-filter-inputs" class="flex flex-col gap-4 px-1">
+                    <!-- Search input -->
+                    <input type="text" id="searchInput" name="search" maxlength="100"
+                        class="input input-bordered input-accent"
+                        placeholder="Search Dashboards" aria-label="Search">
+                    <!-- Status Filters -->
+                    <h5 class="my-0">Status</h5>
+                    <div class="flex flex-col gap-2">
+                        {% for choice in all_status_types %}
+                        <span>
+                            <label class="label cursor-pointer">
+                                <input type="checkbox" class="checkbox checkbox-accent checkbox-sm"
+                                name="type" value="{{ choice|slugify }}"
+                                {% if choice|slugify in type_filter %}checked{% endif %}>
+                                <span class="label-text">{{ choice }}</span>
+                            </label>
+                        </span>
+                        {% endfor %}
+                    </div>
+                    <!-- Topic Filters -->
+                    <h5 class="my-0">Topics</h5>
+                    <div class="flex flex-col gap-2">
+                        {% for topic in all_topics %}
+                        <span>
+                            <label class="label cursor-pointer">
+                                <input type="checkbox" class="checkbox checkbox-accent checkbox-sm"
+                                name="topic" value="{{ topic|slugify }}"
+                                {% if topic|slugify in topics_filter %}checked{% endif %}>
+                                <span class="label-text">{{ topic }}</span>
+                            </label>
+                        </span>
+                        {% endfor %}
+                    </div>
+                </div>
             </div>
         </div>
-    {% endif %}
+    </section>
+
+    <section
+    id="dashboards" class="md:col-span-3 max-md:mt-8"
+    hx-get="{{ request.path }}"
+    hx-trigger="input from:#dashboards-filter-inputs delay:300ms"
+    hx-include="#dashboards-filter-inputs input"
+    hx-target="#dashboards-list"
+    hx-swap="innerHTML"
+    hx-indicator="#dashboards-loading"
+    >
+        <div class="relative min-h-20">
+            <div id="dashboards-loading"
+                class="htmx-indicator absolute inset-0 bg-base-100/80 flex items-center justify-center z-10 rounded-box">
+                <span class="loading loading-spinner text-accent loading-lg" aria-label="Loading"></span>
+            </div>
+            <div id="dashboards-list">
+                {# Partial definition for reusability, this partial id can be used for htmx requests #}
+                {% partialdef dashboards_grid inline %}
+
+                {% if dashboards_list %}
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 lg:gap-3">
+                    {% for dashboard in dashboards_list %}
+                        <!-- Render each dashboard -->
+                        <div class="dashboard">
+                            {% image dashboard.image format-webp as thumbnail %}
+                            {% include "cms/components/content_card.html#content_card" with url=dashboard.url image=thumbnail.url title=dashboard.title description=dashboard.description date=dashboard.dashboard_data_updated_at badge_text=dashboard.get_data_status_display topics=dashboard.topics only %}
+                        </div>
+                    {% endfor %}
+                    </div>
+                {% elif request.htmx %}
+                    <p class="text-center text-pp-dark-grey">No dashboards found for given search query and/or selected filters.</p>
+                {% endif %}
+
+                {% endpartialdef %}
+                {# End of partial definition #} 
+            </div>
+        </div>
+    </section>
+</div>
+
+{% else %}
+<!-- No Dashboards Message -->
+<div class="text-center py-16">
+    <div class="max-w-md mx-auto">
+        <div class="w-20 h-20 bg-pp-pale-grey rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg class="w-10 h-10 text-pp-dark-grey" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
+            </svg>
+        </div>
+        <h3 class="text-xl font-semibold text-pp-dark-grey mb-2">No Dashboards available</h3>
+        <p class="text-pp-dark-grey">
+            There are currently no dashboards available. Please check back later.
+        </p>
+    </div>
+</div>
+{% endif %}
 
 {% endblock %}
