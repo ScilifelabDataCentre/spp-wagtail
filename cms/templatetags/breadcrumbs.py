@@ -25,10 +25,12 @@ def get_ancestors(page: Page) -> list[dict[str, str | None]]:
             crumbs.append({"title": ancestor.title, "url": ancestor.url if ancestor.live else None})
 
         return crumbs
-    except AttributeError:
-        LOGGER.warning("Page object missing attributes for breadcrumbs", page_id=page.id)
-    except Exception as e:
-        LOGGER.exception("Error generating breadcrumbs", error=str(e), page_id=page.id)
+    except Exception:
+        LOGGER.exception(
+            "Error generating breadcrumbs",
+            page_id=getattr(page, "id", None),
+            page_title=getattr(page, "title", None),
+        )
 
     return []
 
