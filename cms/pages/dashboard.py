@@ -62,6 +62,7 @@ class DashboardPage(Page):
     by the parent DashboardIndexPage for the card grid listing.
 
     Attributes:
+        show_toc: Whether to generate and display a table of contents sidebar.
         description: Brief text for the index card.
         image: Thumbnail image for the index card.
         data_status: Whether the dashboard data is active or historic.
@@ -73,6 +74,7 @@ class DashboardPage(Page):
     parent_page_types = ["cms.DashboardIndexPage"]
     subpage_types = []
 
+    show_toc = models.BooleanField(default=False, blank=True, verbose_name="Show TOC")
     description = models.CharField(max_length=255, blank=False)
     image = models.ForeignKey(
         get_image_model_string(),
@@ -127,6 +129,16 @@ class DashboardPage(Page):
         FieldPanel(
             "content",
             help_text="Main content: text, charts, and figures.",
+        ),
+    ]
+
+    promote_panels = Page.promote_panels + [
+        FieldPanel(
+            "show_toc",
+            help_text=(
+                "If checked, a table of contents will be generated from "
+                "headings in the content and displayed in a sidebar."
+            ),
         ),
     ]
 
