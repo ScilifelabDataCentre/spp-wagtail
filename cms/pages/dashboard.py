@@ -1,5 +1,6 @@
 """CMS page for individual dashboards."""
 
+from datetime import date
 from typing import TYPE_CHECKING, Any
 
 from django.db import models
@@ -17,6 +18,7 @@ from cms.blocks import AlertBlock, LastUpdatedBlock, PlotlyFigureBlock, StaticFi
 # Only import TopicPage for type checking to avoid circular imports
 if TYPE_CHECKING:
     from cms.pages.topics import TopicPage
+    from cms.snippets.dashboard_data import DashboardData
 
 DATA_STATUS_CHOICES = [
     ("active", "Active"),
@@ -141,14 +143,14 @@ class DashboardPage(Page):
         return [tag.strip().lower() for tag in self.keywords.split(",") if tag.strip()]
 
     @cached_property
-    def dashboard_data(self) -> dict[str, Any]:
+    def dashboard_data(self) -> DashboardData | None:
         """Return a dictionary of data figures for this dashboard."""
         from cms.snippets.dashboard_data import DashboardData
 
         return DashboardData.get_data(self.slug)
 
     @property
-    def dashboard_data_updated_at(self) -> str | None:
+    def dashboard_data_updated_at(self) -> date | None:
         """Return the last updated timestamp for the dashboard data."""
         return getattr(self.dashboard_data, "data_updated_at", None)
 
