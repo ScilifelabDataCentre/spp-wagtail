@@ -36,29 +36,16 @@ class TestGetAncestors(SimpleTestCase):
         queryset.filter.assert_called_once_with(depth__gt=1)
 
     @patch("cms.templatetags.breadcrumbs.LOGGER")
-    def test_handles_attribute_error(self, mock_logger: MagicMock):
-        """Test that get_ancestors handles AttributeError gracefully."""
-        page = MagicMock(id=123)
-        page.get_ancestors.side_effect = AttributeError
-
-        ancestors = get_ancestors(page)
-
-        self.assertEqual(ancestors, [])
-        mock_logger.warning.assert_called_with(
-            "Page object missing attributes for breadcrumbs", page_id=123
-        )
-
-    @patch("cms.templatetags.breadcrumbs.LOGGER")
     def test_handles_generic_exception(self, mock_logger: MagicMock):
         """Test that get_ancestors handles generic exceptions gracefully."""
-        page = MagicMock(id=456)
+        page = MagicMock(id=123, title="Test Page")
         page.get_ancestors.side_effect = RuntimeError("foo")
 
         result = get_ancestors(page)
 
         self.assertEqual(result, [])
         mock_logger.exception.assert_called_once_with(
-            "Error generating breadcrumbs", error="foo", page_id=456
+            "Error generating breadcrumbs", page_id=123, page_title="Test Page"
         )
 
 
@@ -123,3 +110,40 @@ class TestBreadcrumbsDisplay(SimpleTestCase):
         # current page title should be present
         self.assertIn("Current Page", rendered)
         mock_get_ancestors.assert_called_once()
+
+    @patch("cms.templatetags.breadcrumbs.get_ancestors")
+    def test_non_live_ancestor_renders_as_span(self, mock_get_ancestors: MagicMock):
+        """Non-live ancestors (url=None) must render as plain text, not as a link."""
+        mock_get_ancestors.return_value = [
+            {"title": "Live Section", "url": "/section/"},
+            {"title": "Draft Subsection", "url": None},
+        ]
+        page = SimpleNamespace(depth=4, title="Current Page")
+
+        rendered = Template("{% load breadcrumbs %}{% breadcrumbs_display %}").render(
+            Context({"page": page})
+        )
+
+        # Live ancestor still rendered as a link
+        self.assertIn('href="/section/"', rendered)
+        self.assertIn("Live Section", rendered)
+
+        # Non-live ancestor: title is present, but no anchor for it
+        self.assertIn("Draft Subsection", rendered)
+        self.assertNotIn('href="None"', rendered)  # guard against the obvious bug
+        # Confirm the title appears inside a <span>, not an <a>
+        self.assertRegex(rendered, r"<span[^>]*>\s*Draft Subsection\s*</span>")
+
+    @patch("cms.templatetags.breadcrumbs.get_ancestors")
+    def test_renders_nothing_when_no_ancestors(self, mock_get_ancestors: MagicMock):
+        """If get_ancestors returns [], the template must render no <nav>."""
+        mock_get_ancestors.return_value = []
+        page = SimpleNamespace(depth=3, title="Orphan")
+
+        rendered = Template("{% load breadcrumbs %}{% breadcrumbs_display %}").render(
+            Context({"page": page})
+        )
+
+        self.assertNotIn("<nav", rendered)
+        self.assertNotIn("Orphan", rendered)
+        self.assertEqual(rendered.strip(), "")
