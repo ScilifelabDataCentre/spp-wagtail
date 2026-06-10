@@ -90,7 +90,7 @@ class DashboardPage(Page):
             "show_toc",
             help_text=(
                 "If checked, a table of contents will be generated from "
-                "headings in the content and displayed in a sidebar xx."
+                "headings in the content and displayed in a sidebar."
             ),
         ),
     ]
