@@ -78,7 +78,25 @@
                 <span class="loading loading-spinner text-accent loading-lg" aria-label="Loading"></span>
             </div>
             <div id="articles-list">
-                {% include "cms/components/highlights_and_editorials_list.html#articles_grid" with articles_list=articles_list only %}
+                {# Partial definition for reusability, this partial id can be used for htmx requests #}
+                {% partialdef articles_grid inline %}
+
+                {% if articles_list %}
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 lg:gap-3">
+                    {% for article in articles_list %}
+                        <!-- Render each article -->
+                        <div class="article">
+                            {% image article.image format-webp as thumbnail %}
+                            {% include "cms/components/content_card.html#content_card" with url=article.url image=thumbnail.url title=article.title description=article.description date=article.first_published_at badge_text=article.get_article_type_display topics=article.topics only %}
+                        </div>
+                    {% endfor %}
+                </div>
+                {% elif request.htmx %}
+                    <p class="text-center text-pp-dark-grey">No articles found for given search query and/or selected filters.</p>
+                {% endif %}
+
+                {% endpartialdef %}
+               {# End of partial definition #} 
             </div>
         </div>
     </section>
