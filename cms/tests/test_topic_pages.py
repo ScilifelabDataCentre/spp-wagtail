@@ -52,6 +52,18 @@ class MockHighlightsAndEditorialsIndexPage:
     objects = MagicMock()
 
 
+class MockDashboardPage:
+    """Mock class for DashboardPage to be used in tests."""
+
+    objects = MagicMock()
+
+
+class MockDashboardIndexPage:
+    """Mock class for DashboardIndexPage to be used in tests."""
+
+    objects = MagicMock()
+
+
 ######################################################################
 ############### Test suite for TopicsIndexPage model #################
 ######################################################################
@@ -140,8 +152,8 @@ class TestTopicPage(BasePageTestCase):
         self.assertTrue(TopicPage.objects.filter(id=self.topic_page.id).exists())
         self.assertEqual(self.topic_page.get_parent().specific, self.topics_index)
 
-    def test_related_highlights_and_editorials_returns_filtered_articles(self) -> None:
-        """Test that the related_highlights_and_editorials property returns as expected queryset."""
+    def test_tagged_highlights_and_editorials_returns_filtered_articles(self) -> None:
+        """Test that the tagged_highlights_and_editorials property returns as expected queryset."""
         mock_queryset = MagicMock()
 
         (
@@ -152,7 +164,7 @@ class TestTopicPage(BasePageTestCase):
             "cms.pages.highlights_and_editorials.HighlightsAndEditorialsPage",
             MockHighlightsAndEditorialsPage,
         ):
-            result = self.topic_page.related_highlights_and_editorials
+            result = self.topic_page.tagged_highlights_and_editorials
 
         self.assertEqual(result, mock_queryset)
         (
@@ -161,33 +173,81 @@ class TestTopicPage(BasePageTestCase):
             )
         )
 
+    def test_tagged_dashboards_returns_filtered_dashboards(self) -> None:
+        """Test that the tagged_dashboards property returns as expected queryset."""
+        mock_queryset = MagicMock()
+
+        (
+            MockDashboardPage.objects.live.return_value.public.return_value.filter.return_value.distinct.return_value.order_by.return_value
+        ) = mock_queryset
+
+        with patch(
+            "cms.pages.dashboard.DashboardPage",
+            MockDashboardPage,
+        ):
+            result = self.topic_page.tagged_dashboards
+
+        self.assertEqual(result, mock_queryset)
+        (
+            MockDashboardPage.objects.live.return_value.public.return_value.filter.assert_called_once_with(
+                dashboard_topics__topic=self.topic_page
+            )
+        )
+
     def test_get_context_adds_new_context_values(self) -> None:
         """Test that the get_context method adds the expected values to the context."""
         request = self.factory.get("/")
 
-        mock_index_page = MagicMock()
-        mock_index_page.url = "/highlights-and-editorials/"
-
+        mock_articles_index_page = MagicMock()
+        mock_articles_index_page.url = "/highlights-and-editorials/"
         (
             MockHighlightsAndEditorialsIndexPage.objects.live.return_value.first.return_value
-        ) = mock_index_page
+        ) = mock_articles_index_page
 
-        related_articles = [MagicMock(), MagicMock()]
+        tagged_articles = [MagicMock(), MagicMock()]
+        mock_articles = MagicMock()
+        mock_articles.count.return_value = 2
+        mock_articles.__getitem__.return_value = tagged_articles
+
+        mock_dashboards_index_page = MagicMock()
+        mock_dashboards_index_page.url = "/dashboards/"
+        (
+            MockDashboardIndexPage.objects.live.return_value.first.return_value
+        ) = mock_dashboards_index_page
+
+        tagged_dashboards = [MagicMock()]
+        mock_dashboards = MagicMock()
+        mock_dashboards.count.return_value = 1
+        mock_dashboards.__getitem__.return_value = tagged_dashboards
 
         with (
             patch(
                 "cms.pages.highlights_and_editorials_index.HighlightsAndEditorialsIndexPage",
                 MockHighlightsAndEditorialsIndexPage,
             ),
+            patch(
+                "cms.pages.dashboard_index.DashboardIndexPage",
+                MockDashboardIndexPage,
+            ),
             patch.object(
                 TopicPage,
-                "related_highlights_and_editorials",
+                "tagged_highlights_and_editorials",
                 new_callable=PropertyMock,
-                return_value=related_articles,
+                return_value=mock_articles,
+            ),
+            patch.object(
+                TopicPage,
+                "tagged_dashboards",
+                new_callable=PropertyMock,
+                return_value=mock_dashboards,
             ),
         ):
             context = self.topic_page.get_context(request)
 
         self.assertEqual(context["page_heading"], "Topics")
-        self.assertEqual(context["related_highlights_and_editorials"], related_articles)
+        self.assertEqual(context["tagged_articles_count"], 2)
+        self.assertEqual(context["tagged_highlights_and_editorials"], tagged_articles)
         self.assertEqual(context["articles_index_url"], "/highlights-and-editorials/")
+        self.assertEqual(context["tagged_dashboards_count"], 1)
+        self.assertEqual(context["tagged_dashboards"], tagged_dashboards)
+        self.assertEqual(context["dashboards_index_url"], "/dashboards/")
