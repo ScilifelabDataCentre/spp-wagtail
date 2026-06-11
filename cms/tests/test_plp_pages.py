@@ -668,13 +668,10 @@ class TestPlpProjectCopyInvariants(BasePlpPageTestCase):
         user: AbstractBaseUser | None = None,
     ) -> PlpProjectPageCopyForm:
         user = user or self._superuser()
-        parent = page.get_parent()
-        can_publish = parent.permissions_for_user(user).can_publish_subpage()
         return PlpProjectPageCopyForm(
             data=data,
             user=user,
             page=page,
-            can_publish=can_publish,
         )
 
     def test_recursive_copy_under_project_parent_is_rejected(self):
