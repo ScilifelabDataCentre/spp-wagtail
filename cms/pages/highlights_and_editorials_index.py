@@ -26,7 +26,7 @@ class HighlightsAndEditorialsIndexPage(Page):
 
     max_count = 1
     template = "cms/pages/highlights_and_editorials_index.html"
-    htmx_template = "cms/components/highlights_and_editorials_list.html#articles_grid"
+    htmx_template = "cms/pages/highlights_and_editorials_index.html#articles_grid"
     parent_page_types = ["cms.HomePage"]
     subpage_types = ["cms.HighlightsAndEditorialsPage"]
 

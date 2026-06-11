@@ -27,7 +27,7 @@ class CataloguePage(Page):
     """
 
     template = "cms/pages/catalogue.html"
-    htmx_template = "cms/components/catalogue_list.html#catalogue_grid"
+    htmx_template = "cms/pages/catalogue.html#catalogue_grid"
     parent_page_types = ["cms.HomePage"]
     subpage_types = []
 

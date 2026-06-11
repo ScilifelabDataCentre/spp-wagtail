@@ -92,7 +92,7 @@
 {% if related_articles %}
 <div class="border-t border-pp-pale-grey">
     <h3>Related {{ page.get_article_type_display }}s</h3>
-    {% include "cms/components/highlights_and_editorials_list.html#articles_grid" with articles_list=related_articles only %}
+    {% include "cms/pages/highlights_and_editorials_index.html#articles_grid" with articles_list=related_articles only %}
 </div>
 {% endif %}
 
