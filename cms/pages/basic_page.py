@@ -1,4 +1,4 @@
-"""Standard content page model with a StreamField body."""
+"""Basic content page model with a StreamField body."""
 
 from django.db import models
 from wagtail import blocks
@@ -9,10 +9,8 @@ from wagtail.models import Page
 from cms.blocks import AlertBlock, CardBlock, CardGridBlock, ChildPageCardBlock, DataTableBlock
 
 
-class StandardPage(Page):
+class BasicPage(Page):
     """Simple content page with a reorderable stream of common blocks.
-
-    Cannot have child pages. Allowed parents: home or section index pages.
 
     Attributes:
         show_toc: Whether to generate and display a table of contents sidebar.
@@ -21,9 +19,7 @@ class StandardPage(Page):
             - DataTableBlock: interactive table with search and pagination
     """
 
-    template = "cms/pages/standard_page.html"
-    parent_page_types = ["cms.HomePage", "cms.SectionIndexPage"]
-    subpage_types = []  # No child pages allowed.
+    template = "cms/pages/basic_page.html"
 
     show_toc = models.BooleanField(default=False, blank=True, verbose_name="Show TOC")
 

@@ -14,7 +14,7 @@ from django.test import TestCase
 from wagtail.admin.rich_text.converters.contentstate import ContentstateConverter
 from wagtail.models import Page, Site
 
-from cms.pages import StandardPage
+from cms.pages import BasicPage
 from cms.snippets import SiteAnnouncement
 from cms.templatetags.site_announcements import get_site_announcements
 
@@ -64,21 +64,21 @@ class _SiteAnnouncementRenderTestCase(TestCase):
     The default Wagtail migration tree already installs a root (id=1)
     and a ``home`` page (id=2) bound to the default ``Site``. We reuse
     that home page as the parent so the site's ``root_page`` resolves
-    without recreating a fixture, and add ``StandardPage`` children for
+    without recreating a fixture, and add ``BasicPage`` children for
     the actual render assertions.
     """
 
     def setUp(self) -> None:
-        """Reuse the default Wagtail home page and add a blank ``StandardPage`` child."""
+        """Reuse the default Wagtail home page and add a blank ``BasicPage`` child."""
         self.site = Site.objects.get(is_default_site=True)
         self.home = self.site.root_page
-        self.standard_page = self.home.add_child(
-            instance=StandardPage(title="Standard", slug="standard", content=[]),
+        self.basic_page = self.home.add_child(
+            instance=BasicPage(title="Basic", slug="basic", content=[]),
         )
 
     def _render(self, page: Page | None = None) -> str:
-        """Request ``page`` (defaults to ``self.standard_page``) and return the body."""
-        target = page or self.standard_page
+        """Request ``page`` (defaults to ``self.basic_page``) and return the body."""
+        target = page or self.basic_page
         response = self.client.get(target.url)
         self.assertEqual(response.status_code, 200)
         return response.content.decode()
