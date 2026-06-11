@@ -1,21 +1,57 @@
 """CMS page for individual dashboards."""
 
-from typing import Any
+from datetime import date
+from typing import TYPE_CHECKING, Any
 
 from django.db import models
 from django.http import HttpRequest
-from wagtail.admin.panels import FieldPanel, MultiFieldPanel
+from django.utils.functional import cached_property
+from modelcluster.fields import ParentalKey
+from wagtail.admin.panels import FieldPanel, InlinePanel, MultiFieldPanel, PageChooserPanel
 from wagtail.blocks import RichTextBlock
 from wagtail.fields import StreamField
 from wagtail.images import get_image_model_string
-from wagtail.models import Page
+from wagtail.models import Orderable, Page
 
 from cms.blocks import AlertBlock, LastUpdatedBlock, PlotlyFigureBlock, StaticFigureBlock
+
+# Only import TopicPage for type checking to avoid circular imports
+if TYPE_CHECKING:
+    from cms.pages.topics import TopicPage
+    from cms.snippets.dashboard_data import DashboardData
 
 DATA_STATUS_CHOICES = [
     ("active", "Active"),
     ("historic", "Historic"),
 ]
+
+
+class DashboardTopic(Orderable):
+    """A model representing the many-to-many relationship.
+
+    This model represents the many-to-many relationship between dashboards and topics.
+
+    Attributes:
+    page (ParentalKey): The dashboard page that this topic is associated with.
+    topic (ForeignKey): The topic that is associated with the dashboard.
+    """
+
+    page = ParentalKey(
+        "cms.DashboardPage",
+        on_delete=models.CASCADE,
+        related_name="dashboard_topics",
+    )
+    topic = models.ForeignKey("cms.TopicPage", on_delete=models.CASCADE)
+
+    panels = [
+        PageChooserPanel("topic", "cms.TopicPage"),
+    ]
+
+    class Meta:
+        """Meta options for the DashboardTopic model."""
+
+        verbose_name = "Related Topic"
+        verbose_name_plural = "Related Topics"
 
 
 class DashboardPage(Page):
@@ -30,6 +66,7 @@ class DashboardPage(Page):
         description: Brief text for the index card.
         image: Thumbnail image for the index card.
         data_status: Whether the dashboard data is active or historic.
+        keywords: Optional keywords for searching.
         content: StreamField with text, alerts, and figure blocks.
     """
 
@@ -50,6 +87,7 @@ class DashboardPage(Page):
         max_length=50,
         choices=DATA_STATUS_CHOICES,
     )
+    keywords = models.TextField(blank=True)
     content = StreamField(
         [
             ("text", RichTextBlock()),
@@ -79,6 +117,15 @@ class DashboardPage(Page):
             "data_status",
             help_text="Whether this dashboard's data is active or historic.",
         ),
+        InlinePanel(
+            "dashboard_topics",
+            classname="collapsed",
+            help_text="Research topics associated with this dashboard.",
+        ),
+        FieldPanel(
+            "keywords",
+            help_text=("Comma-separated keywords for related content matching and search"),
+        ),
         FieldPanel(
             "content",
             help_text="Main content: text, charts, and figures.",
@@ -95,19 +142,41 @@ class DashboardPage(Page):
         ),
     ]
 
+    @property
+    def topics(self) -> list[TopicPage]:
+        """Return a sorted list of topics associated with this dashboard."""
+        return sorted((rel.topic for rel in self.dashboard_topics.all()), key=lambda t: t.title)
+
+    @property
+    def keyword_list(self) -> list[str]:
+        """Return keywords as a list of cleaned strings."""
+        if not self.keywords.strip():
+            return []
+        return [tag.strip().lower() for tag in self.keywords.split(",") if tag.strip()]
+
+    @cached_property
+    def dashboard_data(self) -> DashboardData | None:
+        """Return a dictionary of data figures for this dashboard."""
+        from cms.snippets.dashboard_data import DashboardData
+
+        return DashboardData.get_data(self.slug)
+
+    @property
+    def dashboard_data_updated_at(self) -> date | None:
+        """Return the last updated timestamp for the dashboard data."""
+        return getattr(self.dashboard_data, "data_updated_at", None)
+
     def get_context(self, request: HttpRequest) -> dict[str, Any]:
         """Add DashboardData figures, CSV URL, and parent heading to template context."""
 
         # Importing here to avoid circular import issues
         from cms.pages.dashboard_index import DashboardIndexPage
-        from cms.snippets.dashboard_data import DashboardData
 
         context = super().get_context(request)
-        dashboard_data = DashboardData.get_data(self.slug)
-        context["dashboard_data"] = dashboard_data
-        context["figures"] = dashboard_data.data if dashboard_data else {}
-        context["data_updated_at"] = dashboard_data.data_updated_at if dashboard_data else None
-        context["source_file_hash"] = dashboard_data.source_file_hash if dashboard_data else ""
+        context["dashboard_data"] = self.dashboard_data
+        context["figures"] = getattr(self.dashboard_data, "data", {})
+        context["data_updated_at"] = self.dashboard_data_updated_at
+        context["source_file_hash"] = getattr(self.dashboard_data, "source_file_hash", "")
 
         parent = self.get_ancestors().type(DashboardIndexPage).specific().first()
         context["page_heading"] = parent.title if parent else ""
