@@ -97,14 +97,11 @@
             // ── Dataset description "Show more / Show less" ────────────────
             const descBtn = e.target.closest('.toggle-description');
             if (descBtn) {
-                const id    = descBtn.dataset.id;
-                const short = document.getElementById('desc-short-' + id);
-                const full  = document.getElementById('desc-full-'  + id);
-                if (!short || !full) return;
-                const isExpanded = short.classList.contains('hidden');
-                short.classList.toggle('hidden', !isExpanded);
-                full.classList.toggle('hidden',   isExpanded);
-                descBtn.textContent = isExpanded ? 'Show more' : 'Show less';
+                const desc = document.getElementById('desc-' + descBtn.dataset.id);
+                if (!desc) return;
+                const isClamped = desc.classList.contains('line-clamp-4');
+                desc.classList.toggle('line-clamp-4', !isClamped);
+                descBtn.textContent = isClamped ? 'Show less' : 'Show more';
             }
         });
     </script>

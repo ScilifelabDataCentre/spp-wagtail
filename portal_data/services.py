@@ -14,10 +14,26 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+import nh3
 from django.conf import settings
 from django.utils import timezone
 
 logger = logging.getLogger(__name__)
+
+_ALLOWED_TAGS = {"p", "br", "strong", "em", "a", "ul", "ol", "li"}
+_ALLOWED_ATTRIBUTES: dict[str, set[str]] = {"a": {"href", "target"}}
+
+
+def _clean_html(raw: str) -> str:
+    """Strip unsafe tags from HTML, keeping only a safe presentational subset."""
+    sanitised_html = nh3.clean(
+        raw, tags=_ALLOWED_TAGS, attributes=_ALLOWED_ATTRIBUTES, link_rel=None
+    )
+    if sanitised_html:
+        sanitised_html = re.sub(
+            r"<p>\s*(<br\s*/?>\s*)*</p>", "", sanitised_html, flags=re.IGNORECASE
+        )
+    return sanitised_html
 
 
 @dataclass(frozen=True)
@@ -227,7 +243,7 @@ def load_all_items(datatype: str) -> list[dict]:
         meta = parse_investigation_file(inv_path)
 
         title = meta.get("study_title") or accession
-        description = meta.get("study_description") or ""
+        description = _clean_html(meta.get("study_description") or "")
         public_release = meta.get("study_public_release_date")
         year = None
         if isinstance(public_release, str) and len(public_release) >= 4:
