@@ -1,0 +1,25 @@
+{% if ancestors_list %}
+<div class="container">
+    <nav class="breadcrumbs p-0" aria-label="Breadcrumb">
+        <ul class="ps-0 mb-0 items-start">
+            {% for ancestor in ancestors_list %}
+            <li>
+                {% if ancestor.url %}
+                <a class="text-pp-dark-blue" href="{{ ancestor.url }}">{{ ancestor.title }}</a>
+                {% else %}
+                {% comment %}This should mostly not happen for live pages,
+                but kept for drafts and preview{% endcomment %}
+                <span class="no-underline cursor-text text-pp-dark-grey/80">{{ ancestor.title }}</span>
+                {% endif %}
+            </li>
+            {% endfor %}
+            <li>
+                <span aria-current="page" title="{{ current_page.title }}"
+                    class="no-underline cursor-text text-pp-dark-grey/80">
+                        {{ current_page.title|truncatechars:50 }}
+                </span>
+            </li>
+        </ul>
+    </nav>
+</div>
+{% endif %}
