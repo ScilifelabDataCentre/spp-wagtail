@@ -11,7 +11,7 @@
 <section id="related-highlights-and-editorials" class="mt-8">
     <div class="flex flex-col gap-6">
         <h3 class="my-0">Highlights and Editorials ({{ tagged_articles_count }})</h3>
-        {% include "cms/pages/highlights_and_editorials_index.html#articles_grid" with articles_list=related_highlights_and_editorials only %}
+        {% include "cms/pages/highlights_and_editorials_index.html#articles_grid" with articles_list=tagged_highlights_and_editorials only %}
         <div>
             <a href="{{ articles_index_url }}?topic={{ page.slug }}"
             class="font-bold text-lg text-pp-dark-blue hover:text-pp-teal hover:no-underline transition-colors">
