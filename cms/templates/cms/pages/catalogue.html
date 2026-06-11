@@ -58,7 +58,27 @@
                         <span class="loading loading-spinner text-accent loading-lg" aria-label="Loading"></span>
                     </div>
                     <div id="catalogue-list">
-                        {% include "cms/components/catalogue_list.html#catalogue_grid" with catalogue_list=catalogue_list only %}
+                        {# Partial definition for reusability, this partial id can be used for htmx requests #}
+                        {% partialdef catalogue_grid inline %}
+
+                        {% if catalogue_list %}
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 lg:gap-3">
+                            {% for card in catalogue_list %}
+                                <!-- Render each card -->
+                                <div class="card">
+                                    {% image card.image format-webp as thumbnail %}
+                                    {% include "cms/components/content_card.html#content_card" with url=card.url image=thumbnail.url title=card.title description=card.description external_url=True only %}
+                                </div>
+                            {% endfor %}
+                        </div>
+                        {% elif request.htmx %}
+                            <p class="text-center text-pp-dark-grey">
+                                No catalogue items found for given search query and/or selected filters.
+                            </p>
+                        {% endif %}
+
+                        {% endpartialdef %}
+                        {# End of partial definition #}
                     </div>
                 </div>
             </div>
