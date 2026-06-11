@@ -1,5 +1,9 @@
+"""Search Europe PMC for publications associated with MetaboLights."""
+
 import csv
 import time
+from pathlib import Path
+
 import requests
 
 BASE_URL = "https://www.ebi.ac.uk/europepmc/webservices/rest/search"
@@ -7,15 +11,16 @@ BASE_FILTER = '((ACCESSION_TYPE:"metabolights") OR (LABS_PUBS:"1782"))'
 
 
 def build_query(author_name: str) -> str:
+    """Build a Europe PMC query string for the given author name."""
     author_name = (author_name or "").strip()
     if not author_name:
         raise ValueError("author_name is empty")
     return f'{BASE_FILTER} AND AUTH:"{author_name}"'
 
 
-def search_europe_pmc(query: str, page_size: int = 1000, sleep_s: float = 0.1):
-    """
-    Retrieve all Europe PMC results for a query using cursor pagination.
+def search_europe_pmc(query: str, page_size: int = 1000, sleep_s: float = 0.1) -> list[dict]:
+    """Retrieve all Europe PMC results for a query using cursor pagination.
+
     Returns a list of result records.
     """
     cursor_mark = "*"
@@ -47,7 +52,8 @@ def search_europe_pmc(query: str, page_size: int = 1000, sleep_s: float = 0.1):
     return all_results
 
 
-def safe_get(record: dict, key: str):
+def safe_get(record: dict, key: str) -> str:
+    """Return record[key] as a string, or an empty string if missing or None."""
     value = record.get(key, "")
     if value is None:
         return ""
@@ -55,6 +61,7 @@ def safe_get(record: dict, key: str):
 
 
 def flatten_paper(author_name: str, query: str, paper: dict) -> dict:
+    """Flatten a Europe PMC result record into a row dict for CSV output."""
     return {
         "input_author": author_name,
         "query": query,
@@ -73,16 +80,16 @@ def flatten_paper(author_name: str, query: str, paper: dict) -> dict:
     }
 
 
-def read_authors_from_csv(input_csv: str, author_column: str):
+def read_authors_from_csv(input_csv: str, author_column: str) -> list[str]:
+    """Read unique, non-empty author names from a column in a CSV file."""
     authors = []
     seen = set()
 
-    with open(input_csv, newline="", encoding="utf-8-sig") as f:
+    with Path(input_csv).open(newline="", encoding="utf-8-sig") as f:
         reader = csv.DictReader(f)
         if author_column not in reader.fieldnames:
             raise ValueError(
-                f"Column '{author_column}' not found. "
-                f"Available columns: {reader.fieldnames}"
+                f"Column '{author_column}' not found. Available columns: {reader.fieldnames}"
             )
 
         for row in reader:
@@ -96,7 +103,8 @@ def read_authors_from_csv(input_csv: str, author_column: str):
     return authors
 
 
-def main():
+def main() -> None:
+    """Run the Europe PMC author search and write results to CSV files."""
     input_csv = "authors.csv"
     author_column = "author"
     papers_output_csv = "europepmc_metabolights_papers.csv"
@@ -153,13 +161,13 @@ def main():
         "is_open_access",
     ]
 
-    with open(papers_output_csv, "w", newline="", encoding="utf-8") as f:
+    with Path(papers_output_csv).open("w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=paper_fieldnames)
         writer.writeheader()
         writer.writerows(paper_rows)
 
     summary_fieldnames = ["input_author", "query", "match_count", "error"]
-    with open(summary_output_csv, "w", newline="", encoding="utf-8") as f:
+    with Path(summary_output_csv).open("w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=summary_fieldnames)
         writer.writeheader()
         writer.writerows(summary_rows)
