@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import BinaryIO
 
-import pandas as pd
+import polars as pl
 from django.db.models.fields.files import FieldFile
 
 type SourceFile = str | Path | BinaryIO
@@ -126,11 +126,11 @@ def read_source_text(source_file: SourceFile) -> str:
     return raw
 
 
-def read_csv_dataframe(source_file: SourceFile) -> pd.DataFrame:
+def read_csv_dataframe(source_file: SourceFile) -> pl.DataFrame:
     """Parse a dashboard CSV upload into a DataFrame."""
     content = read_source_text(source_file)
     delimiter = detect_csv_delimiter(content)
-    return pd.read_csv(io.StringIO(content), sep=delimiter)
+    return pl.read_csv(io.BytesIO(content.encode("utf-8")), separator=delimiter)
 
 
 @dataclass
