@@ -7,15 +7,30 @@
 
 {% include_block page.content %}
 
-{% if related_highlights_and_editorials %}
+{% if tagged_highlights_and_editorials %}
 <section id="related-highlights-and-editorials" class="mt-8">
     <div class="flex flex-col gap-6">
-        <h3 class="my-0">Highlights and Editorials ({{ related_highlights_and_editorials|length }})</h3>
-        {% include "cms/components/highlights_and_editorials_list.html#articles_grid" with articles_list=related_highlights_and_editorials only %}
+        <h3 class="my-0">Highlights and Editorials ({{ tagged_articles_count }})</h3>
+        {% include "cms/components/highlights_and_editorials_list.html#articles_grid" with articles_list=tagged_highlights_and_editorials only %}
         <div>
             <a href="{{ articles_index_url }}?topic={{ page.slug }}"
             class="font-bold text-lg text-pp-dark-blue hover:text-pp-teal hover:no-underline transition-colors">
                 View all articles for {{ page.title }} &rarr;
+            </a>
+        </div>
+    </div>
+</section>
+{% endif %}
+
+{% if tagged_dashboards %}
+<section id="related-dashboards" class="mt-8">
+    <div class="flex flex-col gap-6">
+        <h3 class="my-0">Dashboards ({{ tagged_dashboards_count }})</h3>
+        {% include "cms/pages/dashboard_index.html#dashboards_grid" with dashboards_list=tagged_dashboards only %}
+        <div>
+            <a href="{{ dashboards_index_url }}?topic={{ page.slug }}"
+            class="font-bold text-lg text-pp-dark-blue hover:text-pp-teal hover:no-underline transition-colors">
+                View all dashboards for {{ page.title }} &rarr;
             </a>
         </div>
     </div>

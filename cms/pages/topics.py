@@ -66,7 +66,7 @@ class TopicPage(Page):
     ]
 
     @property
-    def related_highlights_and_editorials(self) -> models.QuerySet:
+    def tagged_highlights_and_editorials(self) -> models.QuerySet:
         """Return highlights and editorials related to this topic."""
 
         # Importing here to avoid circular import issues
@@ -84,21 +84,47 @@ class TopicPage(Page):
             .order_by("-first_published_at")
         )
 
+    @property
+    def tagged_dashboards(self) -> models.QuerySet:
+        """Return dashboards related to this topic."""
+
+        # Importing here to avoid circular import issues
+        from cms.pages.dashboard import DashboardPage
+
+        # To avoid error in TopicPage preview in Wagtail admin when the page is first created
+        if not self.pk:
+            return DashboardPage.objects.none()
+
+        return (
+            DashboardPage.objects.live()
+            .public()
+            .filter(dashboard_topics__topic=self)
+            .distinct()
+            .order_by("-first_published_at")
+        )
+
     def get_context(self, request: HttpRequest) -> dict[str, Any]:
         """Add the parent page's title to the context for display on the topic page."""
 
         # Importing here to avoid circular import issues
+        from cms.pages.dashboard_index import DashboardIndexPage
         from cms.pages.highlights_and_editorials_index import HighlightsAndEditorialsIndexPage
         from cms.pages.topics_index import TopicsIndexPage
 
         context = super().get_context(request)
-        context["related_highlights_and_editorials"] = self.related_highlights_and_editorials
 
         parent = self.get_ancestors().type(TopicsIndexPage).specific().first()
         context["page_heading"] = parent.title if parent else ""
 
+        context["tagged_articles_count"] = self.tagged_highlights_and_editorials.count()
+        context["tagged_highlights_and_editorials"] = self.tagged_highlights_and_editorials[:3]
         highlights_and_editorials_index = HighlightsAndEditorialsIndexPage.objects.live().first()
         context["articles_index_url"] = (
             highlights_and_editorials_index.url if highlights_and_editorials_index else ""
         )
+
+        context["tagged_dashboards_count"] = self.tagged_dashboards.count()
+        context["tagged_dashboards"] = self.tagged_dashboards[:3]
+        dashboard_index = DashboardIndexPage.objects.live().first()
+        context["dashboards_index_url"] = dashboard_index.url if dashboard_index else ""
         return context
