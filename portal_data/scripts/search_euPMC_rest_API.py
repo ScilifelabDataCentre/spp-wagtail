@@ -1,6 +1,7 @@
 """Search Europe PMC for publications associated with MetaboLights."""
 
 import csv
+import re
 import time
 from pathlib import Path
 
@@ -60,7 +61,37 @@ def safe_get(record: dict, key: str) -> str:
     return value
 
 
-def flatten_paper(author_name: str, query: str, paper: dict) -> dict:
+METABOLIGHTS_FTP_BASE = "/pub/databases/metabolights/studies/public"
+METABOLIGHTS_LOCAL_BASE = "~/Downloads/MTBLS_data"
+
+
+def extract_metabolights_accessions(paper: dict) -> list[str]:
+    """Return all MetaboLights accession IDs (MTBLS*) linked to a paper record."""
+    accessions = []
+    db_refs = paper.get("dbCrossReferenceList", {}).get("dbCrossReference", [])
+    for ref in db_refs:
+        if ref.get("type", "").upper() == "METABOLIGHTS":
+            for acc in ref.get("accessionList", {}).get("accession", []):
+                value = (acc.get("value") or "").strip()
+                if value.upper().startswith("MTBLS"):
+                    accessions.append(value.upper())
+    return accessions
+
+
+def format_lftp_target(accession: str) -> str:
+    """Format a single MTBLS accession as an lftp mirror target line."""
+    return (
+        f"--recursive {METABOLIGHTS_FTP_BASE}/{accession}/ "
+        f"{METABOLIGHTS_LOCAL_BASE}/{accession}/"
+    )
+
+
+def flatten_paper(
+    author_name: str,
+    query: str,
+    paper: dict,
+    matched_keywords: list[str] | None = None,
+) -> dict:
     """Flatten a Europe PMC result record into a row dict for CSV output."""
     return {
         "input_author": author_name,
@@ -77,6 +108,7 @@ def flatten_paper(author_name: str, query: str, paper: dict) -> dict:
         "first_publication_date": safe_get(paper, "firstPublicationDate"),
         "cited_by_count": safe_get(paper, "citedByCount"),
         "is_open_access": safe_get(paper, "isOpenAccess"),
+        "matched_keywords": "; ".join(matched_keywords or []),
     }
 
 
@@ -89,7 +121,8 @@ def read_authors_from_csv(input_csv: str, author_column: str) -> list[str]:
         reader = csv.DictReader(f)
         if author_column not in reader.fieldnames:
             raise ValueError(
-                f"Column '{author_column}' not found. Available columns: {reader.fieldnames}"
+                f"Column '{author_column}' not found. "
+                f"Available columns: {reader.fieldnames}"
             )
 
         for row in reader:
@@ -103,33 +136,97 @@ def read_authors_from_csv(input_csv: str, author_column: str) -> list[str]:
     return authors
 
 
+def load_keywords(path: str) -> list[str]:
+    """Load unique, non-empty keywords from a one-per-line text file."""
+    keywords = []
+    seen = set()
+    with Path(path).open(encoding="utf-8-sig") as f:
+        for line in f:
+            kw = line.strip()
+            if not kw:
+                continue
+            lower = kw.lower()
+            if lower not in seen:
+                seen.add(lower)
+                keywords.append(kw)
+    return keywords
+
+
+def build_keyword_pattern(keywords: list[str]) -> re.Pattern[str]:
+    """Build a case-insensitive whole-word regex matching any keyword."""
+    if not keywords:
+        raise ValueError("keywords list is empty")
+    # Sort by length descending so longer alternatives are tried first.
+    escaped = sorted((re.escape(kw) for kw in keywords), key=len, reverse=True)
+    pattern = r"\b(?:" + "|".join(escaped) + r")\b"
+    return re.compile(pattern, re.IGNORECASE)
+
+
+def find_keyword_matches(text: str, pattern: re.Pattern[str]) -> list[str]:
+    """Return matched keywords in order of first appearance, deduplicated."""
+    if not text:
+        return []
+    seen_lower = set()
+    found = []
+    for m in pattern.finditer(text):
+        val = m.group(0)
+        key = val.lower()
+        if key not in seen_lower:
+            seen_lower.add(key)
+            found.append(val)
+    return found
+
+
 def main() -> None:
     """Run the Europe PMC author search and write results to CSV files."""
     input_csv = "authors.csv"
     author_column = "author"
+    keywords_csv = "pathogen_infectious_disease_keywords_just_keywords.csv"
     papers_output_csv = "europepmc_metabolights_papers.csv"
     summary_output_csv = "europepmc_metabolights_summary.csv"
+    targets_output_txt = "targets.txt"
 
     authors = read_authors_from_csv(input_csv, author_column)
+    keywords = load_keywords(keywords_csv)
+    keyword_pattern = build_keyword_pattern(keywords)
+    print(f"Loaded {len(keywords)} keywords from {keywords_csv}")
 
     paper_rows = []
     summary_rows = []
+    seen_accessions: set[str] = set()
+    accession_targets: list[str] = []
 
     for idx, author_name in enumerate(authors, start=1):
         try:
             query = build_query(author_name)
             results = search_europe_pmc(query)
 
-            print(f"[{idx}/{len(authors)}] {author_name}: {len(results)} matches")
-
+            filtered_count = 0
             for paper in results:
-                paper_rows.append(flatten_paper(author_name, query, paper))
+                text = " ".join(
+                    [safe_get(paper, "title"), safe_get(paper, "abstractText")]
+                )
+                matches = find_keyword_matches(text, keyword_pattern)
+                if not matches:
+                    continue
+                filtered_count += 1
+                paper_rows.append(flatten_paper(author_name, query, paper, matches))
+                for acc in extract_metabolights_accessions(paper):
+                    if acc not in seen_accessions:
+                        seen_accessions.add(acc)
+                        accession_targets.append(format_lftp_target(acc))
+
+            print(
+                f"[{idx}/{len(authors)}] {author_name}: "
+                f"{len(results)} matches, {filtered_count} after keyword filter"
+            )
 
             summary_rows.append(
                 {
                     "input_author": author_name,
                     "query": query,
                     "match_count": len(results),
+                    "filtered_count": filtered_count,
                 }
             )
 
@@ -140,6 +237,7 @@ def main() -> None:
                     "input_author": author_name,
                     "query": "",
                     "match_count": "",
+                    "filtered_count": "",
                     "error": str(e),
                 }
             )
@@ -159,6 +257,7 @@ def main() -> None:
         "first_publication_date",
         "cited_by_count",
         "is_open_access",
+        "matched_keywords",
     ]
 
     with Path(papers_output_csv).open("w", newline="", encoding="utf-8") as f:
@@ -166,15 +265,21 @@ def main() -> None:
         writer.writeheader()
         writer.writerows(paper_rows)
 
-    summary_fieldnames = ["input_author", "query", "match_count", "error"]
+    summary_fieldnames = ["input_author", "query", "match_count", "filtered_count", "error"]
     with Path(summary_output_csv).open("w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=summary_fieldnames)
         writer.writeheader()
         writer.writerows(summary_rows)
 
+    with Path(targets_output_txt).open("w", encoding="utf-8") as f:
+        f.write("\n".join(accession_targets))
+        if accession_targets:
+            f.write("\n")
+
     print()
     print(f"Wrote {len(paper_rows)} paper rows to {papers_output_csv}")
     print(f"Wrote {len(summary_rows)} summary rows to {summary_output_csv}")
+    print(f"Wrote {len(accession_targets)} lftp targets to {targets_output_txt}")
 
 
 if __name__ == "__main__":
