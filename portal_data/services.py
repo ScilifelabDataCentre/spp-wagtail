@@ -26,7 +26,10 @@ _ALLOWED_ATTRIBUTES: dict[str, set[str]] = {"a": {"href", "target"}}
 
 def _clean_html(raw: str) -> str:
     """Strip unsafe tags from HTML, keeping only a safe presentational subset."""
-    return nh3.clean(raw, tags=_ALLOWED_TAGS, attributes=_ALLOWED_ATTRIBUTES, link_rel=None)
+    sanitised_html = nh3.clean(raw, tags=_ALLOWED_TAGS, attributes=_ALLOWED_ATTRIBUTES, link_rel=None)
+    if sanitised_html:
+        sanitised_html = re.sub(r"<p>\s*(<br\s*/?>\s*)*</p>", "", sanitised_html, flags=re.IGNORECASE)
+    return sanitised_html
 
 
 @dataclass(frozen=True)
