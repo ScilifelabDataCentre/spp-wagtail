@@ -6,10 +6,17 @@
 
 <h3>{{ page.title }}</h3>
 
-<!-- Publication Date and Type -->
+<!-- Data last updated date and Type -->
 <p class="text-pp-dark-grey mb-6 flex items-center gap-2 flex-wrap">
     <span class="badge badge-ghost badge-lg">{{ page.get_data_status_display }}</span>
-    <span>Data last updated: {{ page.first_published_at|date:"F j, Y" }}</span>
+    {% if page.dashboard_data_updated_at %}
+        <span>
+            Data last updated:
+            <time datetime="{{ page.dashboard_data_updated_at|date:"Y-m-d" }}">
+                {{ page.dashboard_data_updated_at|date:"F j, Y" }}
+            </time>
+        </span>
+    {% endif %}
 </p>
 
 {% if page.show_toc %}
