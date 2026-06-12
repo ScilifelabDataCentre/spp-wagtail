@@ -4,6 +4,14 @@
 
 {% block content %}
 
+<h3>{{ page.title }}</h3>
+
+<!-- Publication Date and Type -->
+<p class="text-pp-dark-grey mb-6 flex items-center gap-2 flex-wrap">
+    <span class="badge badge-ghost badge-lg">{{ page.get_data_status_display }}</span>
+    <span>Data last updated: {{ page.first_published_at|date:"F j, Y" }}</span>
+</p>
+
 {% if page.show_toc %}
     {% content_with_toc page.content %}
 {% else %}
