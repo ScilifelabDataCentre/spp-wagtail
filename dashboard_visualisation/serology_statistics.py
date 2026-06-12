@@ -5,12 +5,9 @@ from typing import Any
 import plotly.express as px
 import plotly.graph_objects as go
 import polars as pl
-import structlog
 
 from .utils.plotly import figure_to_json
 from .utils.uploads import SourceFile, read_csv_dataframe
-
-LOGGER = structlog.get_logger(__name__)
 
 base_layout = {
     "autosize": True,
