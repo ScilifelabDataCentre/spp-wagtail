@@ -16,7 +16,9 @@ LOGGER = structlog.get_logger(__name__)
 
 # Register active (non-historic) dashboard slugs here, e.g.:
 # "serology-statistics": "dashboard_visualisation.serology_statistics",
-VIZ_MODULES: dict[str, str] = {}
+VIZ_MODULES: dict[str, str] = {
+    "serology-statistics": "dashboard_visualisation.serology_statistics",
+}
 
 
 def validate_source_columns(dashboard_slug: str, columns: list[str]) -> str | None:
