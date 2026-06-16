@@ -213,14 +213,45 @@ def load_keywords(path: str) -> list[str]:
     return keywords
 
 
+def is_uppercase_abbrev(keyword: str) -> bool:
+    """Return True for short pure-letter all-caps strings (likely abbreviations).
+
+    Such keywords (e.g. GAS, AIDS, MAC, MRSA) should match case-sensitively to
+    avoid colliding with common lowercase English words.
+    """
+    return (
+        keyword.isascii()
+        and keyword.isalpha()
+        and keyword.isupper()
+        and 2 <= len(keyword) <= 6
+    )
+
+
 def build_keyword_pattern(keywords: list[str]) -> re.Pattern[str]:
-    """Build a case-insensitive whole-word regex matching any keyword."""
+    """Build a regex matching any keyword.
+
+    Short all-caps alphabetic abbreviations are matched case-sensitively to avoid
+    collisions with common English words (e.g. GAS, the abbreviation for Group A
+    Streptococcus, vs. 'gas' in 'gas chromatography'). All other keywords are
+    matched case-insensitively.
+    """
     if not keywords:
         raise ValueError("keywords list is empty")
+
     # Sort by length descending so longer alternatives are tried first.
-    escaped = sorted((re.escape(kw) for kw in keywords), key=len, reverse=True)
-    pattern = r"\b(?:" + "|".join(escaped) + r")\b"
-    return re.compile(pattern, re.IGNORECASE)
+    cs = sorted(
+        [kw for kw in keywords if is_uppercase_abbrev(kw)], key=len, reverse=True
+    )
+    ci = sorted(
+        [kw for kw in keywords if not is_uppercase_abbrev(kw)], key=len, reverse=True
+    )
+
+    parts = []
+    if cs:
+        parts.append("|".join(re.escape(kw) for kw in cs))
+    if ci:
+        parts.append(r"(?i:" + "|".join(re.escape(kw) for kw in ci) + r")")
+    return re.compile(r"\b(?:" + "|".join(parts) + r")\b")
 
 
 def find_keyword_matches(text: str, pattern: re.Pattern[str]) -> list[str]:
