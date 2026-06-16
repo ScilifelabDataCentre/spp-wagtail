@@ -83,14 +83,11 @@ def extract_metabolights_accessions(paper: dict) -> list[str]:
 def format_lftp_target(accession: str) -> str:
     """Format a single MTBLS accession as an lftp mirror target line."""
     return (
-        f"--recursive {METABOLIGHTS_FTP_BASE}/{accession}/ "
-        f"{METABOLIGHTS_LOCAL_BASE}/{accession}/"
+        f"--recursive {METABOLIGHTS_FTP_BASE}/{accession}/ {METABOLIGHTS_LOCAL_BASE}/{accession}/"
     )
 
 
-ANNOTATIONS_API_URL = (
-    "https://www.ebi.ac.uk/europepmc/annotations_api/annotationsByArticleIds"
-)
+ANNOTATIONS_API_URL = "https://www.ebi.ac.uk/europepmc/annotations_api/annotationsByArticleIds"
 
 
 def fetch_textmined_metabolights_accessions(
@@ -120,11 +117,7 @@ def fetch_textmined_metabolights_accessions(
             for tag in ann.get("tags", []):
                 name = (tag.get("name") or "").strip().upper()
                 uri = (tag.get("uri") or "").lower()
-                if (
-                    name.startswith("MTBLS")
-                    and "metabolights" in uri
-                    and name not in seen
-                ):
+                if name.startswith("MTBLS") and "metabolights" in uri and name not in seen:
                     seen.add(name)
                     accessions.append(name)
     return accessions
@@ -182,8 +175,7 @@ def read_authors_from_csv(input_csv: str, author_column: str) -> list[str]:
         reader = csv.DictReader(f)
         if author_column not in reader.fieldnames:
             raise ValueError(
-                f"Column '{author_column}' not found. "
-                f"Available columns: {reader.fieldnames}"
+                f"Column '{author_column}' not found. Available columns: {reader.fieldnames}"
             )
 
         for row in reader:
@@ -219,12 +211,7 @@ def is_uppercase_abbrev(keyword: str) -> bool:
     Such keywords (e.g. GAS, AIDS, MAC, MRSA) should match case-sensitively to
     avoid colliding with common lowercase English words.
     """
-    return (
-        keyword.isascii()
-        and keyword.isalpha()
-        and keyword.isupper()
-        and 2 <= len(keyword) <= 6
-    )
+    return keyword.isascii() and keyword.isalpha() and keyword.isupper() and 2 <= len(keyword) <= 6
 
 
 def build_keyword_pattern(keywords: list[str]) -> re.Pattern[str]:
@@ -239,12 +226,8 @@ def build_keyword_pattern(keywords: list[str]) -> re.Pattern[str]:
         raise ValueError("keywords list is empty")
 
     # Sort by length descending so longer alternatives are tried first.
-    cs = sorted(
-        [kw for kw in keywords if is_uppercase_abbrev(kw)], key=len, reverse=True
-    )
-    ci = sorted(
-        [kw for kw in keywords if not is_uppercase_abbrev(kw)], key=len, reverse=True
-    )
+    cs = sorted([kw for kw in keywords if is_uppercase_abbrev(kw)], key=len, reverse=True)
+    ci = sorted([kw for kw in keywords if not is_uppercase_abbrev(kw)], key=len, reverse=True)
 
     parts = []
     if cs:
@@ -295,9 +278,7 @@ def main() -> None:
 
             filtered_count = 0
             for paper in results:
-                text = " ".join(
-                    [safe_get(paper, "title"), safe_get(paper, "abstractText")]
-                )
+                text = " ".join([safe_get(paper, "title"), safe_get(paper, "abstractText")])
                 matches = find_keyword_matches(text, keyword_pattern)
                 if not matches:
                     continue
