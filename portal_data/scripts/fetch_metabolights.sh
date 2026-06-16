@@ -2,7 +2,7 @@
 set -eu
 
 BASE_HOST="ftp.ebi.ac.uk"
-TARGETS_FILE="/config/targets.txt"
+TARGETS_FILE="targets.txt"
 DEST_ROOT="/datasets"
 
 echo "Using targets file: $TARGETS_FILE"

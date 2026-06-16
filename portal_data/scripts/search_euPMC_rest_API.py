@@ -1,5 +1,7 @@
 """Search Europe PMC for publications associated with MetaboLights."""
 
+from __future__ import annotations
+
 import csv
 import re
 import time
@@ -84,6 +86,65 @@ def format_lftp_target(accession: str) -> str:
         f"--recursive {METABOLIGHTS_FTP_BASE}/{accession}/ "
         f"{METABOLIGHTS_LOCAL_BASE}/{accession}/"
     )
+
+
+ANNOTATIONS_API_URL = (
+    "https://www.ebi.ac.uk/europepmc/annotations_api/annotationsByArticleIds"
+)
+
+
+def fetch_textmined_metabolights_accessions(
+    source: str, ext_id: str, sleep_s: float = 0.1
+) -> list[str]:
+    """Fetch text-mined MetaboLights accessions via the Europe PMC annotations API."""
+    if not source or not ext_id:
+        return []
+
+    response = requests.get(
+        ANNOTATIONS_API_URL,
+        params={
+            "articleIds": f"{source}:{ext_id}",
+            "type": "Accession Numbers",
+            "format": "JSON",
+        },
+        timeout=60,
+    )
+    response.raise_for_status()
+    payload = response.json()
+    time.sleep(sleep_s)
+
+    accessions = []
+    seen = set()
+    for article in payload:
+        for ann in article.get("annotations", []):
+            for tag in ann.get("tags", []):
+                name = (tag.get("name") or "").strip().upper()
+                uri = (tag.get("uri") or "").lower()
+                if (
+                    name.startswith("MTBLS")
+                    and "metabolights" in uri
+                    and name not in seen
+                ):
+                    seen.add(name)
+                    accessions.append(name)
+    return accessions
+
+
+def get_metabolights_accessions(paper: dict, sleep_s: float = 0.1) -> list[str]:
+    """Get all MetaboLights accessions for a paper.
+
+    Checks curated cross-references first (no API call). Falls back to the
+    Europe PMC annotations API for text-mined accessions when the paper's
+    `hasTMAccessionNumbers` flag is set.
+    """
+    accessions = extract_metabolights_accessions(paper)
+    if accessions:
+        return accessions
+    if paper.get("hasTMAccessionNumbers") != "Y":
+        return []
+    source = paper.get("source") or ""
+    ext_id = paper.get("id") or paper.get("pmid") or ""
+    return fetch_textmined_metabolights_accessions(source, ext_id, sleep_s)
 
 
 def flatten_paper(
@@ -211,7 +272,16 @@ def main() -> None:
                     continue
                 filtered_count += 1
                 paper_rows.append(flatten_paper(author_name, query, paper, matches))
-                for acc in extract_metabolights_accessions(paper):
+
+                try:
+                    accessions = get_metabolights_accessions(paper)
+                except Exception as e:
+                    src = paper.get("source", "?")
+                    pid = paper.get("id", "?")
+                    print(f"    annotation lookup failed for {src}:{pid}: {e}")
+                    accessions = []
+
+                for acc in accessions:
                     if acc not in seen_accessions:
                         seen_accessions.add(acc)
                         accession_targets.append(format_lftp_target(acc))
