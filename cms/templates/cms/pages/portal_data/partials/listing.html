@@ -108,27 +108,18 @@
                         </div>
 
                         {% if it.description %}
-                            <p class="mt-2 text-sm leading-relaxed text-pp-dark-grey">
-                                {% with it.description|striptags|wordcount as desc_words %}
-                                    {% if desc_words > 100 %}
-                                        <span id="desc-short-{{ it.id }}">
-                                            {{ it.description|truncatewords_html:50|safe }}
-                                        </span>
-                                        <span id="desc-full-{{ it.id }}" class="hidden">
-                                            {{ it.description|safe }}
-                                        </span>
-                                        <button
-                                            type="button"
-                                            class="toggle-description btn btn-ghost btn-xs ml-1 text-accent underline"
-                                            data-id="{{ it.id }}"
-                                        >
-                                            Show more
-                                        </button>
-                                    {% else %}
-                                        {{ it.description|safe }}
-                                    {% endif %}
-                                {% endwith %}
-                            </p>
+                            <div class="mt-2 text-sm leading-relaxed text-pp-dark-grey [&_p]:mt-0">
+                                <div id="desc-{{ it.id }}" class="line-clamp-4">
+                                    {{ it.description|safe }}
+                                </div>
+                                <button
+                                    type="button"
+                                    class="toggle-description btn btn-ghost btn-xs mt-1 text-accent underline"
+                                    data-id="{{ it.id }}"
+                                >
+                                    Show more
+                                </button>
+                            </div>
                         {% endif %}
 
                         <dl class="mt-3 space-y-1 text-xs text-pp-dark-grey">
