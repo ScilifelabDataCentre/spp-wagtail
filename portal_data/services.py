@@ -7,6 +7,7 @@ import io
 import json
 import logging
 import os
+import re
 from collections.abc import Iterable, Mapping
 <<<<<<< HEAD
 from dataclasses import dataclass
@@ -203,6 +204,7 @@ def _iter_study_dirs(datatype: str) -> list[Path]:
 
     candidates: dict[str, Path] = {}
     for p in data_root.iterdir():
+<<<<<<< HEAD
 =======
     if not DATA_ROOT.exists():
         return []
@@ -210,6 +212,8 @@ def _iter_study_dirs(datatype: str) -> list[Path]:
     candidates: dict[str, Path] = {}
     for p in DATA_ROOT.iterdir():
 >>>>>>> 9a689df (Merge conflict)
+=======
+>>>>>>> 043adbb (Merge conflict)
         if not p.is_dir():
             continue
         name = p.name
@@ -225,6 +229,7 @@ def _iter_study_dirs(datatype: str) -> list[Path]:
 
 
 
+<<<<<<< HEAD
 def load_all_items(datatype: str) -> list[dict]:
 
     """Load all public metabolomics datasets from the PVC.
@@ -235,13 +240,17 @@ def load_all_items(datatype: str) -> list[dict]:
     if datatype != "metabolomics":
         return []
 
+    data_root = get_data_root()
+    if not data_root.is_dir():
+=======
     if not DATA_ROOT.is_dir():
+>>>>>>> 9a689df (Merge conflict)
         return []
 
     items: list[dict] = []
 
-    for study_dir in sorted(data_root.iterdir(), key=lambda p: p.name):
-
+    for study_dir in sorted(DATA_ROOT.iterdir(), key=lambda p: p.name):
+>>>>>>> 9a689df (Merge conflict)
         if not study_dir.is_dir():
             continue
 
@@ -310,6 +319,7 @@ def load_all_items(datatype: str) -> list[dict]:
 
 
 
+<<<<<<< HEAD
 def apply_search_and_filters(
 
     items: list[dict],
@@ -369,6 +379,7 @@ def apply_search_and_filters(
 
     return items
 
+<<<<<<< HEAD
 def build_facets(
 
     items: list[dict[str, Any]],
@@ -452,6 +463,7 @@ def build_facets(
         cache.set(cache_key, facets, timeout=3600)
     return facets
 
+<<<<<<< HEAD
 def find_investigation_file(study_dir: Path) -> Path | None:
 
     """Prefer the latest investigation file under METADATA_REVISIONS, falling back to top-level."""
@@ -473,6 +485,7 @@ def find_investigation_file(study_dir: Path) -> Path | None:
     return None
 
 
+<<<<<<< HEAD
 def parse_investigation_file(path: Path) -> dict[str, object]:
 
     """Very simple ISA-tab parser focusing on the STUDY rows we care about."""
