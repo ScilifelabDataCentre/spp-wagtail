@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 """Django views for browsing and exporting portal data mounted on the data PVC."""
-=======
-"""View functions for the PortalDataPage."""
->>>>>>> 31d16f4 (Freya-2469: Moved view logic for portal data back into views.py (#50))
 
 from __future__ import annotations
 
@@ -12,6 +8,7 @@ from contextlib import ExitStack
 from pathlib import Path
 from urllib.parse import unquote
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 from django.conf import settings
 from django.http import FileResponse, Http404, HttpRequest, HttpResponse
@@ -27,19 +24,20 @@ from portal_data.services import (
 )
 
 from .context import build_portal_data_context
-=======
+from django.conf import settings
 from django.http import FileResponse, Http404, HttpRequest, HttpResponse
 from django.shortcuts import render
+from django.urls import reverse
+from django.views import View
+
 
 from portal_data.services import ACCESSION_RE, get_data_root, get_datatype_config, list_study_files
->>>>>>> 31d16f4 (Freya-2469: Moved view logic for portal data back into views.py (#50))
 
 from .context import build_portal_data_context
 
 logger = logging.getLogger(__name__)
 
 
-<<<<<<< HEAD
 def _positive_int(value: str | None, default: int) -> int:
     try:
         parsed = int(value or default)
@@ -215,7 +213,6 @@ class DownloadStudyFile(View):
 
 
 
-=======
 def serve_study_files(
     request: HttpRequest, page: object, accession: str, template: str
 ) -> HttpResponse:
@@ -331,4 +328,3 @@ def serve_download_file(
 
     response.close = cleanup_close
     return response
->>>>>>> 31d16f4 (Freya-2469: Moved view logic for portal data back into views.py (#50))
