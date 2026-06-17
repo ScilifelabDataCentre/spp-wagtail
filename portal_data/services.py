@@ -5,6 +5,8 @@ from __future__ import annotations
 import csv
 import io
 import json
+import logging
+import os
 from collections.abc import Iterable, Mapping
 <<<<<<< HEAD
 from dataclasses import dataclass
@@ -222,11 +224,9 @@ def _iter_study_dirs(datatype: str) -> list[Path]:
     return [candidates[name] for name in sorted(candidates)]
 
 
-<<<<<<< HEAD
+
 def load_all_items(datatype: str) -> list[dict]:
-=======
-def _load_all_items(datatype: str) -> list[dict]:
->>>>>>> 9a689df (Merge conflict)
+
     """Load all public metabolomics datasets from the PVC.
 
     Each item dict keeps the old keys (id, repository, repo_url, etc.)
@@ -235,21 +235,13 @@ def _load_all_items(datatype: str) -> list[dict]:
     if datatype != "metabolomics":
         return []
 
-<<<<<<< HEAD
-    data_root = get_data_root()
-    if not data_root.is_dir():
-=======
     if not DATA_ROOT.is_dir():
->>>>>>> 9a689df (Merge conflict)
         return []
 
     items: list[dict] = []
 
-<<<<<<< HEAD
     for study_dir in sorted(data_root.iterdir(), key=lambda p: p.name):
-=======
-    for study_dir in sorted(DATA_ROOT.iterdir(), key=lambda p: p.name):
->>>>>>> 9a689df (Merge conflict)
+
         if not study_dir.is_dir():
             continue
 
@@ -317,19 +309,14 @@ def _load_all_items(datatype: str) -> list[dict]:
 
 
 
-<<<<<<< HEAD
+
 def apply_search_and_filters(
-=======
-def _apply_search_and_filters(
->>>>>>> 9a689df (Merge conflict)
+
     items: list[dict],
     query: str,
     filters: dict[str, list[str]],
 ) -> list[dict]:
-<<<<<<< HEAD
     """Apply text search and facet filters to dataset listing items."""
-=======
->>>>>>> 9a689df (Merge conflict)
     # Text search
     if query:
         q = query.lower()
@@ -382,11 +369,8 @@ def _apply_search_and_filters(
 
     return items
 
-<<<<<<< HEAD
 def build_facets(
-=======
-def _build_facets(
->>>>>>> 9a689df (Merge conflict)
+
     items: list[dict[str, Any]],
     facet_names: list[str],
     filters: dict[str, list[str]] | None,
@@ -468,11 +452,8 @@ def _build_facets(
         cache.set(cache_key, facets, timeout=3600)
     return facets
 
-<<<<<<< HEAD
 def find_investigation_file(study_dir: Path) -> Path | None:
-=======
-def _find_investigation_file(study_dir: Path) -> Path | None:
->>>>>>> 9a689df (Merge conflict)
+
     """Prefer the latest investigation file under METADATA_REVISIONS, falling back to top-level."""
     rev_root = study_dir / "METADATA_REVISIONS"
     if rev_root.is_dir():
@@ -492,11 +473,8 @@ def _find_investigation_file(study_dir: Path) -> Path | None:
     return None
 
 
-<<<<<<< HEAD
 def parse_investigation_file(path: Path) -> dict[str, object]:
-=======
-def _parse_investigation_file(path: Path) -> dict[str, object]:
->>>>>>> 9a689df (Merge conflict)
+
     """Very simple ISA-tab parser focusing on the STUDY rows we care about."""
     meta: dict[str, object] = {}
 
