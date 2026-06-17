@@ -1,21 +1,35 @@
 """CMS page for accessing the Portal Data app."""
+
 from __future__ import annotations
 
+import logging
+from typing import Any
+
 from django.db import models
+from django.http import HttpRequest, HttpResponse
+from django.shortcuts import render
 from wagtail.admin.panels import FieldPanel
-from wagtail.fields import RichTextField
+from wagtail.blocks import RichTextBlock
+from wagtail.contrib.routable_page.models import RoutablePageMixin, path
+from wagtail.fields import StreamField
 from wagtail.models import Page
 
+from cms.blocks import AlertBlock
 from portal_data.context import build_portal_data_context
+from portal_data.views import serve_download_file, serve_study_files
+
+logger = logging.getLogger(__name__)
 
 
-class PortalDataPage(Page):
-    """CMS-managed wrapper around the portal_data dataset browser."""
+class PortalDataPage(RoutablePageMixin, Page):
+    """CMS-managed wrapper around the portal_data dataset browser.
 
-    template = "portal_data/index.html"
+    RoutablePageMixin lets sub-paths for file browsing and file downloads be
+    handled directly by this page. The portal_data app keeps the backend/data
+    access logic, while Wagtail owns the public page URL and editorial content.
+    """
 
-    intro = RichTextField(blank=True)
-    help_text = RichTextField(blank=True)
+    subpage_types: list[str] = []
 
     datatype = models.CharField(
         max_length=64,
@@ -27,23 +41,40 @@ class PortalDataPage(Page):
 
     default_page_size = models.PositiveIntegerField(default=25)
 
-    content_panels = Page.content_panels + [
-        FieldPanel("intro"),
-        FieldPanel("help_text"),
-        FieldPanel("datatype"),
-        FieldPanel("default_page_size"),
-    ]
+    content = StreamField(
+        [
+            ("text", RichTextBlock()),
+            ("alert", AlertBlock()),
+        ],
+        blank=True,
+    )
 
-    subpage_types: list[str] = []
+    content_panels = Page.content_panels + [
+        FieldPanel(
+            "datatype",
+            help_text=(
+                "Type of data page to create. "
+                "Currently only Metabolomics is available."
+            ),
+        ),
+        FieldPanel(
+            "default_page_size",
+            help_text="Number of items to display per page. Default is 25.",
+        ),
+        FieldPanel(
+            "content",
+            help_text="Main editable content for the Portal data page.",
+        ),
+    ]
 
     class Meta:
         """Metadata options for the portal data page."""
 
         verbose_name = "Portal data page"
 
-    def get_context(self, request, *args, **kwargs):  # noqa: ANN201, ANN002, ANN003, ANN001
+    def get_context(self, request: HttpRequest) -> dict[str, Any]:
         """Build the template context for the portal data page."""
-        context = super().get_context(request, *args, **kwargs)
+        context = super().get_context(request)
 
         context.update(
             build_portal_data_context(
@@ -54,3 +85,42 @@ class PortalDataPage(Page):
         )
 
         return context
+
+    @path("")
+    def index(self, request: HttpRequest) -> HttpResponse:
+        """Render the dataset listing."""
+        context = self.get_context(request)
+
+        if getattr(request, "htmx", False):
+            return render(
+                request,
+                "cms/pages/portal_data/partials/listing.html",
+                context,
+            )
+
+        return render(request, "cms/pages/portal_data/index.html", context)
+
+    @path("<slug:accession>/files/")
+    def study_files(self, request: HttpRequest, accession: str) -> HttpResponse:
+        """List files available for a given study accession."""
+        return serve_study_files(
+            request=request,
+            page=self,
+            accession=accession,
+            template="cms/pages/portal_data/study_files.html",
+        )
+
+    @path("<slug:accession>/files/<path:relpath>/")
+    def download_file(
+        self,
+        request: HttpRequest,
+        accession: str,
+        relpath: str,
+    ) -> HttpResponse:
+        """Serve or redirect to a single file for a study."""
+        return serve_download_file(
+            request=request,
+            datatype=self.datatype,
+            accession=accession,
+            relpath=relpath,
+        )

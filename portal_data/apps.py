@@ -4,16 +4,8 @@ from django.apps import AppConfig
 
 
 class PortalDataConfig(AppConfig):
-<<<<<<< HEAD
-<<<<<<< HEAD
     """Configure the portal data Django application."""
 
-=======
->>>>>>> 52490de (Merge conflict)
-=======
-    """Configure the portal data Django application."""
-
->>>>>>> 5a6e2fa (Merge conflict)
     default_auto_field = "django.db.models.BigAutoField"
     name = "portal_data"
     verbose_name = "Portal Data"

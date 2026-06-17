@@ -1,4 +1,4 @@
-"""Service functions for exporting item data for the Portal data page."""
+"""Service functions for portal data listing, facets, exports, and file browsing."""
 
 from __future__ import annotations
 
@@ -16,10 +16,13 @@ from typing import Any
 
 import nh3
 from django.conf import settings
-from django.core.cache import cache
 from django.utils import timezone
 
 logger = logging.getLogger(__name__)
+
+_ALLOWED_TAGS = {"p", "br", "strong", "em", "a", "ul", "ol", "li"}
+_ALLOWED_ATTRIBUTES: dict[str, set[str]] = {"a": {"href", "target"}}
+
 
 @dataclass(frozen=True)
 class DataTypeConfig:
@@ -28,18 +31,11 @@ class DataTypeConfig:
     label: str
     default_facets: tuple[str, ...]
 
+
 SUPPORTED_TYPES: dict[str, DataTypeConfig] = {
     "metabolomics": DataTypeConfig(
         label="Metabolomics",
         default_facets=(
-from pathlib import Path
-
-from django.conf import settings
-
-SUPPORTED_TYPES = {
-    "metabolomics": {
-        "label": "Metabolomics",
-        "default_facets": [
             "year",
             "platforms",
             "technology",
@@ -52,9 +48,41 @@ SUPPORTED_TYPES = {
 
 ACCESSION_RE = re.compile(r"^MTBLS\d+$")
 
-def get_datatype_config(datatype: str) -> DataTypeConfig | None:
+EXPORT_FIELDS: list[tuple[str, str]] = [
+    ("id", "Accession"),
+    ("title", "Title"),
+    ("pathogen", "Pathogen"),
+    ("matrix", "Matrix"),
+    ("instrument", "Instrument"),
+    ("country", "Country"),
+    ("year", "Year"),
+    ("repository", "Repository"),
+    ("repo_url", "Repository URL"),
+]
+
+
+def _clean_html(raw: str) -> str:
+    """Strip unsafe tags from HTML, keeping a safe presentational subset."""
+    sanitized_html = nh3.clean(
+        raw,
+        tags=_ALLOWED_TAGS,
+        attributes=_ALLOWED_ATTRIBUTES,
+        link_rel=None,
+    )
+    if sanitized_html:
+        sanitized_html = re.sub(
+            r"<p>\s*(<br\s*/?>\s*)*</p>",
+            "",
+            sanitized_html,
+            flags=re.IGNORECASE,
+        )
+    return sanitized_html
+
+
+def get_datatype_config(datatype: object) -> DataTypeConfig | None:
     """Return configuration for a supported data type, if available."""
-    return SUPPORTED_TYPES.get(datatype)
+    normalized = str(datatype or "").strip().lower()
+    return SUPPORTED_TYPES.get(normalized)
 
 
 def get_dataset_listing(
@@ -75,13 +103,12 @@ def get_dataset_listing(
         facet_names=facet_names,
         filters=filters,
         datatype=datatype,
-        use_cache=(not query and not filters),
     )
 
     return {
         "items": filtered_items,
         "facets": facets,
-        "has_facets": any(bool(buckets) for buckets in facets.values()),
+        "has_facets": any(bool(facet["buckets"]) for facet in facets),
     }
 
 
@@ -92,38 +119,16 @@ def get_data_root() -> Path:
     """
     return Path(settings.DATASETS_ROOT).expanduser().resolve()
 
-# Fields we include in exports:
-# - key in the item dict
-# - human-readable column header
-EXPORT_FIELDS: list[tuple[str, str]] = [
-    ("id", "Accession"),
-    ("title", "Title"),
-    ("pathogen", "Pathogen"),
-    ("matrix", "Matrix"),
-    ("instrument", "Instrument"),
-    ("country", "Country"),
-    ("year", "Year"),
-    ("repository", "Repository"),
-    ("repo_url", "Repository URL"),
-]
 
+def _normalize_items(items: Iterable[Mapping[str, object]]) -> list[dict[str, object]]:
+    """Normalize view items for export."""
+    normalized: list[dict[str, object]] = []
 
-def _normalize_items(items: Iterable[Mapping[str, object]]) -> list[dict]:
-    """Normalize view items for export.
-
-    Take whatever dicts the view passes in and return a list of clean dicts
-    containing only the fields we want to export, with None -> "".
-    """
-
-    normalized: list[dict] = []
-
-    for it in items:
+    for item in items:
         row: dict[str, object] = {}
-        for key, _ in EXPORT_FIELDS:
-            value = it.get(key, "")
-            if value is None:
-                value = ""
-            row[key] = value
+        for key, _label in EXPORT_FIELDS:
+            value = item.get(key, "")
+            row[key] = "" if value is None else value
         normalized.append(row)
 
     return normalized
@@ -133,25 +138,18 @@ def build_export_tsv(
     items: Iterable[Mapping[str, object]],
     default_filename: str = "export.tsv",
 ) -> tuple[str, str, str]:
-    """Build a TSV export from a sequence of item dicts.
-
-    Returns: (content_str, filename, content_type)
-    """
-
+    """Build a TSV export from a sequence of item dictionaries."""
     rows = _normalize_items(items)
 
-    buf = io.StringIO()
-    writer = csv.writer(buf, delimiter="\t")
+    buffer = io.StringIO()
+    writer = csv.writer(buffer, delimiter="\t")
+    writer.writerow([label for _key, label in EXPORT_FIELDS])
 
-    # Header row
-    writer.writerow([label for _, label in EXPORT_FIELDS])
-
-    # Data rows
     for row in rows:
-        writer.writerow([row.get(key, "") for key, _ in EXPORT_FIELDS])
+        writer.writerow([row.get(key, "") for key, _label in EXPORT_FIELDS])
 
-    content = buf.getvalue()
-    buf.close()
+    content = buffer.getvalue()
+    buffer.close()
 
     filename = default_filename or "export.tsv"
     content_type = "text/tab-separated-values; charset=utf-8"
@@ -162,11 +160,7 @@ def build_export_json(
     items: Iterable[Mapping[str, object]],
     default_filename: str = "export.json",
 ) -> tuple[str, str, str]:
-    """Build a JSON export from a sequence of item dicts.
-
-    Returns: (content_str, filename, content_type)
-    """
-
+    """Build a JSON export from a sequence of item dictionaries."""
     rows = _normalize_items(items)
     content = json.dumps(rows, indent=2, ensure_ascii=False)
 
@@ -176,83 +170,64 @@ def build_export_json(
 
 
 def _iter_study_dirs(datatype: str) -> list[Path]:
-    """Yield directories that look like MetaboLights studies.
-
-    With your current layout this will hit:
-        /datasets/MTBLS1051
-        /datasets/MTBLS1464
-        ...
-    """
+    """Return directories that look like MetaboLights studies."""
     if datatype != "metabolomics":
         return []
-
 
     data_root = get_data_root()
     if not data_root.exists():
         return []
 
     candidates: dict[str, Path] = {}
-    for p in data_root.iterdir():
-        if not p.is_dir():
+
+    for path in data_root.iterdir():
+        if not path.is_dir():
             continue
-        name = p.name
+
+        name = path.name
         if not name.startswith("MTBLS"):
             continue
-        # Only accept IDs like MTBLS1234, MTBLS690, etc.
+
         suffix = name[5:]
         if not suffix.isdigit():
             continue
-        candidates[name] = p
+
+        candidates[name] = path
 
     return [candidates[name] for name in sorted(candidates)]
 
 
-def load_all_items(datatype: str) -> list[dict]:
+def load_all_items(datatype: str) -> list[dict[str, Any]]:
+    """Load all public metabolomics datasets from the local/PVC data root.
 
-    """Load all public metabolomics datasets from the PVC.
-
-    Each item dict keeps the old keys (id, repository, repo_url, etc.)
-    so facets/export keep working, but now also has richer metadata.
+    StorageGRID-backed loading should be added later behind this public function,
+    preferably controlled by a feature flag such as PORTAL_DATA_SOURCE.
     """
+    datatype = str(datatype or "").strip().lower()
+
     if datatype != "metabolomics":
         return []
 
-    data_root = get_data_root()
-    if not data_root.is_dir():
+    items: list[dict[str, Any]] = []
 
-
-    items: list[dict] = []
-
-    for study_dir in sorted(DATA_ROOT.iterdir(), key=lambda p: p.name):
-        if not study_dir.is_dir():
-            continue
-
+    for study_dir in _iter_study_dirs(datatype):
         accession = study_dir.name
-        if not ACCESSION_RE.match(accession):
-            # Skip helper dirs like MTBLS_data, fetch_metabolights.sh, targets.txt
-            continue
-
         inv_path = find_investigation_file(study_dir)
         meta = parse_investigation_file(inv_path)
 
-        title = meta.get("study_title") or accession
-        description = _clean_html(meta.get("study_description") or "")
+        title = str(meta.get("study_title") or accession)
+        description = _clean_html(str(meta.get("study_description") or ""))
 
         public_release = meta.get("study_public_release_date")
         year = None
         if isinstance(public_release, str) and len(public_release) >= 4:
             year = public_release[:4]
 
-        # tags may not exist in the ISA metadata; provide an empty list by default
-        tags = meta.get("tags", [])
-
         item = {
-            # IDs used by bulk selection / export
             "id": accession,
             "accession": accession,
-            # Old fields the template already uses
             "title": title,
-            "pathogen": "",  # not available in ISA; left empty for now
+            "pathogen": "",
             "matrix": "",
             "instrument": "",
             "country": "",
@@ -260,9 +235,8 @@ def load_all_items(datatype: str) -> list[dict]:
             "repository": "MetaboLights",
             "repo_accession": accession,
             "repo_url": f"https://www.ebi.ac.uk/metabolights/{accession}",
-            # New metadata from i_Investigation.txt
             "description": description,
-            "tags": tags,
+            "tags": meta.get("tags", []),
             "public_release_date": public_release,
             "submission_date": meta.get("study_submission_date"),
             "license": meta.get("license"),
@@ -273,130 +247,120 @@ def load_all_items(datatype: str) -> list[dict]:
             "publication_doi": meta.get("publication_doi"),
             "publication_authors": meta.get("publication_authors"),
             "technology": meta.get("technology"),
-            # Local PVC location (useful for debugging or later features)
             "local_path": str(study_dir),
         }
-
         items.append(item)
 
     return items
 
 
+def apply_text_search(items: list[dict[str, Any]], query: str) -> list[dict[str, Any]]:
+    """Apply text search to dataset listing items."""
+    if not query:
+        return items
+
+    normalized_query = query.lower()
+
+    def matches_text(item: dict[str, Any]) -> bool:
+        searchable_fields = (
+            item.get("title", ""),
+            item.get("id", ""),
+            item.get("accession", ""),
+            item.get("description", ""),
+        )
+
+        if any(normalized_query in str(value).lower() for value in searchable_fields):
+            return True
+
+        tags = item.get("tags", [])
+        if isinstance(tags, str):
+            return normalized_query in tags.lower()
+
+        return any(normalized_query in str(tag).lower() for tag in tags)
+
+    return [item for item in items if matches_text(item)]
 
 
-
-
-def apply_search_and_filters(
-
-    items: list[dict],
-    query: str,
+def apply_facet_filters(
+    items: list[dict[str, Any]],
     filters: dict[str, list[str]],
-) -> list[dict]:
-    """Apply text search and facet filters to dataset listing items."""
-    # Text search
-    if query:
-        q = query.lower()
+) -> list[dict[str, Any]]:
+    """Apply selected facet filters to dataset listing items."""
+    if not filters:
+        return items
 
-        def matches_text(it: dict[str, Any]) -> bool:
-            # title and id (existing behavior)
-            if q in str(it.get("title", "")).lower() or q in str(it.get("id", "")).lower():
-                return True
-            # description
-            if q in str(it.get("description", "")).lower():
-                return True
-            # tags (could be list or string)
-            tags = it.get("tags", [])
-            if isinstance(tags, str):
-                if q in tags.lower():
-                    return True
-            else:
-                for t in tags:
-                    if q in str(t).lower():
-                        return True
-            return False
+    filtered_items = items
 
-        items = [it for it in items if matches_text(it)]
-
-    # Facet filters
     for field, values in filters.items():
         if not values:
             continue
-        values_set = {str(v) for v in values}
+
+        selected_values = {str(value) for value in values}
 
         def matches_filter(
-            it: dict[str, Any],
+            item: dict[str, Any],
             *,
-            _field: str = field,
-            _values_set: set[str] = values_set,
+            field_name: str = field,
+            allowed_values: set[str] = selected_values,
         ) -> bool:
-            """Check if item matches the filter for this field."""
-            field_value = it.get(_field)
-            if field_value is None:
+            field_value = item.get(field_name)
+
+            if field_value in (None, "", [], {}):
                 return False
-            # Handle list values (e.g., platforms, factors, design_types)
+
             if isinstance(field_value, list):
-                # If any value in the list matches any filter value, include the item
-                return any(str(v) in _values_set for v in field_value if v is not None and v != "")
-            else:
-                # Scalar value (e.g., year, repository, technology)
-                return str(field_value) in _values_set
+                return any(
+                    str(value) in allowed_values
+                    for value in field_value
+                    if value not in (None, "")
+                )
 
-        items = [it for it in items if matches_filter(it)]
+            return str(field_value) in allowed_values
 
-    return items
+        filtered_items = [item for item in filtered_items if matches_filter(item)]
+
+    return filtered_items
+
+
+def apply_search_and_filters(
+    items: list[dict[str, Any]],
+    query: str,
+    filters: dict[str, list[str]],
+) -> list[dict[str, Any]]:
+    """Apply text search followed by facet filters."""
+    return apply_facet_filters(apply_text_search(items, query), filters)
+
+
+def _facet_label(field: str) -> str:
+    """Return a display label for a facet field."""
+    return field.replace("_", " ").capitalize()
 
 
 def build_facets(
-
     items: list[dict[str, Any]],
     facet_names: list[str],
     filters: dict[str, list[str]] | None,
     datatype: str,
-    *,
-    use_cache: bool = True,
-) -> dict[str, list[dict[str, Any]]]:
-    """Build facet buckets for a given datatype.
+) -> list[dict[str, Any]]:
+    """Build facet groups for the listing template."""
+    del datatype
 
-    items:
-        Full list of items (dicts) for this datatype.
-    facet_names:
-        Keys in each item to facet on, e.g. ["pathogen", "country", "year"].
-    filters:
-        Currently active filters (used to mark 'checked' buckets).
-    datatype:
-        Slug/name of the datatype, e.g. "metabolomics".
-    """
-    # Normalise inputs
-    items = list(items)
     filters = filters or {}
-
-    # Include datatype and facet_names in the cache key
-    cache_key = f"facets_{datatype}_{hash(str(sorted(facet_names)))}"
-    if use_cache:
-        cached: dict[str, list[dict[str, Any]]] | None = cache.get(cache_key)
-        if cached is not None:
-            # Update "checked" flags based on current filters before returning
-            for facet, buckets in cached.items():
-                active_values = set(filters.get(facet, []))
-                for bucket in buckets:
-                    bucket["checked"] = str(bucket["value"]) in active_values
-            return cached
-
-    facets: dict[str, list[dict[str, Any]]] = {}
+    facet_groups: list[dict[str, Any]] = []
 
     for facet in facet_names:
         counts: dict[str, int] = {}
 
-        for it in items:
-            value = it.get(facet)
+        for item in items:
+            value = item.get(facet)
+
             if value in (None, "", [], {}):
                 continue
 
-            # Handle list-valued fields (e.g. platforms, design_types)
             if isinstance(value, list):
-                for v in value:
-                    if v not in (None, ""):
-                        key = str(v)
+                for entry in value:
+                    if entry not in (None, ""):
+                        key = str(entry)
                         counts[key] = counts.get(key, 0) + 1
             else:
                 key = str(value)
@@ -404,42 +368,49 @@ def build_facets(
 
         buckets = list(counts.items())
 
-        # For the "year" facet prefer numeric descending (most recent first),
-        # but only if all keys look like integers; otherwise fall back to
-        # string-based descending sort. All other facets are sorted ascending.
         if facet == "year" and buckets:
 
-            def _is_integer_string(s: str) -> bool:
-                return re.fullmatch(r"-?\d+", s) is not None
+            def is_integer_string(value: str) -> bool:
+                return re.fullmatch(r"-?\d+", value) is not None
 
-            if all(_is_integer_string(k) for k, _ in buckets):
-                buckets.sort(key=lambda kv: int(kv[0]), reverse=True)
+            if all(is_integer_string(key) for key, _count in buckets):
+                buckets.sort(key=lambda item: int(item[0]), reverse=True)
             else:
-                buckets.sort(key=lambda kv: kv[0], reverse=True)
+                buckets.sort(key=lambda item: item[0], reverse=True)
         else:
-            buckets.sort(key=lambda kv: kv[0])
+            buckets.sort(key=lambda item: item[0])
 
         active_values = set(filters.get(facet, []))
-        facets[facet] = [
-            {"value": value, "count": count, "checked": str(value) in active_values}
-            for value, count in buckets
-        ]
+        facet_groups.append(
+            {
+                "field": facet,
+                "label": _facet_label(facet),
+                "buckets": [
+                    {
+                        "value": value,
+                        "count": count,
+                        "checked": str(value) in active_values,
+                    }
+                    for value, count in buckets
+                ],
+            }
+        )
 
-    if use_cache:
-        cache.set(cache_key, facets, timeout=3600)
-    return facets
+    return facet_groups
+
 
 def find_investigation_file(study_dir: Path) -> Path | None:
+    """Find the preferred investigation file for a study directory."""
+    revisions_root = study_dir / "METADATA_REVISIONS"
 
-    """Prefer the latest investigation file under METADATA_REVISIONS, falling back to top-level."""
-    rev_root = study_dir / "METADATA_REVISIONS"
-    if rev_root.is_dir():
-        rev_dirs = sorted(
-            [p for p in rev_root.iterdir() if p.is_dir()],
-            key=lambda p: p.name,
+    if revisions_root.is_dir():
+        revision_dirs = sorted(
+            [path for path in revisions_root.iterdir() if path.is_dir()],
+            key=lambda path: path.name,
         )
-        for rev_dir in reversed(rev_dirs):
-            candidate = rev_dir / "i_Investigation.txt"
+
+        for revision_dir in reversed(revision_dirs):
+            candidate = revision_dir / "i_Investigation.txt"
             if candidate.is_file():
                 return candidate
 
@@ -450,24 +421,23 @@ def find_investigation_file(study_dir: Path) -> Path | None:
     return None
 
 
-def parse_investigation_file(path: Path) -> dict[str, object]:
-
-    """Very simple ISA-tab parser focusing on the STUDY rows we care about."""
+def parse_investigation_file(path: Path | None) -> dict[str, object]:
+    """Parse selected study metadata from an ISA-tab investigation file."""
     meta: dict[str, object] = {}
 
     if path is None or not path.is_file():
         return meta
 
     try:
-        with path.open(encoding="utf-8") as f:
-            for raw in f:
-                line = raw.rstrip("\n")
+        with path.open(encoding="utf-8") as file_obj:
+            for raw_line in file_obj:
+                line = raw_line.rstrip("\n")
                 if not line or "\t" not in line:
                     continue
 
-                cols = [c.strip() for c in line.split("\t")]
-                key = cols[0]
-                values = [c for c in cols[1:] if c]
+                columns = [column.strip() for column in line.split("\t")]
+                key = columns[0]
+                values = [column for column in columns[1:] if column]
 
                 if not values:
                     continue
@@ -497,24 +467,24 @@ def parse_investigation_file(path: Path) -> dict[str, object]:
                 elif key == "Study Assay Technology Type":
                     meta["technology"] = values[0]
     except FileNotFoundError:
-        pass
+        logger.debug("Investigation file disappeared during parsing: %s", path)
 
     return meta
 
 
 def list_study_files(study_dir: Path) -> list[dict[str, Any]]:
-    """Return metadata for files contained in a study directory."""
+    """List all files within a study directory."""
     files: list[dict[str, Any]] = []
 
-    for root, _, filenames in os.walk(study_dir):
+    for root, _dirnames, filenames in os.walk(study_dir):
         for filename in filenames:
-            full = Path(root) / filename
+            full_path = Path(root) / filename
 
             try:
-                relpath = str(full.relative_to(study_dir)).replace(os.sep, "/")
-                stat = full.stat()
+                relpath = str(full_path.relative_to(study_dir)).replace(os.sep, "/")
+                stat = full_path.stat()
             except (OSError, ValueError):
-                logger.debug("Skipping file during listing: %s", full, exc_info=True)
+                logger.debug("Skipping file during listing: %s", full_path, exc_info=True)
                 continue
 
             files.append(
@@ -529,74 +499,5 @@ def list_study_files(study_dir: Path) -> list[dict[str, Any]]:
                 }
             )
 
-    files.sort(key=lambda file: file["relpath"])
+    files.sort(key=lambda file_info: file_info["relpath"])
     return files
-
-def apply_text_search(items: list[dict], query: str) -> list[dict]:
-    """Apply text search to dataset listing items."""
-    if not query:
-        return items
-
-    q = query.lower()
-
-    def matches_text(it: dict[str, Any]) -> bool:
-        if q in str(it.get("title", "")).lower():
-            return True
-
-        if q in str(it.get("id", "")).lower():
-            return True
-
-        if q in str(it.get("accession", "")).lower():
-            return True
-
-        if q in str(it.get("description", "")).lower():
-            return True
-
-        tags = it.get("tags", [])
-        if isinstance(tags, str):
-            return q in tags.lower()
-
-        return any(q in str(tag).lower() for tag in tags)
-
-    return [it for it in items if matches_text(it)]
-
-
-def apply_facet_filters(
-    items: list[dict],
-    filters: dict[str, list[str]],
-) -> list[dict]:
-    """Apply selected facet filters to dataset listing items."""
-    if not filters:
-        return items
-
-    filtered_items = items
-
-    for field, values in filters.items():
-        if not values:
-            continue
-
-        values_set = {str(v) for v in values}
-
-        def matches_filter(
-            it: dict[str, Any],
-            *,
-            _field: str = field,
-            _values_set: set[str] = values_set,
-        ) -> bool:
-            field_value = it.get(_field)
-
-            if field_value is None:
-                return False
-
-            if isinstance(field_value, list):
-                return any(
-                    str(v) in _values_set
-                    for v in field_value
-                    if v is not None and v != ""
-                )
-
-            return str(field_value) in _values_set
-
-        filtered_items = [it for it in filtered_items if matches_filter(it)]
-
-    return filtered_items
