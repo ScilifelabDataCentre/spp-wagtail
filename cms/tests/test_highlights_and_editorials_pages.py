@@ -72,7 +72,7 @@ class TestHighlightsAndEditorialsIndexPage(BasePageTestCase):
             HighlightsAndEditorialsIndexPage.subpage_types, ["cms.HighlightsAndEditorialsPage"]
         )
 
-    @patch("cms.pages.highlights_and_editorials.validate_filters")
+    @patch("cms.pages.highlights_and_editorials_index.validate_filters")
     def test_get_context_adds_filter_metadata(self, mock_validate_filters: MagicMock):
         """Test that get_context adds the correct filter metadata to the context."""
         mock_validate_filters.return_value = {}
@@ -92,7 +92,7 @@ class TestHighlightsAndEditorialsIndexPage(BasePageTestCase):
             # Mock article queryset chain
             mock_queryset = MagicMock()
             (
-                mock_child_of.return_value.live.return_value.prefetch_related.return_value.order_by.return_value.distinct.return_value.filter.return_value
+                mock_child_of.return_value.live.return_value.public.return_value.prefetch_related.return_value.order_by.return_value.distinct.return_value.filter.return_value
             ) = mock_queryset
 
             context = self.index_page.get_context(request)
@@ -110,7 +110,7 @@ class TestHighlightsAndEditorialsIndexPage(BasePageTestCase):
             valid_types=["Data Highlight", "Editorial"],
         )
 
-    @patch("cms.pages.highlights_and_editorials.validate_filters")
+    @patch("cms.pages.highlights_and_editorials_index.validate_filters")
     def test_get_context_applies_search_filter(self, mock_validate_filters: MagicMock):
         """Test that get_context applies the search filter correctly."""
         mock_validate_filters.return_value = {
@@ -127,7 +127,7 @@ class TestHighlightsAndEditorialsIndexPage(BasePageTestCase):
 
             mock_filter = MagicMock()
 
-            queryset_chain = mock_child_of.return_value.live.return_value.prefetch_related.return_value.order_by.return_value.distinct.return_value  # noqa: E501
+            queryset_chain = mock_child_of.return_value.live.return_value.public.return_value.prefetch_related.return_value.order_by.return_value.distinct.return_value  # noqa: E501
 
             queryset_chain.filter.return_value = mock_filter
 
@@ -136,7 +136,7 @@ class TestHighlightsAndEditorialsIndexPage(BasePageTestCase):
         self.assertEqual(context["articles_list"], mock_filter)
         queryset_chain.filter.assert_called_once()
 
-    @patch("cms.pages.highlights_and_editorials.render")
+    @patch("cms.pages.highlights_and_editorials_index.render")
     def test_serve_htmx_request_returns_partial_response(self, mock_render: MagicMock):
         """Test the partial response with the correct template and context for HTMX requests."""
         request = self.factory.get("/?search=test&type=Editorial")
@@ -328,7 +328,7 @@ class TestGetRelatedArticles(SimpleTestCase):
         queryset.exists.return_value = False
 
         (
-            article_model.objects.live.return_value.filter.return_value.exclude.return_value.order_by.return_value
+            article_model.objects.live.return_value.public.return_value.filter.return_value.exclude.return_value.order_by.return_value
         ) = queryset
 
         empty_queryset = MagicMock()
@@ -365,7 +365,7 @@ class TestGetRelatedArticles(SimpleTestCase):
         queryset.iterator.return_value = [related_low, unrelated, related_high]
 
         (
-            article_model.objects.live.return_value.filter.return_value.exclude.return_value.order_by.return_value
+            article_model.objects.live.return_value.public.return_value.filter.return_value.exclude.return_value.order_by.return_value
         ) = queryset
 
         result = get_related_articles(main_article, limit=2, threshold=0.1)
@@ -388,7 +388,7 @@ class TestGetRelatedArticles(SimpleTestCase):
         queryset.iterator.return_value = [weak_match]
 
         (
-            article_model.objects.live.return_value.filter.return_value.exclude.return_value.order_by.return_value
+            article_model.objects.live.return_value.public.return_value.filter.return_value.exclude.return_value.order_by.return_value
         ) = queryset
 
         result = get_related_articles(main_article, threshold=0.9)
@@ -413,7 +413,7 @@ class TestGetRelatedArticles(SimpleTestCase):
         queryset.iterator.return_value = [no_keywords_article]
 
         (
-            article_model.objects.live.return_value.filter.return_value.exclude.return_value.order_by.return_value
+            article_model.objects.live.return_value.public.return_value.filter.return_value.exclude.return_value.order_by.return_value
         ) = queryset
 
         result = get_related_articles(main_article)
@@ -445,7 +445,7 @@ class TestGetRelatedArticles(SimpleTestCase):
         queryset.iterator.return_value = [article_1, article_2, article_3]
 
         (
-            article_model.objects.live.return_value.filter.return_value.exclude.return_value.order_by.return_value
+            article_model.objects.live.return_value.public.return_value.filter.return_value.exclude.return_value.order_by.return_value
         ) = queryset
 
         result = get_related_articles(main_article, limit=2)

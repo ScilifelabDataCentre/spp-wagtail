@@ -2,7 +2,6 @@
 
 from typing import Any
 
-from django.apps import apps
 from django.db import models
 from django.http import HttpRequest
 from wagtail.admin.panels import FieldPanel, MultiFieldPanel
@@ -12,41 +11,6 @@ from wagtail.images import get_image_model_string
 from wagtail.models import Page
 
 from cms.blocks import AlertBlock
-
-
-class TopicsIndexPage(Page):
-    """A page listing all topics.
-
-    This page is intended to be used as a parent page for TopicPage instances.
-    Only one instance of this page can exist. Child topic pages will be listed
-    as cards on this page.
-
-    Attributes:
-        content (StreamField): A stream field for the page content, allowing rich text.
-    """
-
-    max_count = 1
-    template = "cms/pages/topics_index.html"
-    parent_page_types = ["cms.HomePage"]
-    subpage_types = ["cms.TopicPage"]
-
-    content = StreamField(
-        [
-            ("text", RichTextBlock()),
-            ("alert", AlertBlock()),
-        ],
-        blank=True,
-    )
-
-    content_panels = Page.content_panels + [
-        FieldPanel("content"),
-    ]
-
-    def get_context(self, request: HttpRequest) -> dict[str, Any]:
-        """Add child topics to the context."""
-        context = super().get_context(request)
-        context["topics"] = self.get_children().type(TopicPage).live().specific().order_by("title")
-        return context
 
 
 class TopicPage(Page):
@@ -104,9 +68,16 @@ class TopicPage(Page):
     @property
     def related_highlights_and_editorials(self) -> models.QuerySet:
         """Return highlights and editorials related to this topic."""
-        article_model = apps.get_model("cms", "HighlightsAndEditorialsPage")
+
+        # Importing here to avoid circular import issues
+        from cms.pages.highlights_and_editorials import HighlightsAndEditorialsPage
+
+        # To avoid error in TopicPage preview in Wagtail admin when the page is first created
+        if not self.pk:
+            return HighlightsAndEditorialsPage.objects.none()
+
         return (
-            article_model.objects.live()
+            HighlightsAndEditorialsPage.objects.live()
             .public()
             .filter(article_topics__topic=self)
             .distinct()
@@ -115,10 +86,19 @@ class TopicPage(Page):
 
     def get_context(self, request: HttpRequest) -> dict[str, Any]:
         """Add the parent page's title to the context for display on the topic page."""
+
+        # Importing here to avoid circular import issues
+        from cms.pages.highlights_and_editorials_index import HighlightsAndEditorialsIndexPage
+        from cms.pages.topics_index import TopicsIndexPage
+
         context = super().get_context(request)
-        context["page_heading"] = self.get_parent().specific.title
         context["related_highlights_and_editorials"] = self.related_highlights_and_editorials
+
+        parent = self.get_ancestors().type(TopicsIndexPage).specific().first()
+        context["page_heading"] = parent.title if parent else ""
+
+        highlights_and_editorials_index = HighlightsAndEditorialsIndexPage.objects.live().first()
         context["articles_index_url"] = (
-            apps.get_model("cms", "HighlightsAndEditorialsIndexPage").objects.live().first().url
+            highlights_and_editorials_index.url if highlights_and_editorials_index else ""
         )
         return context

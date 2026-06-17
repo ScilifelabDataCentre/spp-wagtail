@@ -1,4 +1,4 @@
-"""CMS page for News index."""
+"""CMS page for topics index."""
 
 from typing import Any
 
@@ -11,11 +11,11 @@ from wagtail.models import Page
 from cms.blocks import AlertBlock
 
 
-class NewsIndexPage(Page):
-    """A page listing all news articles.
+class TopicsIndexPage(Page):
+    """A page listing all topics.
 
-    This page is intended to be used as a parent page for NewsPage instances.
-    Only one instance of this page can exist. Child news pages will be listed
+    This page is intended to be used as a parent page for TopicPage instances.
+    Only one instance of this page can exist. Child topic pages will be listed
     as cards on this page.
 
     Attributes:
@@ -23,9 +23,9 @@ class NewsIndexPage(Page):
     """
 
     max_count = 1
-    template = "cms/pages/news_index.html"
+    template = "cms/pages/topics_index.html"
     parent_page_types = ["cms.HomePage"]
-    subpage_types = ["cms.NewsPage"]
+    subpage_types = ["cms.TopicPage"]
 
     content = StreamField(
         [
@@ -40,18 +40,13 @@ class NewsIndexPage(Page):
     ]
 
     def get_context(self, request: HttpRequest) -> dict[str, Any]:
-        """Add child news articles to the context."""
+        """Add child topics to the context."""
 
-        # Importing here to avoid circular imports
-        from cms.pages.news import NewsPage
+        # Importing here to avoid circular import issues
+        from cms.pages.topics import TopicPage
 
         context = super().get_context(request)
-        context["all_news"] = (
-            self.get_children()
-            .type(NewsPage)
-            .live()
-            .public()
-            .specific()
-            .order_by("-first_published_at")
+        context["topics"] = (
+            self.get_children().type(TopicPage).live().public().specific().order_by("title")
         )
         return context

@@ -42,6 +42,7 @@ def get_related_articles(article, limit: int = 3, threshold: float = 0.1) -> lis
     # Get all active articles of the same type, excluding current article
     candidate_articles = (
         article_model.objects.live()
+        .public()
         .filter(article_type=article.article_type)
         .exclude(id=article.id)
         .order_by("-first_published_at")
