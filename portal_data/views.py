@@ -34,6 +34,8 @@ from django.shortcuts import render
 from portal_data.services import ACCESSION_RE, get_data_root, get_datatype_config, list_study_files
 >>>>>>> 31d16f4 (Freya-2469: Moved view logic for portal data back into views.py (#50))
 
+from .context import build_portal_data_context
+
 logger = logging.getLogger(__name__)
 
 
