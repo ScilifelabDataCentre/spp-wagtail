@@ -6,6 +6,7 @@ import csv
 import io
 import json
 from collections.abc import Iterable, Mapping
+<<<<<<< HEAD
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -29,18 +30,34 @@ SUPPORTED_TYPES: dict[str, DataTypeConfig] = {
     "metabolomics": DataTypeConfig(
         label="Metabolomics",
         default_facets=(
+=======
+from pathlib import Path
+
+from django.conf import settings
+
+SUPPORTED_TYPES = {
+    "metabolomics": {
+        "label": "Metabolomics",
+        "default_facets": [
+>>>>>>> 9a689df (Merge conflict)
             "year",
             "platforms",
             "technology",
             "factors",
             "design_types",
             "repository",
+<<<<<<< HEAD
         ),
     ),
+=======
+        ],
+    },
+>>>>>>> 9a689df (Merge conflict)
 }
 
 ACCESSION_RE = re.compile(r"^MTBLS\d+$")
 
+<<<<<<< HEAD
 def get_datatype_config(datatype: str) -> DataTypeConfig | None:
     """Return configuration for a supported data type, if available."""
     return SUPPORTED_TYPES.get(datatype)
@@ -73,6 +90,8 @@ def get_dataset_listing(
         "has_facets": any(bool(buckets) for buckets in facets.values()),
     }
 
+=======
+>>>>>>> 9a689df (Merge conflict)
 
 def get_data_root() -> Path:
     """Return the configured datasets root.
@@ -175,12 +194,20 @@ def _iter_study_dirs(datatype: str) -> list[Path]:
     if datatype != "metabolomics":
         return []
 
+<<<<<<< HEAD
     data_root = get_data_root()
     if not data_root.exists():
         return []
 
     candidates: dict[str, Path] = {}
     for p in data_root.iterdir():
+=======
+    if not DATA_ROOT.exists():
+        return []
+
+    candidates: dict[str, Path] = {}
+    for p in DATA_ROOT.iterdir():
+>>>>>>> 9a689df (Merge conflict)
         if not p.is_dir():
             continue
         name = p.name
@@ -195,7 +222,11 @@ def _iter_study_dirs(datatype: str) -> list[Path]:
     return [candidates[name] for name in sorted(candidates)]
 
 
+<<<<<<< HEAD
 def load_all_items(datatype: str) -> list[dict]:
+=======
+def _load_all_items(datatype: str) -> list[dict]:
+>>>>>>> 9a689df (Merge conflict)
     """Load all public metabolomics datasets from the PVC.
 
     Each item dict keeps the old keys (id, repository, repo_url, etc.)
@@ -204,13 +235,21 @@ def load_all_items(datatype: str) -> list[dict]:
     if datatype != "metabolomics":
         return []
 
+<<<<<<< HEAD
     data_root = get_data_root()
     if not data_root.is_dir():
+=======
+    if not DATA_ROOT.is_dir():
+>>>>>>> 9a689df (Merge conflict)
         return []
 
     items: list[dict] = []
 
+<<<<<<< HEAD
     for study_dir in sorted(data_root.iterdir(), key=lambda p: p.name):
+=======
+    for study_dir in sorted(DATA_ROOT.iterdir(), key=lambda p: p.name):
+>>>>>>> 9a689df (Merge conflict)
         if not study_dir.is_dir():
             continue
 
@@ -219,11 +258,19 @@ def load_all_items(datatype: str) -> list[dict]:
             # Skip helper dirs like MTBLS_data, fetch_metabolights.sh, targets.txt
             continue
 
+<<<<<<< HEAD
         inv_path = find_investigation_file(study_dir)
         meta = parse_investigation_file(inv_path)
 
         title = meta.get("study_title") or accession
         description = _clean_html(meta.get("study_description") or "")
+=======
+        inv_path = _find_investigation_file(study_dir)
+        meta = _parse_investigation_file(inv_path)
+
+        title = meta.get("study_title") or accession
+        description = meta.get("study_description") or ""
+>>>>>>> 9a689df (Merge conflict)
         public_release = meta.get("study_public_release_date")
         year = None
         if isinstance(public_release, str) and len(public_release) >= 4:
@@ -270,12 +317,19 @@ def load_all_items(datatype: str) -> list[dict]:
 
 
 
+<<<<<<< HEAD
 def apply_search_and_filters(
+=======
+def _apply_search_and_filters(
+>>>>>>> 9a689df (Merge conflict)
     items: list[dict],
     query: str,
     filters: dict[str, list[str]],
 ) -> list[dict]:
+<<<<<<< HEAD
     """Apply text search and facet filters to dataset listing items."""
+=======
+>>>>>>> 9a689df (Merge conflict)
     # Text search
     if query:
         q = query.lower()
@@ -328,7 +382,11 @@ def apply_search_and_filters(
 
     return items
 
+<<<<<<< HEAD
 def build_facets(
+=======
+def _build_facets(
+>>>>>>> 9a689df (Merge conflict)
     items: list[dict[str, Any]],
     facet_names: list[str],
     filters: dict[str, list[str]] | None,
@@ -410,7 +468,11 @@ def build_facets(
         cache.set(cache_key, facets, timeout=3600)
     return facets
 
+<<<<<<< HEAD
 def find_investigation_file(study_dir: Path) -> Path | None:
+=======
+def _find_investigation_file(study_dir: Path) -> Path | None:
+>>>>>>> 9a689df (Merge conflict)
     """Prefer the latest investigation file under METADATA_REVISIONS, falling back to top-level."""
     rev_root = study_dir / "METADATA_REVISIONS"
     if rev_root.is_dir():
@@ -430,7 +492,11 @@ def find_investigation_file(study_dir: Path) -> Path | None:
     return None
 
 
+<<<<<<< HEAD
 def parse_investigation_file(path: Path) -> dict[str, object]:
+=======
+def _parse_investigation_file(path: Path) -> dict[str, object]:
+>>>>>>> 9a689df (Merge conflict)
     """Very simple ISA-tab parser focusing on the STUDY rows we care about."""
     meta: dict[str, object] = {}
 
