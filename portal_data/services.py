@@ -19,8 +19,6 @@ from django.conf import settings
 from django.core.cache import cache
 from django.utils import timezone
 
-from portal_data.SUPPORTED_TYPES import SUPPORTED_TYPES
-
 logger = logging.getLogger(__name__)
 
 @dataclass(frozen=True)
