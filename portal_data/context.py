@@ -40,6 +40,7 @@ def build_portal_data_context(
     if config is None:
         return {
             "datatype": datatype,
+<<<<<<< HEAD
             "raw_datatype": raw_datatype,
             "datatype_label": datatype or "Unknown",
             "error": f"Unknown data type: {datatype or raw_datatype}",
@@ -55,6 +56,21 @@ def build_portal_data_context(
             "form_action": request.path,
             "reset_url": request.path,
         }
+=======
+            "datatype_label": config.label,
+            "query": query,
+            "filters": filters,
+            "facet_names": facet_names,
+            "facets": listing["facets"],
+            "has_facets": listing["has_facets"],
+            "items": filtered_items[start:end],
+            "total": len(filtered_items),
+            "page_number": page_number,
+            "size": size,
+            "form_action": request.path,
+            "reset_url": request.path,
+            }
+>>>>>>> a5ff37d (more robust context)
 
     query = request.GET.get("q", "").strip()
     page_number = positive_int(request.GET.get("page"), 1)
