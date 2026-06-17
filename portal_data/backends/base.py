@@ -1,4 +1,5 @@
 """Base file for the portal data backend"""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -26,11 +27,9 @@ class PortalDataset:
 
 
 class PortalDataBackend(Protocol):
-    def list_datasets(self, *, datatype: str) -> list[PortalDataset]:
-        ...
+    def list_datasets(self, *, datatype: str) -> list[PortalDataset]: ...
 
-    def get_dataset(self, dataset_id: str) -> PortalDataset | None:
-        ...
+    def get_dataset(self, dataset_id: str) -> PortalDataset | None: ...
 
     def get_download_url(
         self,
@@ -38,5 +37,4 @@ class PortalDataBackend(Protocol):
         dataset_id: str,
         file_path: str,
         expires_in_seconds: int,
-    ) -> str:
-        ...
+    ) -> str: ...

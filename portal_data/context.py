@@ -62,9 +62,7 @@ def build_portal_data_context(
 
     facet_names = request.GET.getlist("facet") or list(config.default_facets)
     filters = {
-        field: request.GET.getlist(field)
-        for field in facet_names
-        if request.GET.getlist(field)
+        field: request.GET.getlist(field) for field in facet_names if request.GET.getlist(field)
     }
 
     listing = get_dataset_listing(

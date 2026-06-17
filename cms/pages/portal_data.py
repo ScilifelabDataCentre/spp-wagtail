@@ -52,10 +52,7 @@ class PortalDataPage(RoutablePageMixin, Page):
     content_panels = Page.content_panels + [
         FieldPanel(
             "datatype",
-            help_text=(
-                "Type of data page to create. "
-                "Currently only Metabolomics is available."
-            ),
+            help_text=("Type of data page to create. Currently only Metabolomics is available."),
         ),
         FieldPanel(
             "default_page_size",

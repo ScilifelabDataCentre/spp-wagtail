@@ -310,9 +310,7 @@ def apply_facet_filters(
 
             if isinstance(field_value, list):
                 return any(
-                    str(value) in allowed_values
-                    for value in field_value
-                    if value not in (None, "")
+                    str(value) in allowed_values for value in field_value if value not in (None, "")
                 )
 
             return str(field_value) in allowed_values

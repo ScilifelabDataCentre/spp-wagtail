@@ -48,8 +48,7 @@ def test_load_all_items_reads_valid_metabolights_dirs(
     study = tmp_path / "MTBLS9999"
     study.mkdir()
     (study / "i_Investigation.txt").write_text(
-        "Study Title\tExample study\n"
-        "Study Public Release Date\t2024-01-15\n",
+        "Study Title\tExample study\nStudy Public Release Date\t2024-01-15\n",
         encoding="utf-8",
     )
 

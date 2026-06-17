@@ -42,7 +42,7 @@ if settings.DEBUG:
 
 
 urlpatterns += [
-        # Wagtail-facing portal data file routes.
+    # Wagtail-facing portal data file routes.
     path(
         "data/",
         include("portal_data.wagtail_urls", namespace="portal_data_wagtail"),

@@ -1,4 +1,4 @@
-"Helper functions for communicating with the Storagegrid S3 system"
+"""Helper functions for communicating with the Storagegrid S3 system"""
 
 from __future__ import annotations
 
