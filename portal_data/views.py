@@ -8,8 +8,6 @@ from contextlib import ExitStack
 from pathlib import Path
 from urllib.parse import unquote
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 from django.conf import settings
 from django.http import FileResponse, Http404, HttpRequest, HttpResponse
 from django.shortcuts import render

@@ -85,7 +85,6 @@ def get_dataset_listing(
     }
 
 
-
 def get_data_root() -> Path:
     """Return the configured datasets root.
 
