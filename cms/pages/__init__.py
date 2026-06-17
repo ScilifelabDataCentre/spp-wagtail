@@ -6,7 +6,6 @@ from .highlights_and_editorials import (
     HighlightsAndEditorialsTopic,
 )
 from .home import HomePage
-
 from .outbreaks import OutbreakPage, OutbreaksIndexPage
 from .portal_data import PortalDataPage
 from .section_index import SectionIndexPage
@@ -18,6 +17,8 @@ __all__ = [
     "HighlightsAndEditorialsPage",
     "HighlightsAndEditorialsTopic",
     "HomePage",
+    "NewsIndexPage",
+    "NewsPage",
     "OutbreakPage",
     "OutbreaksIndexPage",
     "PortalDataPage",
