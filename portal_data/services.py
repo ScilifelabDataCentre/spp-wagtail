@@ -483,7 +483,6 @@ def parse_investigation_file(path: Path) -> dict[str, object]:
     return meta
 
 
-
 def list_study_files(study_dir: Path) -> list[dict[str, Any]]:
     """Return metadata for files contained in a study directory."""
     files: list[dict[str, Any]] = []

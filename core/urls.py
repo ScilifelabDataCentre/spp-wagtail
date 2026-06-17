@@ -32,7 +32,6 @@ urlpatterns = [
     path(settings.ADMIN_URL, admin.site.urls, name="admin"),
     path("healthz/", healthz, name="healthz"),
 ]
-
 # Auto browser reload addition for local development
 if settings.DEBUG:
     urlpatterns += [
