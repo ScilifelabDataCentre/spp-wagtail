@@ -9,7 +9,6 @@ import logging
 import os
 import re
 from collections.abc import Iterable, Mapping
-<<<<<<< HEAD
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -19,6 +18,8 @@ import nh3
 from django.conf import settings
 from django.core.cache import cache
 from django.utils import timezone
+
+from portal_data.SUPPORTED_TYPES import SUPPORTED_TYPES
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +34,6 @@ SUPPORTED_TYPES: dict[str, DataTypeConfig] = {
     "metabolomics": DataTypeConfig(
         label="Metabolomics",
         default_facets=(
-=======
 from pathlib import Path
 
 from django.conf import settings
@@ -42,25 +42,18 @@ SUPPORTED_TYPES = {
     "metabolomics": {
         "label": "Metabolomics",
         "default_facets": [
->>>>>>> 9a689df (Merge conflict)
             "year",
             "platforms",
             "technology",
             "factors",
             "design_types",
             "repository",
-<<<<<<< HEAD
         ),
     ),
-=======
-        ],
-    },
->>>>>>> 9a689df (Merge conflict)
 }
 
 ACCESSION_RE = re.compile(r"^MTBLS\d+$")
 
-<<<<<<< HEAD
 def get_datatype_config(datatype: str) -> DataTypeConfig | None:
     """Return configuration for a supported data type, if available."""
     return SUPPORTED_TYPES.get(datatype)
@@ -93,8 +86,7 @@ def get_dataset_listing(
         "has_facets": any(bool(buckets) for buckets in facets.values()),
     }
 
-=======
->>>>>>> 9a689df (Merge conflict)
+
 
 def get_data_root() -> Path:
     """Return the configured datasets root.
@@ -197,23 +189,13 @@ def _iter_study_dirs(datatype: str) -> list[Path]:
     if datatype != "metabolomics":
         return []
 
-<<<<<<< HEAD
+
     data_root = get_data_root()
     if not data_root.exists():
         return []
 
     candidates: dict[str, Path] = {}
     for p in data_root.iterdir():
-<<<<<<< HEAD
-=======
-    if not DATA_ROOT.exists():
-        return []
-
-    candidates: dict[str, Path] = {}
-    for p in DATA_ROOT.iterdir():
->>>>>>> 9a689df (Merge conflict)
-=======
->>>>>>> 043adbb (Merge conflict)
         if not p.is_dir():
             continue
         name = p.name
@@ -228,8 +210,6 @@ def _iter_study_dirs(datatype: str) -> list[Path]:
     return [candidates[name] for name in sorted(candidates)]
 
 
-
-<<<<<<< HEAD
 def load_all_items(datatype: str) -> list[dict]:
 
     """Load all public metabolomics datasets from the PVC.
@@ -242,15 +222,11 @@ def load_all_items(datatype: str) -> list[dict]:
 
     data_root = get_data_root()
     if not data_root.is_dir():
-=======
-    if not DATA_ROOT.is_dir():
->>>>>>> 9a689df (Merge conflict)
-        return []
+
 
     items: list[dict] = []
 
     for study_dir in sorted(DATA_ROOT.iterdir(), key=lambda p: p.name):
->>>>>>> 9a689df (Merge conflict)
         if not study_dir.is_dir():
             continue
 
@@ -259,19 +235,12 @@ def load_all_items(datatype: str) -> list[dict]:
             # Skip helper dirs like MTBLS_data, fetch_metabolights.sh, targets.txt
             continue
 
-<<<<<<< HEAD
         inv_path = find_investigation_file(study_dir)
         meta = parse_investigation_file(inv_path)
 
         title = meta.get("study_title") or accession
         description = _clean_html(meta.get("study_description") or "")
-=======
-        inv_path = _find_investigation_file(study_dir)
-        meta = _parse_investigation_file(inv_path)
 
-        title = meta.get("study_title") or accession
-        description = meta.get("study_description") or ""
->>>>>>> 9a689df (Merge conflict)
         public_release = meta.get("study_public_release_date")
         year = None
         if isinstance(public_release, str) and len(public_release) >= 4:
@@ -319,7 +288,7 @@ def load_all_items(datatype: str) -> list[dict]:
 
 
 
-<<<<<<< HEAD
+
 def apply_search_and_filters(
 
     items: list[dict],
@@ -379,7 +348,7 @@ def apply_search_and_filters(
 
     return items
 
-<<<<<<< HEAD
+
 def build_facets(
 
     items: list[dict[str, Any]],
@@ -463,7 +432,6 @@ def build_facets(
         cache.set(cache_key, facets, timeout=3600)
     return facets
 
-<<<<<<< HEAD
 def find_investigation_file(study_dir: Path) -> Path | None:
 
     """Prefer the latest investigation file under METADATA_REVISIONS, falling back to top-level."""
@@ -485,7 +453,6 @@ def find_investigation_file(study_dir: Path) -> Path | None:
     return None
 
 
-<<<<<<< HEAD
 def parse_investigation_file(path: Path) -> dict[str, object]:
 
     """Very simple ISA-tab parser focusing on the STUDY rows we care about."""
