@@ -1,0 +1,8 @@
+{% extends "wagtailsnippets/chooser/results.html" %}
+{% load i18n %}
+
+{% block results_listing %}
+    {{ block.super }}
+    {% url add_url_name as create_url %}
+    <p><a href="{{ create_url }}" target="_blank" rel="noreferrer">{% blocktrans trimmed with snippet_type_name=snippet_type_name %}Create new {{ snippet_type_name }}{% endblocktrans %}</a></p>
+{% endblock %}

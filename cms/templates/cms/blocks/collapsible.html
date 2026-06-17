@@ -1,0 +1,18 @@
+{% load wagtailcore_tags %}
+<details
+    class="group bg-white rounded-lg border border-pp-pale-grey/30 shadow-sm overflow-hidden transition-all duration-300">
+    <summary
+        class="p-4 font-bold text-lg cursor-pointer flex items-center justify-between list-none hover:bg-pp-pale-grey/10 transition-colors">
+        {{ value.label }}
+        <span class="transition-transform duration-300 group-open:rotate-180">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+        </span>
+    </summary>
+    <div
+        class="border-t border-pp-pale-grey/20 p-4 [&_[id^='data-table-'][id$='-title']]:sr-only">
+        {% include_block value.body %}
+    </div>
+</details>
