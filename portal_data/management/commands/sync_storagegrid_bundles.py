@@ -72,8 +72,7 @@ class Command(BaseCommand):
             "--prefix",
             default="",
             help=(
-                "Prefix to scan within each bucket. Example: 'units/'. "
-                "Defaults to the bucket root."
+                "Prefix to scan within each bucket. Example: 'units/'. Defaults to the bucket root."
             ),
         )
         parser.add_argument(
@@ -116,10 +115,7 @@ class Command(BaseCommand):
         limit = options["limit"]
 
         if not buckets:
-            msg = (
-                "No buckets configured. Pass --bucket or define "
-                "settings.STORAGEGRID_BUCKETS."
-            )
+            msg = "No buckets configured. Pass --bucket or define settings.STORAGEGRID_BUCKETS."
             raise CommandError(msg)
 
         if isinstance(buckets, str):
@@ -133,8 +129,7 @@ class Command(BaseCommand):
 
         self.stdout.write(
             self.style.NOTICE(
-                f"Scanning {len(buckets)} bucket(s), prefix={prefix!r}, "
-                f"dry_run={dry_run}",
+                f"Scanning {len(buckets)} bucket(s), prefix={prefix!r}, dry_run={dry_run}",
             ),
         )
 
@@ -215,7 +210,7 @@ class Command(BaseCommand):
     def _validate_location(
         self,
         *,
-        client: Any,
+        client: Any,  # noqa: ANN401
         location: ManifestLocation,
         detect_unexpected_files: bool,
         unexpected_files_fail: bool,
@@ -236,7 +231,7 @@ class Command(BaseCommand):
     def _discover_manifests(
         self,
         *,
-        client: Any,
+        client: Any,  # noqa: ANN401
         bucket: str,
         prefix: str,
     ) -> list[ManifestLocation]:
@@ -257,7 +252,7 @@ class Command(BaseCommand):
     def _validate_bundle(
         self,
         *,
-        client: Any, # noqa: ANN401
+        client: Any,  # noqa: ANN401
         location: ManifestLocation,
         detect_unexpected_files: bool,
         unexpected_files_fail: bool,
@@ -325,14 +320,12 @@ class Command(BaseCommand):
             )
 
             unexpected_files = [
-                key.removeprefix(f"{location.dataset_prefix}/")
-                for key in unexpected_file_keys
+                key.removeprefix(f"{location.dataset_prefix}/") for key in unexpected_file_keys
             ]
 
             if unexpected_files and unexpected_files_fail:
                 errors.append(
-                    "Unexpected files present: "
-                    + ", ".join(unexpected_files[:20]),
+                    "Unexpected files present: " + ", ".join(unexpected_files[:20]),
                 )
 
         return ValidationResult(
@@ -344,10 +337,10 @@ class Command(BaseCommand):
     def _read_json_object(
         self,
         *,
-        client: Any,
+        client: Any,  # noqa: ANN401
         bucket: str,
         key: str,
-    ) -> dict[str, Any]:
+    ) -> dict[str, Any]:  # noqa: ANN401
         """Read a JSON object from object storage."""
         response = client.get_object(Bucket=bucket, Key=key)
 
@@ -365,7 +358,7 @@ class Command(BaseCommand):
     def _object_exists(
         self,
         *,
-        client: Any,
+        client: Any,  # noqa: ANN401
         bucket: str,
         key: str,
     ) -> bool:
@@ -388,7 +381,7 @@ class Command(BaseCommand):
     def _object_size(
         self,
         *,
-        client: Any,
+        client: Any,  # noqa: ANN401
         bucket: str,
         key: str,
     ) -> int | None:
@@ -404,7 +397,7 @@ class Command(BaseCommand):
     def _list_dataset_file_keys(
         self,
         *,
-        client: Any,
+        client: Any,  # noqa: ANN401
         bucket: str,
         dataset_prefix: str,
     ) -> set[str]:
@@ -504,7 +497,7 @@ class Command(BaseCommand):
             },
         )
 
-    def _metadata_from_manifest(self, manifest: PortalBundleManifest) -> dict[str, Any]:
+    def _metadata_from_manifest(self, manifest: PortalBundleManifest) -> dict[str, Any]:  # noqa: ANN401
         """Build JSON metadata stored in the lightweight index."""
         return {
             "pathogen": manifest.pathogen,
