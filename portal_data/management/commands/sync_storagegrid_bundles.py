@@ -57,7 +57,7 @@ class Command(BaseCommand):
 
     help = "Sync portal data bundle manifests from NetApp StorageGRID."
 
-    def add_arguments(self, parser: Any) -> None:
+    def add_arguments(self, parser: Any) -> None:  # noqa: ANN401
         """Register management command arguments."""
         parser.add_argument(
             "--bucket",
@@ -104,7 +104,7 @@ class Command(BaseCommand):
             help="Maximum number of manifests to process. Useful for testing.",
         )
 
-    def handle(self, *args: Any, **options: Any) -> None:
+    def handle(self, *args: Any, **options: Any) -> None:  # noqa: ANN401
         """Run the synchronisation command."""
         del args
 
@@ -257,7 +257,7 @@ class Command(BaseCommand):
     def _validate_bundle(
         self,
         *,
-        client: Any,
+        client: Any, # noqa: ANN401
         location: ManifestLocation,
         detect_unexpected_files: bool,
         unexpected_files_fail: bool,
@@ -517,7 +517,7 @@ class Command(BaseCommand):
             },
         }
 
-    def _file_to_dict(self, file_record: Any) -> dict[str, Any]:
+    def _file_to_dict(self, file_record: Any) -> dict[str, Any]:  # noqa: ANN401
         """Convert a manifest file record into JSON-serialisable data."""
         return {
             "name": file_record.name,

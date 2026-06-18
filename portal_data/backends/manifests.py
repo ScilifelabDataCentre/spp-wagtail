@@ -46,7 +46,7 @@ class PortalBundleManifest:
     withdrawn: bool = False
 
     @classmethod
-    def from_dict(cls, payload: dict[str, Any]) -> "PortalBundleManifest":
+    def from_dict(cls, payload: dict[str, Any]) -> PortalBundleManifest:
         """Build and validate a manifest from decoded JSON."""
         required_fields = ("id", "title", "unit", "datatype", "provenance", "files")
         missing_fields = [field_name for field_name in required_fields if field_name not in payload]

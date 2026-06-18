@@ -9,7 +9,7 @@ from botocore.config import Config
 from django.conf import settings
 
 
-def get_storagegrid_client() -> Any:
+def get_storagegrid_client() -> Any: # noqa: ANN401
     """Return a boto3 S3 client configured for NetApp StorageGRID."""
     return boto3.client(
         "s3",
