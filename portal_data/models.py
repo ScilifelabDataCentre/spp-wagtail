@@ -6,7 +6,11 @@ from django.db import models
 
 
 class PortalDatasetIndex(models.Model):
+    """Searchable index entry for one portal data bundle manifest."""
+
     class IngestionStatus(models.TextChoices):
+        """Possible ingestion states for an indexed dataset."""
+
         IN_SYNC = "in_sync", "In sync"
         INVALID = "invalid", "Invalid"
         OUT_OF_SYNC = "out_of_sync", "Out of sync"
@@ -43,6 +47,8 @@ class PortalDatasetIndex(models.Model):
     submitted_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
+        """Model metadata for portal dataset index entries."""
+
         indexes = [
             models.Index(fields=["datatype", "ingestion_status"]),
             models.Index(fields=["repository"]),
@@ -51,4 +57,5 @@ class PortalDatasetIndex(models.Model):
         ]
 
     def __str__(self) -> str:
+        """Return the dataset identifier."""
         return self.dataset_id
