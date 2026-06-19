@@ -10,6 +10,7 @@ from .highlights_and_editorials import (
 )
 from .highlights_and_editorials_index import HighlightsAndEditorialsIndexPage
 from .home import HomePage
+from .liver_resource import LiverResourceDashboardPage
 from .news import NewsPage
 from .news_index import NewsIndexPage
 from .outbreaks import OutbreakPage
@@ -30,6 +31,7 @@ __all__ = [
     "HighlightsAndEditorialsPage",
     "HighlightsAndEditorialsTopic",
     "HomePage",
+    "LiverResourceDashboardPage",
     "NewsIndexPage",
     "NewsPage",
     "OutbreakPage",

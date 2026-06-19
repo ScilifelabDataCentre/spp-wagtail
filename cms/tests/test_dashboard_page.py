@@ -147,9 +147,12 @@ class TestDashboardIndexPageModel(DashboardPageTestCase):
         """Test that only HomePage can be a parent."""
         self.assertEqual(DashboardIndexPage.parent_page_types, ["cms.HomePage"])
 
-    def test_subpage_types_allows_dashboard_page(self) -> None:
-        """Test that DashboardPage is the only allowed child."""
-        self.assertEqual(DashboardIndexPage.subpage_types, ["cms.DashboardPage"])
+    def test_subpage_types_allows_dashboard_page_types(self) -> None:
+        """Test that standard and liver dashboard pages are allowed children."""
+        self.assertEqual(
+            DashboardIndexPage.subpage_types,
+            ["cms.DashboardPage", "cms.LiverResourceDashboardPage"],
+        )
 
     @patch("cms.pages.dashboard_index.validate_filters")
     def test_get_context_adds_filter_metadata(self, mock_validate_filters: MagicMock):
