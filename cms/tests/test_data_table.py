@@ -16,7 +16,7 @@ from wagtail.models import Page, PageViewRestriction, Site
 from wagtail.test.utils import WagtailPageTestCase
 
 from cms.blocks import DataTableBlock
-from cms.pages import HomePage, StandardPage
+from cms.pages import BasicPage, HomePage
 from cms.services.data_table import extract_block_params, extract_table_data, get_table_context
 
 
@@ -643,7 +643,7 @@ class TablePartialViewTest(WagtailPageTestCase):
 
     @classmethod
     def setUpTestData(cls) -> None:
-        """Create a published StandardPage with a 15-row data table."""
+        """Create a published BasicPage with a 15-row data table."""
         root = Page.get_first_root_node()
         for child in root.get_children():
             child.delete()
@@ -655,7 +655,7 @@ class TablePartialViewTest(WagtailPageTestCase):
             defaults={"hostname": "testserver", "root_page": cls.home},
         )
 
-        cls.page = StandardPage(title="Test Page", slug="test-page")
+        cls.page = BasicPage(title="Test Page", slug="test-page")
         cls.page.content = _table_content_json(
             "scores",
             rows=[[f"student-{i}", float(i), 18 + i] for i in range(15)],
@@ -782,7 +782,7 @@ class TablePartialViewTest(WagtailPageTestCase):
 
     def test_empty_table_shows_no_data_message(self) -> None:
         """A table with zero rows renders a 'No data available' message."""
-        page = StandardPage(title="Empty Table Page", slug="empty-table")
+        page = BasicPage(title="Empty Table Page", slug="empty-table")
         page.content = _table_content_json("empty", rows=[], caption="Empty")
         self.home.add_child(instance=page)
         page.save_revision().publish()

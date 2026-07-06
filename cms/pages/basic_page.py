@@ -1,4 +1,4 @@
-"""Standard content page model with a StreamField body."""
+"""Basic content page model with a StreamField body."""
 
 from django.db import models
 from wagtail import blocks
@@ -6,24 +6,22 @@ from wagtail.admin.panels import FieldPanel
 from wagtail.fields import StreamField
 from wagtail.models import Page
 
-from cms.blocks import AlertBlock, CardBlock, CardGridBlock, ChildPageCardBlock, DataTableBlock
+from cms.blocks import AlertBlock, CollapsibleBlock, DataTableBlock
 
 
-class StandardPage(Page):
+class BasicPage(Page):
     """Simple content page with a reorderable stream of common blocks.
-
-    Cannot have child pages. Allowed parents: home or section index pages.
 
     Attributes:
         show_toc: Whether to generate and display a table of contents sidebar.
-        content (StreamField): StreamField with multiple content block types:
+        content (StreamField): StreamField with four content block types:
             - RichTextBlock: formatted text (headings, bold, italic, links, lists)
+            - AlertBlock: callout/notice box
             - DataTableBlock: interactive table with search and pagination
+            - CollapsibleBlock: ``<details>`` accordion with a rich-text body
     """
 
-    template = "cms/pages/standard_page.html"
-    parent_page_types = ["cms.HomePage", "cms.SectionIndexPage"]
-    subpage_types = []  # No child pages allowed.
+    template = "cms/pages/basic_page.html"
 
     show_toc = models.BooleanField(default=False, blank=True, verbose_name="Show TOC")
 
@@ -37,10 +35,8 @@ class StandardPage(Page):
                 ),
             ),
             ("alert", AlertBlock()),
-            ("card", CardBlock()),
-            ("card_grid", CardGridBlock()),
-            ("child_page_cards", ChildPageCardBlock()),
             ("data_table", DataTableBlock()),
+            ("collapsible", CollapsibleBlock()),
         ],
         blank=True,
     )

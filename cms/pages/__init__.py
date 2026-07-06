@@ -1,5 +1,6 @@
 """Wagtail CMS Page models."""
 
+from .basic_page import BasicPage
 from .catalogue import CataloguePage
 from .dashboard import DashboardPage, DashboardTopic
 from .dashboard_index import DashboardIndexPage
@@ -16,12 +17,11 @@ from .outbreaks_index import OutbreaksIndexPage
 from .plp_index import PlpIndexPage
 from .plp_project import PlpProjectPage
 from .portal_data import PortalDataPage
-from .section_index import SectionIndexPage
-from .standard_page import StandardPage
 from .topics import TopicPage
 from .topics_index import TopicsIndexPage
 
 __all__ = [
+    "BasicPage",
     "CataloguePage",
     "DashboardIndexPage",
     "DashboardPage",
@@ -37,8 +37,6 @@ __all__ = [
     "PlpIndexPage",
     "PlpProjectPage",
     "PortalDataPage",
-    "SectionIndexPage",
-    "StandardPage",
     "TopicPage",
     "TopicsIndexPage",
 ]
