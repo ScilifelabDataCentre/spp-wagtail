@@ -9,6 +9,7 @@ Raw imagery is never touched; only derived artefacts land under
 
 from __future__ import annotations
 
+import hashlib
 import json
 from datetime import date, datetime
 from pathlib import Path
@@ -85,12 +86,16 @@ class Command(BaseCommand):
         figures = build_all_figures(table, umap_coords=options["umap_coords"])
         self._write_figures(figures_dir, figures)
 
-        source_hash = self._hash_file(input_path)
+        feature_hash = self._hash_file(input_path)
+        input_hashes = [feature_hash, self._hash_file(metadata_path)]
+        if options["umap_coords"]:
+            input_hashes.append(self._hash_file(Path(options["umap_coords"])))
+        source_hash = self._combine_hashes(input_hashes)
         generated_at = timezone.now()
         summary = build_summary(
             table,
             source_filename=input_path.name,
-            source_hash=source_hash,
+            source_hash=feature_hash,
             generated_at=generated_at.isoformat(),
         )
         (output_dir / "summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
@@ -133,6 +138,21 @@ class Command(BaseCommand):
         """Return the SHA-256 of a file (calculate_file_hash needs a handle)."""
         with path.open("rb") as handle:
             return calculate_file_hash(handle)
+
+    @staticmethod
+    def _combine_hashes(hex_digests: list[str]) -> str:
+        """Combine per-input SHA-256 digests into one stable cache-busting hash.
+
+        Folding every precompute input (feature table, metadata, and any UMAP
+        coordinates) into ``source_file_hash`` ensures the ``PlotlyFigureBlock``
+        render cache (keyed by slug + figure_id + source_file_hash) is busted
+        whenever any input that affects the figures changes.
+        """
+        hasher = hashlib.sha256()
+        for digest in hex_digests:
+            hasher.update(digest.encode("ascii"))
+            hasher.update(b"\0")
+        return hasher.hexdigest()
 
     @staticmethod
     def _resolve_updated_date(slug: str, source_hash: str, override: str | None) -> date:

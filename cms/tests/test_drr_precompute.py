@@ -164,3 +164,32 @@ class DrrPrecomputeTests(TestCase):
         self.assertTrue((self.out_dir / "figures" / "umap.json").is_file())
         row = DrrDatasetData.get_data(SLUG)
         self.assertIn("umap", row.data)
+
+    def test_umap_coords_change_busts_source_hash(self) -> None:
+        """Changing only the UMAP coords changes source_file_hash (busts the render cache)."""
+        coords_a = self.base / "umap_a.parquet"
+        pl.DataFrame(
+            {
+                "umap_x": [0.1, 0.2, 0.3, 0.4, 0.5, 0.6],
+                "umap_y": [1.1, 1.2, 1.3, 1.4, 1.5, 1.6],
+                "pert_type": ["trt", "trt", "ctrl", "trt", "ctrl", "trt"],
+            }
+        ).write_parquet(coords_a)
+        self._run(umap_coords=str(coords_a))
+        first = DrrDatasetData.get_data(SLUG)
+        first_hash = first.source_file_hash
+        first_umap = json.dumps(first.data["umap"], sort_keys=True)
+
+        coords_b = self.base / "umap_b.parquet"
+        pl.DataFrame(
+            {
+                "umap_x": [5.1, 5.2, 5.3, 5.4, 5.5, 5.6],
+                "umap_y": [9.1, 9.2, 9.3, 9.4, 9.5, 9.6],
+                "pert_type": ["trt", "trt", "ctrl", "trt", "ctrl", "trt"],
+            }
+        ).write_parquet(coords_b)
+        self._run(umap_coords=str(coords_b))
+        second = DrrDatasetData.get_data(SLUG)
+
+        self.assertNotEqual(second.source_file_hash, first_hash)
+        self.assertNotEqual(json.dumps(second.data["umap"], sort_keys=True), first_umap)
